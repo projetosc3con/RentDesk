@@ -1,4 +1,4 @@
-# PRD — ERP Web para Gestão de Locação de Equipamentos Industriais
+# PRD — RentDesk ERP Web para Gestão de Locação de Equipamentos Industriais
 
 ## 1. Visão Geral do Produto
 

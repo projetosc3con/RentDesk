@@ -11,7 +11,7 @@ const AppLayout: React.FC = () => {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0 relative">
         <Header />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-20 md:pb-8 bg-slate-50/50">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 pb-20 lg:pb-8 bg-slate-50/50">
           <AnimatePresence mode="wait">
             <motion.div
               key={window.location.pathname}

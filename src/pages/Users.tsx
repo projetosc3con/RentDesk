@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import api from '../services/api';
 import type { UserProfile } from '../types';
 
 const Users: React.FC = () => {
@@ -16,23 +16,18 @@ const Users: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('users_profiles')
-        .select('*')
-        .order('full_name', { ascending: true });
-
-      if (error) throw error;
-      setUsers(data || []);
+      const response = await api.get('/users');
+      setUsers(response.data || []);
     } catch (err: any) {
       console.error('Error fetching users:', err);
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
@@ -44,7 +39,7 @@ const Users: React.FC = () => {
           <p className="text-slate-500 mt-1">Gerencie os acessos e perfis de usuários do sistema.</p>
         </div>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={fetchUsers}
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors font-bold text-xs uppercase tracking-wider"
           >
@@ -66,10 +61,10 @@ const Users: React.FC = () => {
         <div className="p-6 border-b border-slate-200 bg-slate-50/50 flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-            <input 
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-emerald-900 focus:ring-1 focus:ring-emerald-900 focus:outline-none transition-all text-sm" 
-              placeholder="Buscar por nome, e-mail ou CPF..." 
-              type="text" 
+            <input
+              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 focus:border-emerald-900 focus:ring-1 focus:ring-emerald-900 focus:outline-none transition-all text-sm"
+              placeholder="Buscar por nome, e-mail ou CPF..."
+              type="text"
             />
           </div>
           <div className="flex gap-4">
@@ -106,7 +101,7 @@ const Users: React.FC = () => {
               <span className="material-symbols-outlined text-red-500 text-[48px] mb-3 block">error</span>
               <p className="text-sm font-medium text-slate-900">Ocorreu um erro ao carregar os dados.</p>
               <p className="text-xs text-slate-500 mt-1">{error}</p>
-              <button 
+              <button
                 onClick={fetchUsers}
                 className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold text-slate-700 transition-colors"
               >
@@ -137,7 +132,7 @@ const Users: React.FC = () => {
                   </tr>
                 )}
                 {users.map((user, index) => (
-                  <motion.tr 
+                  <motion.tr
                     key={user.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -163,21 +158,19 @@ const Users: React.FC = () => {
                       <div className="text-sm text-slate-700 font-medium">{user.role_title}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase border ${
-                        user.access_level === 'Admin' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                        user.access_level === 'Gerente' ? 'bg-blue-50 text-blue-800 border-blue-200' :
-                        user.access_level === 'Técnico' ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                        'bg-slate-50 text-slate-700 border-slate-200'
-                      }`}>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase border ${user.access_level === 'Admin' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
+                          user.access_level === 'Gerente' ? 'bg-blue-50 text-blue-800 border-blue-200' :
+                            user.access_level === 'Técnico' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                              'bg-slate-50 text-slate-700 border-slate-200'
+                        }`}>
                         {user.access_level}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                        user.active 
-                          ? 'bg-emerald-100 text-emerald-800' 
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${user.active
+                          ? 'bg-emerald-100 text-emerald-800'
                           : 'bg-slate-100 text-slate-600'
-                      }`}>
+                        }`}>
                         <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
                         {user.active ? 'Ativo' : 'Inativo'}
                       </span>
@@ -207,7 +200,7 @@ const Users: React.FC = () => {
             </table>
           )}
         </div>
-        
+
         <div className="border-t border-slate-200 bg-slate-50 px-6 py-4">
           <span className="text-xs text-slate-500 font-medium">
             Total de <span className="font-bold text-slate-900">{users.length}</span> colaboradores cadastrados

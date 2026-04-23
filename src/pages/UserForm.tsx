@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { supabase } from '../lib/supabase';
+import api from '../services/api'; // Importando a API Axios
 import type { AccessLevel } from '../types';
 
 const UserForm: React.FC = () => {
@@ -30,28 +30,17 @@ const UserForm: React.FC = () => {
     setError(null);
 
     try {
-      // In a real production app, this should be done via an Edge Function
-      // to avoid exposing service role keys or to handle auth.admin actions.
-      // For this demo, we will use the Edge Function 'invite-user'.
-      
-      const { data, error: inviteError } = await supabase.functions.invoke('invite-user', {
-        body: { 
-          email: formData.email,
-          full_name: formData.full_name,
-          role_title: formData.role_title,
-          access_level: formData.access_level,
-          cpf: formData.cpf,
-          phone: formData.phone
-        }
+      // Agora chamamos o nosso próprio Backend Node.js
+      await api.post('/users/invite', {
+        ...formData,
+        redirectTo: window.location.origin
       });
 
-      if (inviteError) throw inviteError;
-
       setSuccess(true);
-      setTimeout(() => navigate('/usuarios'), 2000);
+      setTimeout(() => navigate('/usuarios'), 5000);
     } catch (err: any) {
       console.error('Error inviting user:', err);
-      setError(err.message || 'Ocorreu um erro ao enviar o convite.');
+      setError(err.response?.data?.error || 'Ocorreu um erro ao enviar o convite.');
     } finally {
       setLoading(false);
     }
@@ -60,7 +49,7 @@ const UserForm: React.FC = () => {
   if (success) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="bg-white p-8 rounded-2xl shadow-xl border border-emerald-100 flex flex-col items-center text-center max-w-sm"
@@ -73,7 +62,7 @@ const UserForm: React.FC = () => {
             Um e-mail de convite foi enviado para <strong>{formData.email}</strong>. O usuário poderá finalizar o cadastro através do link recebido.
           </p>
           <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-            <motion.div 
+            <motion.div
               initial={{ width: 0 }}
               animate={{ width: '100%' }}
               transition={{ duration: 2 }}
@@ -87,13 +76,13 @@ const UserForm: React.FC = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       className="max-w-2xl mx-auto space-y-8 pb-20"
     >
       <div className="flex items-center gap-4">
-        <button 
+        <button
           onClick={() => navigate('/usuarios')}
           className="p-2 hover:bg-white rounded-full transition-colors text-slate-400 hover:text-slate-600"
         >
@@ -117,58 +106,58 @@ const UserForm: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Nome Completo</label>
-              <input 
+              <input
                 required
                 name="full_name"
                 value={formData.full_name}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 focus:border-emerald-900 focus:ring-1 focus:ring-emerald-900 focus:outline-none transition-all text-sm" 
-                placeholder="Ex: João da Silva" 
-                type="text" 
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 focus:border-emerald-900 focus:ring-1 focus:ring-emerald-900 focus:outline-none transition-all text-sm"
+                placeholder="Ex: João da Silva"
+                type="text"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">E-mail Corporativo</label>
-              <input 
+              <input
                 required
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 focus:border-emerald-900 focus:ring-1 focus:ring-emerald-900 focus:outline-none transition-all text-sm" 
-                placeholder="email@empresa.com" 
-                type="email" 
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 focus:border-emerald-900 focus:ring-1 focus:ring-emerald-900 focus:outline-none transition-all text-sm"
+                placeholder="email@empresa.com"
+                type="email"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">CPF</label>
-              <input 
+              <input
                 name="cpf"
                 value={formData.cpf}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 focus:border-emerald-900 focus:ring-1 focus:ring-emerald-900 focus:outline-none transition-all text-sm" 
-                placeholder="000.000.000-00" 
-                type="text" 
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 focus:border-emerald-900 focus:ring-1 focus:ring-emerald-900 focus:outline-none transition-all text-sm"
+                placeholder="000.000.000-00"
+                type="text"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Cargo / Atribuição</label>
-              <input 
+              <input
                 name="role_title"
                 value={formData.role_title}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 focus:border-emerald-900 focus:ring-1 focus:ring-emerald-900 focus:outline-none transition-all text-sm" 
-                placeholder="Ex: Técnico de Manutenção" 
-                type="text" 
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 focus:border-emerald-900 focus:ring-1 focus:ring-emerald-900 focus:outline-none transition-all text-sm"
+                placeholder="Ex: Técnico de Manutenção"
+                type="text"
               />
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Nível de Acesso</label>
               <div className="relative">
-                <select 
+                <select
                   name="access_level"
                   value={formData.access_level}
                   onChange={handleChange}
@@ -188,14 +177,14 @@ const UserForm: React.FC = () => {
         </div>
 
         <div className="bg-slate-50 border-t border-slate-200 p-6 flex justify-end gap-3">
-          <button 
+          <button
             type="button"
             onClick={() => navigate('/usuarios')}
             className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors font-bold text-xs uppercase tracking-wider"
           >
             Cancelar
           </button>
-          <button 
+          <button
             type="submit"
             disabled={loading}
             className="px-8 py-2.5 rounded-lg bg-emerald-900 text-white hover:bg-emerald-800 transition-all font-bold text-xs uppercase tracking-wider shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -222,7 +211,7 @@ const UserForm: React.FC = () => {
         <div>
           <h4 className="text-sm font-bold text-emerald-900">Como funciona o convite?</h4>
           <p className="text-xs text-emerald-800/70 mt-1 leading-relaxed">
-            Ao clicar em "Enviar Convite", o sistema enviará um e-mail para o colaborador. Ele precisará clicar no link do e-mail para definir sua senha e ativar sua conta. O perfil de acesso que você definiu será aplicado automaticamente após a confirmação.
+            Ao clicar em "Enviar Convite", o sistema enviará um e-mail para o colaborador através do nosso backend. Ele precisará clicar no link do e-mail para definir sua senha e ativar sua conta. O perfil de acesso que você definiu será aplicado automaticamente após a confirmação.
           </p>
         </div>
       </div>

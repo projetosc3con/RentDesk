@@ -9,21 +9,26 @@ function cn(...inputs: ClassValue[]) {
 
 import { motion } from 'framer-motion';
 import { navItems } from '../constants/navigation';
+import logo from '../assets/logo.png';
 
 const Sidebar: React.FC = () => {
+
   return (
     <motion.nav
       initial={{ x: -20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="hidden md:flex flex-col gap-1 p-4 w-64 h-full bg-slate-50 border-r border-slate-200 z-50 shrink-0"
+      className="hidden lg:flex flex-col p-4 w-64 h-full bg-white border-r border-slate-200 z-50 shrink-0"
     >
-      <div className="mb-8 px-4">
-        <h2 className="text-emerald-900 tracking-widest text-2xl font-bold font-inter">RentDesk</h2>
-        <p className="text-slate-500 text-[12px] font-normal">Gerenciamento de frotas</p>
+      <div className="mb-8 px-4 flex items-center justify-center flex-col">
+        <div className="w-12 h-12 mb-3 ">
+          <img src={logo} alt="Logo" className="w-full h-full object-contain" />
+        </div>
+        <h2 className="text-emerald-900 tracking-widest text-2xl font-bold font-inter leading-none">RentDesk</h2>
+        <p className="text-slate-500 text-[12px] font-normal mt-1">Gerenciamento de frotas</p>
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex-1 flex flex-col gap-1 overflow-y-auto">
         {navItems.map((item, index) => (
           <motion.div
             key={item.path}

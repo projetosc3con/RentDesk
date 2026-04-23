@@ -6,6 +6,25 @@ import Maintenance from './pages/Maintenance';
 import Rentals from './pages/Rentals';
 import Users from './pages/Users';
 import UserForm from './pages/UserForm';
+import EquipmentForm from './pages/EquipmentForm';
+import EquipmentEdit from './pages/EquipmentEdit';
+import LoginPage from './pages/LoginPage';
+import Profile from './pages/Profile';
+import SetPassword from './pages/SetPassword';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+// Redireciona para /definir-senha se o usuário ainda não definiu sua senha
+const PasswordGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { profile } = useAuth();
+
+  // Se o perfil carregou e password_set é false, redireciona
+  if (profile && profile.password_set === false) {
+    return <Navigate to="/definir-senha" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 const Placeholder = ({ title }: { title: string }) => (
   <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-slate-200 rounded-xl bg-white p-12 text-center">
@@ -19,24 +38,36 @@ const Placeholder = ({ title }: { title: string }) => (
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<AppLayout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/locacoes" element={<Rentals />} />
-          <Route path="/equipamentos" element={<Inventory />} />
-          <Route path="/clientes" element={<Placeholder title="Base de Clientes" />} />
-          <Route path="/pecas" element={<Placeholder title="Estoque de Peças" />} />
-          <Route path="/manutencoes" element={<Maintenance />} />
-          <Route path="/usuarios" element={<Users />} />
-          <Route path="/usuarios/novo" element={<UserForm />} />
-          <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
-        </Route>
-        
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/definir-senha" element={<SetPassword />} />
+
+          {/* Protected Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<PasswordGuard><AppLayout /></PasswordGuard>}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/locacoes" element={<Rentals />} />
+              <Route path="/equipamentos" element={<Inventory />} />
+              <Route path="/equipamentos/novo" element={<EquipmentForm />} />
+              <Route path="/equipamentos/editar/:id" element={<EquipmentEdit />} />
+              <Route path="/clientes" element={<Placeholder title="Base de Clientes" />} />
+              <Route path="/pecas" element={<Placeholder title="Estoque de Peças" />} />
+              <Route path="/manutencoes" element={<Maintenance />} />
+              <Route path="/usuarios" element={<Users />} />
+              <Route path="/usuarios/novo" element={<UserForm />} />
+              <Route path="/perfil" element={<Profile />} />
+              <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
+            </Route>
+          </Route>
+          
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
