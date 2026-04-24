@@ -13,6 +13,39 @@ const Clients: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [exporting, setExporting] = useState(false);
+  const [exportToast, setExportToast] = useState<string | null>(null);
+
+  const handleExport = async () => {
+    try {
+      setExporting(true);
+      setExportToast(null);
+
+      const { data } = await api.get<{
+        downloadUrl: string;
+        fileName: string;
+        expiresIn: number;
+        totalRecords: number;
+      }>('/exports/clients');
+
+      // Trigger download via a temporary anchor element
+      const link = document.createElement('a');
+      link.href = data.downloadUrl;
+      link.download = data.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setExportToast(`✓ ${data.totalRecords} clientes exportados com sucesso!`);
+      setTimeout(() => setExportToast(null), 5000);
+    } catch (err: any) {
+      console.error('[handleExport]', err);
+      setExportToast('✗ Erro ao gerar exportação. Tente novamente.');
+      setTimeout(() => setExportToast(null), 5000);
+    } finally {
+      setExporting(false);
+    }
+  };
 
 
 
@@ -43,13 +76,13 @@ const Clients: React.FC = () => {
       // Filter by Search
       if (search) {
         const q = search.toLowerCase();
-        const match = 
+        const match =
           client.company_name.toLowerCase().includes(q) ||
           client.cnpj.toLowerCase().includes(q) ||
           (client.contact_name || '').toLowerCase().includes(q) ||
           (client.email || '').toLowerCase().includes(q) ||
           (client.address_city || '').toLowerCase().includes(q);
-        
+
         if (!match) return false;
       }
 
@@ -84,6 +117,27 @@ const Clients: React.FC = () => {
       animate={{ opacity: 1 }}
       className="space-y-8"
     >
+      {/* Export Toast Notification */}
+      <AnimatePresence>
+        {exportToast && (
+          <motion.div
+            key="export-toast"
+            initial={{ opacity: 0, y: -16, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.97 }}
+            className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold ${
+              exportToast.startsWith('✓')
+                ? 'bg-emerald-900 text-white'
+                : 'bg-red-600 text-white'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              {exportToast.startsWith('✓') ? 'check_circle' : 'error'}
+            </span>
+            {exportToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <motion.div
@@ -99,10 +153,31 @@ const Clients: React.FC = () => {
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.4 }}
+          className="flex items-center gap-3"
         >
+          {/* Export to XLSX button */}
+          <button
+            onClick={handleExport}
+            disabled={exporting || clients.length === 0}
+            className="flex items-center gap-2 bg-white text-slate-600 px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 active:scale-95 transition-all font-bold text-xs uppercase tracking-widest shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Exportar todos os clientes para XLSX"
+          >
+            {exporting ? (
+              <>
+                <span className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                Gerando...
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[18px]">download</span>
+                Exportar XLSX
+              </>
+            )}
+          </button>
+
           <button
             onClick={() => navigate('/clientes/novo')}
-            className="flex items-center gap-2 bg-emerald-900 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-900/20 hover:bg-emerald-800 transition-all font-bold text-xs uppercase tracking-widest"
+            className="flex items-center gap-2 bg-emerald-900 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-900/20 hover:bg-emerald-800 active:scale-95 transition-all font-bold text-xs uppercase tracking-widest"
           >
             <span className="material-symbols-outlined text-[18px]">person_add</span>
             Novo Cliente
@@ -164,11 +239,10 @@ const Clients: React.FC = () => {
             <button
               key={option.value}
               onClick={() => setStatusFilter(option.value as any)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                statusFilter === option.value
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${statusFilter === option.value
                   ? 'bg-white text-emerald-900 shadow-sm'
                   : 'text-slate-400 hover:text-slate-600'
-              }`}
+                }`}
             >
               {option.label}
             </button>
@@ -258,11 +332,10 @@ const Clients: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          client.active
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${client.active
                             ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                             : 'bg-slate-50 text-slate-400 border border-slate-100'
-                        }`}>
+                          }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${client.active ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
                           {client.active ? 'Ativo' : 'Inativo'}
                         </span>
@@ -313,7 +386,7 @@ const Clients: React.FC = () => {
                 >
                   <span className="material-symbols-outlined">chevron_left</span>
                 </button>
-                
+
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum;
@@ -326,11 +399,10 @@ const Clients: React.FC = () => {
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-                          currentPage === pageNum
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === pageNum
                             ? 'bg-emerald-900 text-white shadow-md'
                             : 'text-slate-400 hover:text-slate-600 hover:bg-white'
-                        }`}
+                          }`}
                       >
                         {pageNum}
                       </button>

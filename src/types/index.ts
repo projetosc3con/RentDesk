@@ -18,11 +18,12 @@ export interface Equipment {
   updated_at: string;
 }
 
-export type BillingStatus = 'Pendente' | 'Emitida' | 'Cancelada' | 'Paga';
+export type BillingStatus = 'Pendente' | 'Faturado' | 'Emitida' | 'Cancelada';
 export type ReconciliationStatus = 'Pendente' | 'Conciliado' | 'Divergente';
 
 export interface RentalInvoice {
   id: string;
+  invoice_number?: string;
   client_id: string;
   client_name: string;
   cnpj: string;
