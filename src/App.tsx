@@ -11,6 +11,8 @@ import EquipmentEdit from './pages/EquipmentEdit';
 import LoginPage from './pages/LoginPage';
 import Profile from './pages/Profile';
 import SetPassword from './pages/SetPassword';
+import Clients from './pages/Clients';
+import ClientForm from './pages/ClientForm';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -53,16 +55,20 @@ function App() {
               <Route path="/equipamentos" element={<Inventory />} />
               <Route path="/equipamentos/novo" element={<EquipmentForm />} />
               <Route path="/equipamentos/editar/:id" element={<EquipmentEdit />} />
-              <Route path="/clientes" element={<Placeholder title="Base de Clientes" />} />
+              <Route path="/clientes" element={<Clients />} />
+              <Route path="/clientes/novo" element={<ClientForm />} />
+              <Route path="/clientes/:id" element={<ClientForm />} />
               <Route path="/pecas" element={<Placeholder title="Estoque de Peças" />} />
               <Route path="/manutencoes" element={<Maintenance />} />
               <Route path="/usuarios" element={<Users />} />
               <Route path="/usuarios/novo" element={<UserForm />} />
               <Route path="/perfil" element={<Profile />} />
+              <Route path="/financeiro" element={<Placeholder title="Financeiro" />} />
+              <Route path="/rh" element={<Placeholder title="Recursos Humanos" />} />
               <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
             </Route>
           </Route>
-          
+
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

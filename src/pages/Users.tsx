@@ -141,8 +141,12 @@ const Users: React.FC = () => {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold text-sm">
-                          {user.full_name?.charAt(0) || '?'}
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-900 flex items-center justify-center font-bold text-sm overflow-hidden border border-slate-100 shadow-sm">
+                          {user.photo_url ? (
+                            <img src={user.photo_url} alt={user.full_name} className="w-full h-full object-cover" />
+                          ) : (
+                            user.full_name?.charAt(0) || '?'
+                          )}
                         </div>
                         <div>
                           <div className="font-semibold text-slate-900 text-sm">{user.full_name}</div>

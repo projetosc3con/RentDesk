@@ -67,7 +67,6 @@ const Header: React.FC = () => {
           className="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors relative"
         >
           <span className="material-symbols-outlined">notifications</span>
-          <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
         </motion.button>
 
         <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden md:block"></div>

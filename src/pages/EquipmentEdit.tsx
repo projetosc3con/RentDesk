@@ -5,12 +5,8 @@ import { supabase } from '../lib/supabase';
 import api from '../services/api';
 
 const EQUIPMENT_TYPES = [
-  'Plataforma Tesoura',
-  'Plataforma Articulada',
-  'Telescópica',
-  'Mastro Vertical',
-  'Rebocável',
-  'Outro',
+  'Elétrica',
+  'Diesel',
 ];
 
 const EquipmentEdit: React.FC = () => {

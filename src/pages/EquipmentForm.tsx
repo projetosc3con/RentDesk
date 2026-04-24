@@ -5,12 +5,8 @@ import { supabase } from '../lib/supabase';
 import api from '../services/api';
 
 const EQUIPMENT_TYPES = [
-  'Plataforma Tesoura',
-  'Plataforma Articulada',
-  'Telescópica',
-  'Mastro Vertical',
-  'Rebocável',
-  'Outro',
+  'Elétrica',
+  'Diesel',
 ];
 
 const EquipmentForm: React.FC = () => {
@@ -285,7 +281,7 @@ const EquipmentForm: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Altura de Trabalho (m)</label>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Altura (m)</label>
                     <input
                       type="number"
                       step="0.01"

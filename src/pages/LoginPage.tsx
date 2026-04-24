@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import logo from '../assets/logo.png';
+import wallpaper from '../assets/login-wallpaper.jpeg';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -39,14 +40,22 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 font-sans">
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-900 font-sans">
+      {/* Wallpaper background */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-50"
+        style={{ backgroundImage: `url(${wallpaper})` }}
+      />
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 z-10 bg-gradient-to-tr from-emerald-950/80 via-slate-900/60 to-transparent" />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-md w-full"
+        className="max-w-md w-full relative z-20 p-4"
       >
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 overflow-hidden">
           <div className="p-8 pb-6 text-emerald-900 text-center">
             <div className="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm border border-white/20 p-2">
               <img src={logo} alt="RentDesk Logo" className="w-full h-full object-contain" />

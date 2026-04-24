@@ -4,12 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
 
 const EQUIPMENT_TYPES = [
-  'Plataforma Tesoura',
-  'Plataforma Articulada',
-  'Telescópica',
-  'Mastro Vertical',
-  'Rebocável',
-  'Outro',
+  'Elétrica',
+  'Diesel'
 ];
 
 interface Equipment {
@@ -119,7 +115,7 @@ const Inventory: React.FC = () => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="space-y-8"
@@ -133,28 +129,28 @@ const Inventory: React.FC = () => {
           <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Estoque de Máquinas</h1>
           <p className="text-slate-500 mt-1">Gerencie a frota de equipamentos, status e disponibilidade.</p>
         </motion.div>
-        <motion.div 
+        <motion.div
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.4 }}
           className="flex items-center gap-3"
         >
           <div className="flex bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
-            <button 
+            <button
               onClick={() => setViewMode('grid')}
               className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-slate-100 text-emerald-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <span className="material-symbols-outlined text-[20px]">grid_view</span>
             </button>
-            <button 
+            <button
               onClick={() => setViewMode('list')}
               className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-slate-100 text-emerald-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
             >
               <span className="material-symbols-outlined text-[20px]">view_list</span>
             </button>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => navigate('/equipamentos/novo')}
             className="flex items-center gap-2 bg-emerald-900 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-900/20 hover:bg-emerald-800 transition-all font-bold text-xs uppercase tracking-widest"
           >
@@ -164,7 +160,7 @@ const Inventory: React.FC = () => {
         </motion.div>
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
@@ -206,7 +202,7 @@ const Inventory: React.FC = () => {
 
       <AnimatePresence mode="wait">
         {loading ? (
-          <motion.div 
+          <motion.div
             key="loading"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -217,7 +213,7 @@ const Inventory: React.FC = () => {
             <p className="text-slate-400 text-sm font-medium mt-4">Carregando estoque...</p>
           </motion.div>
         ) : error ? (
-          <motion.div 
+          <motion.div
             key="error"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -225,7 +221,7 @@ const Inventory: React.FC = () => {
           >
             <span className="material-symbols-outlined text-4xl mb-2 text-red-500">error</span>
             <p className="font-bold">{error}</p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="mt-4 px-6 py-2 bg-red-100 hover:bg-red-200 rounded-xl text-sm font-bold transition-colors"
             >
@@ -233,7 +229,7 @@ const Inventory: React.FC = () => {
             </button>
           </motion.div>
         ) : equipments.length === 0 ? (
-          <motion.div 
+          <motion.div
             key="empty"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -242,7 +238,7 @@ const Inventory: React.FC = () => {
             <span className="material-symbols-outlined text-6xl text-slate-200 mb-4">inventory_2</span>
             <h3 className="text-xl font-bold text-slate-900">Nenhum equipamento cadastrado</h3>
             <p className="text-slate-500 mt-2 max-w-xs mx-auto">Comece adicionando uma nova máquina ao seu estoque operacional.</p>
-            <button 
+            <button
               onClick={() => navigate('/equipamentos/novo')}
               className="mt-6 px-8 py-3 bg-emerald-900 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-emerald-800 transition-all"
             >
@@ -267,8 +263,8 @@ const Inventory: React.FC = () => {
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredEquipments.map((equipment, index) => (
-                  <motion.div 
-                    key={equipment.id} 
+                  <motion.div
+                    key={equipment.id}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
@@ -276,9 +272,9 @@ const Inventory: React.FC = () => {
                   >
                     <div className="h-48 relative overflow-hidden bg-slate-100">
                       {equipment.photo_url ? (
-                        <img 
-                          src={equipment.photo_url} 
-                          alt={equipment.name} 
+                        <img
+                          src={equipment.photo_url}
+                          alt={equipment.name}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         />
                       ) : (
@@ -298,7 +294,7 @@ const Inventory: React.FC = () => {
                         <h3 className="text-lg font-bold text-slate-900 leading-tight group-hover:text-emerald-900 transition-colors line-clamp-1">{equipment.name}</h3>
                         <p className="text-sm font-medium text-slate-500">{equipment.model || 'Modelo não informado'}</p>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-6 mt-auto border-t border-slate-50 pt-4">
                         <div>
                           <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Patrimônio</span>
@@ -315,19 +311,18 @@ const Inventory: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      
+
                       <div className="flex gap-2">
-                        <button 
+                        <button
                           onClick={() => setSelectedEquipment(equipment)}
                           className="flex-1 bg-white border border-slate-200 text-slate-700 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-colors"
                         >
                           Detalhes
                         </button>
-                        <button className={`flex-1 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${
-                          equipment.status === 'Disponível' 
-                            ? 'bg-emerald-900 text-white hover:bg-emerald-800' 
-                            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                        }`}>
+                        <button className={`flex-1 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${equipment.status === 'Disponível'
+                          ? 'bg-emerald-900 text-white hover:bg-emerald-800'
+                          : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                          }`}>
                           Locar
                         </button>
                       </div>
@@ -383,14 +378,14 @@ const Inventory: React.FC = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-center gap-2">
-                              <button 
+                              <button
                                 onClick={() => setSelectedEquipment(equipment)}
-                                className="p-2 text-slate-400 hover:text-emerald-900 hover:bg-emerald-50 rounded-lg transition-all" 
+                                className="p-2 text-slate-400 hover:text-emerald-900 hover:bg-emerald-50 rounded-lg transition-all"
                                 title="Ver Detalhes"
                               >
                                 <span className="material-symbols-outlined text-[20px]">visibility</span>
                               </button>
-                              <button 
+                              <button
                                 className={`p-2 rounded-lg transition-all ${equipment.status === 'Disponível' ? 'text-slate-400 hover:text-emerald-900 hover:bg-emerald-50' : 'text-slate-200 cursor-not-allowed'}`}
                                 title="Locar Equipamento"
                                 disabled={equipment.status !== 'Disponível'}
@@ -415,7 +410,7 @@ const Inventory: React.FC = () => {
         {selectedEquipment && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -424,7 +419,7 @@ const Inventory: React.FC = () => {
             />
 
             {/* Modal Content */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -433,9 +428,9 @@ const Inventory: React.FC = () => {
               {/* Lado Esquerdo: Imagem */}
               <div className="w-full md:w-1/2 h-64 md:h-auto relative bg-slate-100">
                 {selectedEquipment.photo_url ? (
-                  <img 
-                    src={selectedEquipment.photo_url} 
-                    alt={selectedEquipment.name} 
+                  <img
+                    src={selectedEquipment.photo_url}
+                    alt={selectedEquipment.name}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -444,7 +439,7 @@ const Inventory: React.FC = () => {
                     <p className="text-xs font-bold uppercase tracking-widest mt-2">Sem foto cadastrada</p>
                   </div>
                 )}
-                
+
                 {/* Status Badge flutuante na imagem */}
                 <div className={`absolute top-6 left-6 flex items-center gap-2 px-4 py-2 rounded-full font-bold text-xs uppercase tracking-widest shadow-2xl border ${getStatusStyle(selectedEquipment.status)}`}>
                   <span className="material-symbols-outlined text-[18px]">
@@ -453,7 +448,7 @@ const Inventory: React.FC = () => {
                   {selectedEquipment.status}
                 </div>
 
-                <button 
+                <button
                   onClick={() => setSelectedEquipment(null)}
                   className="absolute top-6 right-6 md:hidden w-10 h-10 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white"
                 >
@@ -468,7 +463,7 @@ const Inventory: React.FC = () => {
                     <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{selectedEquipment.name}</h2>
                     <p className="text-slate-500 font-medium text-lg mt-1">{selectedEquipment.model || 'Modelo não informado'}</p>
                   </div>
-                  <button 
+                  <button
                     onClick={() => setSelectedEquipment(null)}
                     className="hidden md:flex w-10 h-10 hover:bg-slate-100 rounded-full items-center justify-center text-slate-400 transition-colors"
                   >
@@ -478,6 +473,14 @@ const Inventory: React.FC = () => {
 
                 {/* Grid de Especificações - Bento Style */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tipo</span>
+                    <span className="text-sm font-bold text-slate-800">{selectedEquipment.type || '-'}</span>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Unidade</span>
+                    <span className="text-sm font-bold text-slate-800">{selectedEquipment.unit || '-'}</span>
+                  </div>
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                     <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Patrimônio</span>
                     <span className="text-sm font-bold text-slate-800">{selectedEquipment.asset_number}</span>
@@ -495,7 +498,7 @@ const Inventory: React.FC = () => {
                     <span className="text-sm font-bold text-slate-800">{selectedEquipment.manufacture_year || '-'}</span>
                   </div>
                   <div className="col-span-2 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50">
-                    <span className="block text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest mb-1">Valor Patrimonial</span>
+                    <span className="block text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest mb-1">Valor</span>
                     <span className="text-xl font-black text-emerald-900">
                       {selectedEquipment.value ? `R$ ${selectedEquipment.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Sob Consulta'}
                     </span>
@@ -515,20 +518,19 @@ const Inventory: React.FC = () => {
 
                 {/* Ações Inferiores */}
                 <div className="mt-auto pt-6 border-t border-slate-100 flex gap-3">
-                  <button 
+                  <button
                     onClick={() => navigate(`/equipamentos/editar/${selectedEquipment.id}`)}
                     className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
                   >
                     <span className="material-symbols-outlined text-[18px]">edit</span>
                     Editar Máquina
                   </button>
-                  <button 
+                  <button
                     disabled={selectedEquipment.status !== 'Disponível'}
-                    className={`flex-[2] px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${
-                      selectedEquipment.status === 'Disponível' 
-                        ? 'bg-emerald-900 text-white hover:bg-emerald-800 shadow-emerald-900/20' 
-                        : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
-                    }`}
+                    className={`flex-[2] px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${selectedEquipment.status === 'Disponível'
+                      ? 'bg-emerald-900 text-white hover:bg-emerald-800 shadow-emerald-900/20'
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
+                      }`}
                   >
                     <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span>
                     Criar Locação

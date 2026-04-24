@@ -56,6 +56,7 @@ export interface Client {
   id: string;
   company_name: string;
   cnpj: string;
+  state_subscription?: string;
   contact_name: string;
   phone: string;
   email: string;
@@ -120,6 +121,7 @@ export interface UserProfile {
   address_state: string;
   address_zip: string;
   role_title: string;
+  photo_url?: string;
   access_level: AccessLevel;
   active: boolean;
   created_at: string;
