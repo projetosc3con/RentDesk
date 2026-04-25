@@ -13,7 +13,10 @@ import Profile from './pages/Profile';
 import SetPassword from './pages/SetPassword';
 import Clients from './pages/Clients';
 import ClientForm from './pages/ClientForm';
+import RentalForm from './pages/RentalForm';
+import RentalEdit from './pages/RentalEdit';
 import ProtectedRoute from './components/ProtectedRoute';
+
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Redireciona para /definir-senha se o usuário ainda não definiu sua senha
@@ -52,7 +55,11 @@ function App() {
             <Route element={<PasswordGuard><AppLayout /></PasswordGuard>}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/locacoes" element={<Rentals />} />
+              <Route path="/locacoes/novo" element={<RentalForm />} />
+              <Route path="/locacoes/editar/:id" element={<RentalEdit />} />
               <Route path="/equipamentos" element={<Inventory />} />
+
+
               <Route path="/equipamentos/novo" element={<EquipmentForm />} />
               <Route path="/equipamentos/editar/:id" element={<EquipmentEdit />} />
               <Route path="/clientes" element={<Clients />} />

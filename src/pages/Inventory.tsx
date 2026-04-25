@@ -319,7 +319,9 @@ const Inventory: React.FC = () => {
                         >
                           Detalhes
                         </button>
-                        <button className={`flex-1 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${equipment.status === 'Disponível'
+                        <button 
+                          onClick={() => equipment.status === 'Disponível' && navigate(`/locacoes/novo?equipmentId=${equipment.id}`)}
+                          className={`flex-1 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${equipment.status === 'Disponível'
                           ? 'bg-emerald-900 text-white hover:bg-emerald-800'
                           : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                           }`}>
@@ -386,6 +388,7 @@ const Inventory: React.FC = () => {
                                 <span className="material-symbols-outlined text-[20px]">visibility</span>
                               </button>
                               <button
+                                onClick={() => equipment.status === 'Disponível' && navigate(`/locacoes/novo?equipmentId=${equipment.id}`)}
                                 className={`p-2 rounded-lg transition-all ${equipment.status === 'Disponível' ? 'text-slate-400 hover:text-emerald-900 hover:bg-emerald-50' : 'text-slate-200 cursor-not-allowed'}`}
                                 title="Locar Equipamento"
                                 disabled={equipment.status !== 'Disponível'}
@@ -527,6 +530,7 @@ const Inventory: React.FC = () => {
                   </button>
                   <button
                     disabled={selectedEquipment.status !== 'Disponível'}
+                    onClick={() => navigate(`/locacoes/novo?equipmentId=${selectedEquipment.id}`)}
                     className={`flex-[2] px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${selectedEquipment.status === 'Disponível'
                       ? 'bg-emerald-900 text-white hover:bg-emerald-800 shadow-emerald-900/20'
                       : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'

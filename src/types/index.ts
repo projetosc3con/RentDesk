@@ -19,7 +19,7 @@ export interface Equipment {
 }
 
 export type BillingStatus = 'Pendente' | 'Faturado' | 'Emitida' | 'Cancelada';
-export type ReconciliationStatus = 'Pendente' | 'Conciliado' | 'Divergente';
+export type ReconciliationStatus = 'Pendente' | 'Atrasado' | 'Recebido' | 'Divergente' | 'No prazo';
 
 export interface RentalInvoice {
   id: string;
