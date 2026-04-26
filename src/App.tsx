@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppLayout from './layouts/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Inventory from './pages/Inventory';
-import Maintenance from './pages/Maintenance';
 import Rentals from './pages/Rentals';
 import Users from './pages/Users';
 import UserForm from './pages/UserForm';
@@ -66,7 +65,7 @@ function App() {
               <Route path="/clientes/novo" element={<ClientForm />} />
               <Route path="/clientes/:id" element={<ClientForm />} />
               <Route path="/pecas" element={<Placeholder title="Estoque de Peças" />} />
-              <Route path="/manutencoes" element={<Maintenance />} />
+              <Route path="/manutencoes" element={<Placeholder title="Manutenção" />} />
               <Route path="/usuarios" element={<Users />} />
               <Route path="/usuarios/novo" element={<UserForm />} />
               <Route path="/perfil" element={<Profile />} />
