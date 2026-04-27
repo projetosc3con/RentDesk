@@ -3,11 +3,21 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../services/api';
 
+const maskCnpj = (value: string) => {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2')
+    .slice(0, 18);
+};
+
 const ClientForm: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  
+
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +74,53 @@ const ClientForm: React.FC = () => {
     const { name, value, type } = e.target;
     const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
     setFormData(prev => ({ ...prev, [name]: val }));
+  };
+
+  const handleCnpjChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = maskCnpj(e.target.value);
+    setFormData(prev => ({ ...prev, cnpj: masked }));
+
+    const unmasked = masked.replace(/\D/g, '');
+    if (unmasked.length === 14) {
+      try {
+        const response = await fetch(`https://api.opencnpj.org/${unmasked}`);
+        if (!response.ok) return;
+        const data = await response.json();
+
+        const company_name = data.razao_scoial || data.razao_social || '';
+        const tel = data.telefones?.[0];
+        const phone = tel ? `(${tel.ddd}) ${tel.numero}` : '';
+        const email = data.email || '';
+
+        const tipo_logradouro = data.tipo_logradouro || '';
+        const logradouro = data.logradouro || '';
+        const numero = data.numero || '';
+        const bairro = data.bairro || '';
+        const municipio = data.municipio || '';
+        const uf = data.uf || '';
+
+        const cepStr = (data.cep || '').replace(/\D/g, '');
+        const cep_formatado = cepStr.length === 8 ? `${cepStr.slice(0, 5)}-${cepStr.slice(5)}` : data.cep || '';
+
+        const address_street = `${tipo_logradouro} ${logradouro}`.trim();
+        const address_complement = `${tipo_logradouro} ${logradouro} Nº ${numero}, ${bairro}, ${municipio} - ${uf} CEP: ${cep_formatado}`.trim();
+
+        setFormData(prev => ({
+          ...prev,
+          company_name: company_name || prev.company_name,
+          phone: phone || prev.phone,
+          email: email || prev.email,
+          address_street: address_street || prev.address_street,
+          address_number: numero || prev.address_number,
+          address_complement: address_complement || prev.address_complement,
+          address_city: municipio || prev.address_city,
+          address_state: uf || prev.address_state,
+          address_zip: cep_formatado || prev.address_zip
+        }));
+      } catch (err) {
+        // não fazer nada se a api falhar
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,7 +213,7 @@ const ClientForm: React.FC = () => {
                   type="text"
                   name="cnpj"
                   value={formData.cnpj}
-                  onChange={handleChange}
+                  onChange={handleCnpjChange}
                   placeholder="00.000.000/0000-00"
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
                 />
@@ -175,20 +232,20 @@ const ClientForm: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-               <div className="flex items-center h-5">
-                  <input
-                    id="active"
-                    name="active"
-                    type="checkbox"
-                    checked={formData.active}
-                    onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.checked }))}
-                    className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer"
-                  />
-               </div>
-               <div className="ml-1 text-sm">
-                  <label htmlFor="active" className="font-bold text-slate-700 cursor-pointer">Cliente Ativo</label>
-                  <p className="text-xs text-slate-500">Desative para suspender novas locações para este cliente.</p>
-               </div>
+              <div className="flex items-center h-5">
+                <input
+                  id="active"
+                  name="active"
+                  type="checkbox"
+                  checked={formData.active}
+                  onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.checked }))}
+                  className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer"
+                />
+              </div>
+              <div className="ml-1 text-sm">
+                <label htmlFor="active" className="font-bold text-slate-700 cursor-pointer">Cliente Ativo</label>
+                <p className="text-xs text-slate-500">Desative para suspender novas locações para este cliente.</p>
+              </div>
             </div>
           </div>
         </div>

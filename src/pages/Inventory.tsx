@@ -304,12 +304,6 @@ const Inventory: React.FC = () => {
                           <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ano</span>
                           <span className="text-sm font-bold text-slate-800">{equipment.manufacture_year || '-'}</span>
                         </div>
-                        <div className="col-span-2">
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Valor de Mercado</span>
-                          <span className="text-sm font-bold text-emerald-900">
-                            {equipment.value ? `R$ ${equipment.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}
-                          </span>
-                        </div>
                       </div>
 
                       <div className="flex gap-2">
@@ -342,7 +336,6 @@ const Inventory: React.FC = () => {
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Patrimônio</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Modelo</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Valor</th>
                         <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                       </tr>
                     </thead>
@@ -374,9 +367,6 @@ const Inventory: React.FC = () => {
                               </span>
                               {equipment.status}
                             </div>
-                          </td>
-                          <td className="px-6 py-4 text-sm font-bold text-slate-900 text-right">
-                            {equipment.value ? `R$ ${equipment.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-center gap-2">
@@ -499,12 +489,6 @@ const Inventory: React.FC = () => {
                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                     <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fabricação</span>
                     <span className="text-sm font-bold text-slate-800">{selectedEquipment.manufacture_year || '-'}</span>
-                  </div>
-                  <div className="col-span-2 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100/50">
-                    <span className="block text-[10px] font-bold text-emerald-600/60 uppercase tracking-widest mb-1">Valor</span>
-                    <span className="text-xl font-black text-emerald-900">
-                      {selectedEquipment.value ? `R$ ${selectedEquipment.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Sob Consulta'}
-                    </span>
                   </div>
                 </div>
 

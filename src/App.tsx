@@ -14,8 +14,11 @@ import Clients from './pages/Clients';
 import ClientForm from './pages/ClientForm';
 import RentalForm from './pages/RentalForm';
 import RentalEdit from './pages/RentalEdit';
+import Parts from './pages/Parts';
+import PartForm from './pages/PartForm';
+import Maintenance from './pages/Maintenance';
+import MaintenanceForm from './pages/MaintenanceForm';
 import ProtectedRoute from './components/ProtectedRoute';
-
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Redireciona para /definir-senha se o usuário ainda não definiu sua senha
@@ -57,15 +60,15 @@ function App() {
               <Route path="/locacoes/novo" element={<RentalForm />} />
               <Route path="/locacoes/editar/:id" element={<RentalEdit />} />
               <Route path="/equipamentos" element={<Inventory />} />
-
-
               <Route path="/equipamentos/novo" element={<EquipmentForm />} />
               <Route path="/equipamentos/editar/:id" element={<EquipmentEdit />} />
               <Route path="/clientes" element={<Clients />} />
               <Route path="/clientes/novo" element={<ClientForm />} />
               <Route path="/clientes/:id" element={<ClientForm />} />
-              <Route path="/pecas" element={<Placeholder title="Estoque de Peças" />} />
-              <Route path="/manutencoes" element={<Placeholder title="Manutenção" />} />
+              <Route path="/pecas" element={<Parts />} />
+              <Route path="/pecas/novo" element={<PartForm />} />
+              <Route path="/manutencoes" element={<Maintenance />} />
+              <Route path="/manutencoes/nova" element={<MaintenanceForm />} />
               <Route path="/usuarios" element={<Users />} />
               <Route path="/usuarios/novo" element={<UserForm />} />
               <Route path="/perfil" element={<Profile />} />

@@ -18,8 +18,41 @@ export interface Equipment {
   updated_at: string;
 }
 
+export interface Part {
+  id: string;
+  internal_code: string;
+  description: string;
+  part_number: string;
+  quantity: number;
+  unit_value: number;
+  total_value: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export type BillingStatus = 'Pendente' | 'Faturado' | 'Emitida' | 'Cancelada';
 export type ReconciliationStatus = 'Pendente' | 'Atrasado' | 'Recebido' | 'Divergente' | 'No prazo';
+export type ServiceOrderStatus = 'Aberta' | 'Em Andamento' | 'Aguardando Peças' | 'Concluída' | 'Cancelada';
+
+export interface ServiceOrder {
+  id: string;
+  os_number: number;
+  equipment_id?: string;
+  equipment_asset_number?: string;
+  equipment_name?: string;
+  equipment_model?: string;
+  equipment_serial_number?: string;
+  equipment_condition_entry?: string;
+  executed_by?: string;
+  execution_date?: string;
+  execution_location?: string;
+  status: ServiceOrderStatus;
+  description?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface RentalInvoice {
   id: string;
@@ -85,28 +118,7 @@ export interface Part {
   updated_at: string;
 }
 
-export type OSStatus = 'Aberta' | 'Em Andamento' | 'Aguardando Peças' | 'Concluída' | 'Cancelada';
-
-export interface ServiceOrder {
-  id: string;
-  os_number: string;
-  equipment_id: string;
-  equipment_asset_number: string;
-  equipment_name: string;
-  equipment_model: string;
-  equipment_serial_number: string;
-  equipment_condition_entry: string;
-  executed_by: string;
-  execution_date: string;
-  execution_location: string;
-  status: OSStatus;
-  description: string;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export type AccessLevel = 'Admin' | 'Gerente' | 'Operacional' | 'Técnico' | 'Financeiro' | 'Visualizador';
+export type AccessLevel = 'Admin' | 'Diretoria' | 'Gerente' | 'Comercial' | 'Manutenção' | 'Financeiro' | 'Recursos Humanos' | 'Usuário';
 
 export interface UserProfile {
   id: string;
