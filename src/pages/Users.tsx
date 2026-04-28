@@ -163,17 +163,17 @@ const Users: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase border ${user.access_level === 'Admin' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                          user.access_level === 'Gerente' ? 'bg-blue-50 text-blue-800 border-blue-200' :
-                            user.access_level === 'Técnico' ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                              'bg-slate-50 text-slate-700 border-slate-200'
+                        user.access_level === 'Gerente' ? 'bg-blue-50 text-blue-800 border-blue-200' :
+                          user.access_level === 'Manutenção' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                            'bg-slate-50 text-slate-700 border-slate-200'
                         }`}>
                         {user.access_level}
                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${user.active
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-slate-100 text-slate-600'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-slate-100 text-slate-600'
                         }`}>
                         <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
                         {user.active ? 'Ativo' : 'Inativo'}
