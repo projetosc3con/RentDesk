@@ -69,6 +69,7 @@ function App() {
               <Route path="/pecas/novo" element={<PartForm />} />
               <Route path="/manutencoes" element={<Maintenance />} />
               <Route path="/manutencoes/nova" element={<MaintenanceForm />} />
+              <Route path="/manutencoes/editar/:id" element={<MaintenanceForm />} />
               <Route path="/usuarios" element={<Users />} />
               <Route path="/usuarios/novo" element={<UserForm />} />
               <Route path="/perfil" element={<Profile />} />

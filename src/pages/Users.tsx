@@ -163,7 +163,7 @@ const Users: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wide uppercase border ${user.access_level === 'Admin' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                        user.access_level === 'Gerente' ? 'bg-blue-50 text-blue-800 border-blue-200' :
+                        user.access_level === 'Diretoria' ? 'bg-blue-50 text-blue-800 border-blue-200' :
                           user.access_level === 'Manutenção' ? 'bg-amber-50 text-amber-800 border-amber-200' :
                             'bg-slate-50 text-slate-700 border-slate-200'
                         }`}>

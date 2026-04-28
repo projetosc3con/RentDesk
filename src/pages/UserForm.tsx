@@ -164,11 +164,13 @@ const UserForm: React.FC = () => {
                   className="w-full pl-4 pr-10 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-900 focus:border-emerald-900 focus:ring-1 focus:ring-emerald-900 focus:outline-none transition-all text-sm appearance-none cursor-pointer"
                 >
                   <option value="Admin">Admin</option>
+                  <option value="Diretoria">Diretoria</option>
                   <option value="Gerente">Gerente</option>
-                  <option value="Operacional">Operacional</option>
-                  <option value="Técnico">Técnico</option>
+                  <option value="Comercial">Comercial</option>
+                  <option value="Manutenção">Manutenção</option>
                   <option value="Financeiro">Financeiro</option>
-                  <option value="Visualizador">Visualizador</option>
+                  <option value="Recursos Humanos">Recursos Humanos</option>
+                  <option value="Usuário">Usuário padrão</option>
                 </select>
                 <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">expand_more</span>
               </div>

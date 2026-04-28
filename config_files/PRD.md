@@ -96,6 +96,7 @@ Gerencia todo o ciclo de vida de uma locação industrial: criação do contrato
 | `payment_method` | text | Forma de pagamento |
 | `bank_reconciliation_date` | date | Data da conciliação bancária |
 | `reconciliation_status` | enum | Status da conciliação: Pendente, Conciliado, Divergente |
+| `client_score` | integer | Nota atribuída ao cliente nesta fatura (1-5) |
 | `notes` | text | Observações |
 | `created_at` | timestamp | Data de criação |
 | `updated_at` | timestamp | Última atualização |
@@ -167,6 +168,8 @@ Cadastro centralizado de todos os clientes industriais da empresa com dados come
 | `address_city` | text | Cidade |
 | `address_state` | text | Estado (UF) |
 | `address_zip` | text | CEP |
+| `average_score` | numeric | Média de avaliações do cliente |
+| `documentation_url` | text | URL do documento anexado (contrato/documentos) |
 | `active` | boolean | Cliente ativo/inativo |
 | `created_at` | timestamp | Data de cadastro |
 | `updated_at` | timestamp | Última atualização |

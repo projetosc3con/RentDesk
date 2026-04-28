@@ -52,6 +52,21 @@ export interface ServiceOrder {
   notes?: string;
   created_at: string;
   updated_at: string;
+  // Included fields
+  parts?: ServiceOrderPart[];
+}
+
+export interface ServiceOrderPart {
+  id: string;
+  service_order_id: string;
+  part_id: string;
+  quantity_used: number;
+  unit_value_at_use: number;
+  subtotal: number;
+  // Denormalized for UI
+  part_description?: string;
+  part_number?: string;
+  internal_code?: string;
 }
 
 export interface RentalInvoice {
@@ -81,6 +96,7 @@ export interface RentalInvoice {
   payment_method: string;
   bank_reconciliation_date?: string;
   reconciliation_status: ReconciliationStatus;
+  client_score?: number;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -100,20 +116,9 @@ export interface Client {
   address_city: string;
   address_state: string;
   address_zip: string;
+  average_score?: number;
+  documentation_url?: string;
   active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Part {
-  id: string;
-  internal_code: string;
-  description: string;
-  part_number: string;
-  quantity: number;
-  unit_value: number;
-  total_value: number;
-  notes?: string;
   created_at: string;
   updated_at: string;
 }

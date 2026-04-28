@@ -11,6 +11,7 @@ const Clients: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [minScore, setMinScore] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [exporting, setExporting] = useState(false);
@@ -73,6 +74,9 @@ const Clients: React.FC = () => {
       if (statusFilter === 'active' && !client.active) return false;
       if (statusFilter === 'inactive' && client.active) return false;
 
+      // Filter by Score
+      if (Number(client.average_score || 0) < minScore) return false;
+
       // Filter by Search
       if (search) {
         const q = search.toLowerCase();
@@ -88,7 +92,7 @@ const Clients: React.FC = () => {
 
       return true;
     });
-  }, [clients, statusFilter, search]);
+  }, [clients, statusFilter, minScore, search]);
 
   const paginatedClients = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -100,7 +104,7 @@ const Clients: React.FC = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, itemsPerPage]);
+  }, [search, statusFilter, minScore, itemsPerPage]);
 
 
   const stats = useMemo(() => {
@@ -110,6 +114,12 @@ const Clients: React.FC = () => {
       inactive: clients.filter(c => !c.active).length
     };
   }, [clients]);
+
+  const getScoreStyle = (score: number = 0) => {
+    if (score < 3) return { badge: 'bg-red-50 text-red-700 border-red-100', icon: 'text-amber-400 fill-amber-400' };
+    if (score < 4) return { badge: 'bg-amber-50 text-amber-700 border-amber-100', icon: 'text-amber-500 fill-amber-500' };
+    return { badge: 'bg-emerald-50 text-emerald-700 border-emerald-100', icon: 'text-amber-400 fill-amber-400' };
+  };
 
   return (
     <motion.div
@@ -125,11 +135,10 @@ const Clients: React.FC = () => {
             initial={{ opacity: 0, y: -16, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -12, scale: 0.97 }}
-            className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold ${
-              exportToast.startsWith('✓')
-                ? 'bg-emerald-900 text-white'
-                : 'bg-red-600 text-white'
-            }`}
+            className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold ${exportToast.startsWith('✓')
+              ? 'bg-emerald-900 text-white'
+              : 'bg-red-600 text-white'
+              }`}
           >
             <span className="material-symbols-outlined text-[20px]">
               {exportToast.startsWith('✓') ? 'check_circle' : 'error'}
@@ -230,23 +239,46 @@ const Clients: React.FC = () => {
           />
         </div>
 
-        <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
-          {[
-            { label: 'Todos', value: 'all' },
-            { label: 'Ativos', value: 'active' },
-            { label: 'Inativos', value: 'inactive' },
-          ].map((option) => (
-            <button
-              key={option.value}
-              onClick={() => setStatusFilter(option.value as any)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${statusFilter === option.value
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
+            {[
+              { label: 'Todos', value: 'all' },
+              { label: 'Ativos', value: 'active' },
+              { label: 'Inativos', value: 'inactive' },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setStatusFilter(option.value as any)}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${statusFilter === option.value
                   ? 'bg-white text-emerald-900 shadow-sm'
                   : 'text-slate-400 hover:text-slate-600'
-                }`}
-            >
-              {option.label}
-            </button>
-          ))}
+                  }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-col gap-1.5 min-w-[200px] px-2">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Score Mínimo</span>
+              <span className="text-xs font-black text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+                {minScore.toFixed(1)}
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="5"
+              step="0.1"
+              value={minScore}
+              onChange={(e) => setMinScore(parseFloat(e.target.value))}
+              className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-emerald-900 transition-all"
+              style={{
+                background: `linear-gradient(to right, #064e3b 0%, #064e3b ${(minScore / 5) * 100}%, #e2e8f0 ${(minScore / 5) * 100}%, #e2e8f0 100%)`
+              }}
+            />
+          </div>
         </div>
       </motion.div>
 
@@ -308,6 +340,7 @@ const Clients: React.FC = () => {
                     <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">CNPJ</th>
                     <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inscrição Estadual</th>
                     <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cidade/UF</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Score</th>
                     <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
                     <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Ações</th>
                   </tr>
@@ -332,9 +365,20 @@ const Clients: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
+                        {(() => {
+                          const style = getScoreStyle(client.average_score);
+                          return (
+                            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg w-fit border ${style.badge}`}>
+                              <span className={`material-symbols-outlined text-[16px] ${style.icon}`}>star</span>
+                              <span className="text-sm font-black">{client.average_score?.toFixed(1) || '0.0'}</span>
+                            </div>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${client.active
-                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                            : 'bg-slate-50 text-slate-400 border border-slate-100'
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                          : 'bg-slate-50 text-slate-400 border border-slate-100'
                           }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${client.active ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
                           {client.active ? 'Ativo' : 'Inativo'}
@@ -400,8 +444,8 @@ const Clients: React.FC = () => {
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
                         className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === pageNum
-                            ? 'bg-emerald-900 text-white shadow-md'
-                            : 'text-slate-400 hover:text-slate-600 hover:bg-white'
+                          ? 'bg-emerald-900 text-white shadow-md'
+                          : 'text-slate-400 hover:text-slate-600 hover:bg-white'
                           }`}
                       >
                         {pageNum}

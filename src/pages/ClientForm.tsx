@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../services/api';
+import { supabase } from '../lib/supabase';
 
 const maskCnpj = (value: string) => {
   return value
@@ -19,6 +20,7 @@ const ClientForm: React.FC = () => {
   const isEdit = Boolean(id);
 
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +37,7 @@ const ClientForm: React.FC = () => {
     address_city: '',
     address_state: '',
     address_zip: '',
+    documentation_url: '',
     active: true,
   });
 
@@ -57,6 +60,7 @@ const ClientForm: React.FC = () => {
             address_city: data.address_city || '',
             address_state: data.address_state || '',
             address_zip: data.address_zip || '',
+            documentation_url: data.documentation_url || '',
             active: data.active ?? true,
           });
         } catch (err: any) {
@@ -120,6 +124,45 @@ const ClientForm: React.FC = () => {
       } catch (err) {
         // não fazer nada se a api falhar
       }
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedExtensions = ['pdf', 'png', 'jpg', 'jpeg', 'xlsx', 'docx'];
+    const extension = file.name.split('.').pop()?.toLowerCase();
+
+    if (!extension || !allowedExtensions.includes(extension)) {
+      setError('Tipo de arquivo não suportado. Use PDF, PNG, JPG, JPEG, XLSX ou DOCX.');
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setError(null);
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
+      const filePath = `documents/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('client-documents')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('client-documents')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, documentation_url: publicUrl }));
+    } catch (err: any) {
+      console.error('Erro no upload:', err);
+      setError('Falha ao enviar arquivo. Tente novamente.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -384,33 +427,98 @@ const ClientForm: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Botões de Ação */}
-          <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => navigate('/clientes')}
-              className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors font-bold text-xs uppercase tracking-wider"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-8 py-3 bg-emerald-900 text-white rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-emerald-800 active:scale-[0.98] transition-all shadow-lg shadow-emerald-900/10 flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined text-[20px]">
-                    {isEdit ? 'save' : 'person_add'}
-                  </span>
-                  {isEdit ? 'Salvar Alterações' : 'Cadastrar Cliente'}
-                </>
-              )}
-            </button>
+        {/* Seção: Anexos e Documentação */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-slate-100 bg-slate-50/30">
+            <h3 className="font-bold text-slate-900 flex items-center gap-2">
+              <span className="material-symbols-outlined text-emerald-900 text-xl">description</span>
+              Anexos e Documentação
+            </h3>
           </div>
+          <div className="p-6 space-y-4">
+            <p className="text-xs text-slate-500 mb-2">
+              Anexe documentos de identificação ou outros arquivos relevantes (PDF, PNG, JPG, JPEG, XLSX, DOCX).
+            </p>
+
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+              <label className="relative flex flex-col items-center justify-center w-full md:w-64 h-32 border-2 border-dashed border-slate-200 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/30 transition-all cursor-pointer group">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
+                  {uploading ? (
+                    <div className="w-8 h-8 border-2 border-emerald-900/20 border-t-emerald-900 rounded-full animate-spin mb-2"></div>
+                  ) : (
+                    <span className="material-symbols-outlined text-slate-400 group-hover:text-emerald-600 text-3xl mb-2">cloud_upload</span>
+                  )}
+                  <p className="text-xs font-bold text-slate-500 group-hover:text-emerald-900">
+                    {uploading ? 'Enviando...' : 'Clique para anexar'}
+                  </p>
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  accept=".pdf,.png,.jpg,.jpeg,.xlsx,.docx"
+                />
+              </label>
+
+              {formData.documentation_url && (
+                <div className="flex-1 w-full bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                      <span className="material-symbols-outlined text-emerald-600">attachment</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-emerald-900">Documento Anexado</p>
+                      <a
+                        href={formData.documentation_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
+                      >
+                        Visualizar arquivo
+                        <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+                      </a>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, documentation_url: '' }))}
+                    className="p-2 text-emerald-900/40 hover:text-red-500 transition-colors"
+                  >
+                    <span className="material-symbols-outlined">delete</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/clientes')}
+            className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors font-bold text-xs uppercase tracking-wider"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-8 py-3 bg-emerald-900 text-white rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-emerald-800 active:scale-[0.98] transition-all shadow-lg shadow-emerald-900/10 flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
+          >
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[20px]">
+                  {isEdit ? 'save' : 'person_add'}
+                </span>
+                {isEdit ? 'Salvar Alterações' : 'Cadastrar Cliente'}
+              </>
+            )}
+          </button>
         </div>
       </form>
     </motion.div>
