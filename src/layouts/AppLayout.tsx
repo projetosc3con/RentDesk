@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import BottomNav from '../components/BottomNav';
+import ChatWidget from '../components/ChatWidget';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const AppLayout: React.FC = () => {
@@ -26,6 +27,7 @@ const AppLayout: React.FC = () => {
           </AnimatePresence>
         </main>
         <BottomNav />
+        <ChatWidget />
       </div>
     </div>
   );

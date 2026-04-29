@@ -16,8 +16,15 @@ import RentalForm from './pages/RentalForm';
 import RentalEdit from './pages/RentalEdit';
 import Parts from './pages/Parts';
 import PartForm from './pages/PartForm';
-import Maintenance from './pages/Maintenance';
 import MaintenanceForm from './pages/MaintenanceForm';
+import Maintenance from './pages/Maintenance';
+import HR from './pages/HR/HR';
+import { 
+  PositionsTab, 
+  DocumentsTab, 
+  IntegrationsTab, 
+  TrainingsTab 
+} from './pages/HR/tabs';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -74,7 +81,13 @@ function App() {
               <Route path="/usuarios/novo" element={<UserForm />} />
               <Route path="/perfil" element={<Profile />} />
               <Route path="/financeiro" element={<Placeholder title="Financeiro" />} />
-              <Route path="/rh" element={<Placeholder title="Recursos Humanos" />} />
+              <Route path="/rh" element={<HR />}>
+                <Route index element={<Navigate to="cargos" replace />} />
+                <Route path="cargos" element={<PositionsTab />} />
+                <Route path="documentacao" element={<DocumentsTab />} />
+                <Route path="integracoes" element={<IntegrationsTab />} />
+                <Route path="treinamentos" element={<TrainingsTab />} />
+              </Route>
               <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
             </Route>
           </Route>

@@ -1,0 +1,58 @@
+import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+
+const HR: React.FC = () => {
+  const location = useLocation();
+
+  const tabs = [
+    { id: 'cargos', label: 'Cargos e Salários', icon: 'account_tree', path: '/rh/cargos' },
+    { id: 'documentacao', label: 'Documentação', icon: 'description', path: '/rh/documentacao' },
+    { id: 'integracoes', label: 'Integrações', icon: 'verified_user', path: '/rh/integracoes' },
+    { id: 'treinamentos', label: 'Treinamentos', icon: 'school', path: '/rh/treinamentos' },
+  ];
+
+  return (
+    <div className="space-y-8 pb-20">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Recursos Humanos</h1>
+        <p className="text-slate-500 mt-1">Gestão de cargos, documentos, integrações e treinamentos da equipe.</p>
+      </div>
+
+      {/* Tabs Navigation */}
+      <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 w-full overflow-x-auto custom-scrollbar">
+        {tabs.map((tab) => (
+          <NavLink
+            key={tab.id}
+            to={tab.path}
+            className={({ isActive }) => `flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap ${isActive
+                ? 'bg-emerald-900 text-white shadow-lg shadow-emerald-900/20'
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+              }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">{tab.icon}</span>
+            {tab.label}
+          </NavLink>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="min-h-[500px]">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+};
+
+export default HR;
