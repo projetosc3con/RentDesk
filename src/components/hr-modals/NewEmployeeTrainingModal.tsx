@@ -19,7 +19,7 @@ const MOCK_TRAININGS = [
   { id: '3', name: 'Gestão de Tempo', category: 'Gestão', defaultHours: 4 },
 ];
 
-const STATUS_OPTIONS = ['Válido', 'Vencido', 'A Vencer'];
+
 
 const NewEmployeeTrainingModal: React.FC<NewEmployeeTrainingModalProps> = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
@@ -38,7 +38,7 @@ const NewEmployeeTrainingModal: React.FC<NewEmployeeTrainingModalProps> = ({ isO
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const selectedTraining = MOCK_TRAININGS.find(t => t.id === formData.trainingId);
+
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
