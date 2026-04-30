@@ -116,9 +116,9 @@ const Clients: React.FC = () => {
   }, [clients]);
 
   const getScoreStyle = (score: number = 0) => {
-    if (score < 3) return { badge: 'bg-red-50 text-red-700 border-red-100', icon: 'text-amber-400 fill-amber-400' };
-    if (score < 4) return { badge: 'bg-amber-50 text-amber-700 border-amber-100', icon: 'text-amber-500 fill-amber-500' };
-    return { badge: 'bg-emerald-50 text-emerald-700 border-emerald-100', icon: 'text-amber-400 fill-amber-400' };
+    if (score < 3) return { badge: 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-100 dark:border-red-500/20', icon: 'text-amber-400 fill-amber-400' };
+    if (score < 4) return { badge: 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-500/20', icon: 'text-amber-500 fill-amber-500' };
+    return { badge: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20', icon: 'text-amber-400 fill-amber-400' };
   };
 
   return (
@@ -154,8 +154,8 @@ const Clients: React.FC = () => {
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.4 }}
         >
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Base de Clientes</h1>
-          <p className="text-slate-500 mt-1">Gerencie sua carteira de clientes e dados de contato.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Base de Clientes</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Gerencie sua carteira de clientes e dados de contato.</p>
         </motion.div>
 
         <motion.div
@@ -168,7 +168,7 @@ const Clients: React.FC = () => {
           <button
             onClick={handleExport}
             disabled={exporting || clients.length === 0}
-            className="flex items-center gap-2 bg-white text-slate-600 px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 active:scale-95 transition-all font-bold text-xs uppercase tracking-widest shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all font-bold text-xs uppercase tracking-widest shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             title="Exportar todos os clientes para XLSX"
           >
             {exporting ? (
@@ -186,7 +186,7 @@ const Clients: React.FC = () => {
 
           <button
             onClick={() => navigate('/clientes/novo')}
-            className="flex items-center gap-2 bg-emerald-900 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-900/20 hover:bg-emerald-800 active:scale-95 transition-all font-bold text-xs uppercase tracking-widest"
+            className="flex items-center gap-2 bg-mustard-500 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-mustard-500/20 hover:bg-mustard-600 active:scale-95 transition-all font-bold text-xs uppercase tracking-widest"
           >
             <span className="material-symbols-outlined text-[18px]">person_add</span>
             Novo Cliente
@@ -197,24 +197,24 @@ const Clients: React.FC = () => {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: 'Total de Clientes', value: stats.total, icon: 'groups', color: 'bg-blue-50 text-blue-600' },
-          { label: 'Clientes Ativos', value: stats.active, icon: 'check_circle', color: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Clientes Inativos', value: stats.inactive, icon: 'cancel', color: 'bg-slate-100 text-slate-400' },
+          { label: 'Total de Clientes', value: stats.total, icon: 'groups', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' },
+          { label: 'Clientes Ativos', value: stats.active, icon: 'check_circle', color: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' },
+          { label: 'Clientes Inativos', value: stats.inactive, icon: 'cancel', color: 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500' },
         ].map((stat, i) => (
           <motion.div
             key={stat.label}
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm"
+            className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
           >
             <div className="flex items-center gap-4">
               <div className={`w-12 h-12 ${stat.color} rounded-xl flex items-center justify-center`}>
                 <span className="material-symbols-outlined text-2xl">{stat.icon}</span>
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">{stat.label}</p>
-                <p className="text-2xl font-black text-slate-900 leading-none">{stat.value}</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">{stat.label}</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white leading-none">{stat.value}</p>
               </div>
             </div>
           </motion.div>
@@ -226,21 +226,21 @@ const Clients: React.FC = () => {
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4"
+        className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4"
       >
         <div className="relative flex-1">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400">search</span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 dark:text-slate-500">search</span>
           <input
             type="text"
             placeholder="Buscar por nome, CNPJ, contato ou cidade..."
-            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-emerald-900/20 transition-all outline-none"
+            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-sm dark:text-white focus:ring-2 focus:ring-mustard-500/20 transition-all outline-none"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
         <div className="flex flex-wrap items-center gap-6">
-          <div className="flex bg-slate-50 p-1 rounded-xl border border-slate-100">
+          <div className="flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-700">
             {[
               { label: 'Todos', value: 'all' },
               { label: 'Ativos', value: 'active' },
@@ -250,8 +250,8 @@ const Clients: React.FC = () => {
                 key={option.value}
                 onClick={() => setStatusFilter(option.value as any)}
                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${statusFilter === option.value
-                  ? 'bg-white text-emerald-900 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-600'
+                  ? 'bg-white dark:bg-slate-700 text-mustard-500 shadow-sm'
+                  : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
                   }`}
               >
                 {option.label}
@@ -261,8 +261,8 @@ const Clients: React.FC = () => {
 
           <div className="flex flex-col gap-1.5 min-w-[200px] px-2">
             <div className="flex justify-between items-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Score Mínimo</span>
-              <span className="text-xs font-black text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-100">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Score Mínimo</span>
+              <span className="text-xs font-black text-mustard-600 dark:text-mustard-400 bg-mustard-50 dark:bg-mustard-500/10 px-2 py-0.5 rounded-lg border border-mustard-100 dark:border-mustard-500/20">
                 {minScore.toFixed(1)}
               </span>
             </div>
@@ -273,9 +273,9 @@ const Clients: React.FC = () => {
               step="0.1"
               value={minScore}
               onChange={(e) => setMinScore(parseFloat(e.target.value))}
-              className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-emerald-900 transition-all"
+              className="w-full h-1.5 rounded-lg appearance-none cursor-pointer accent-mustard-500 transition-all"
               style={{
-                background: `linear-gradient(to right, #064e3b 0%, #064e3b ${(minScore / 5) * 100}%, #e2e8f0 ${(minScore / 5) * 100}%, #e2e8f0 100%)`
+                background: `linear-gradient(to right, #bf8110 0%, #bf8110 ${(minScore / 5) * 100}%, var(--tw-color-slate-200, #e2e8f0) ${(minScore / 5) * 100}%, var(--tw-color-slate-200, #e2e8f0) 100%)`
               }}
             />
           </div>
@@ -292,7 +292,7 @@ const Clients: React.FC = () => {
             exit={{ opacity: 0 }}
             className="flex flex-col items-center justify-center py-24"
           >
-            <div className="w-12 h-12 border-4 border-emerald-900/20 border-t-emerald-900 rounded-full animate-spin"></div>
+            <div className="w-12 h-12 border-4 border-mustard-500/20 border-t-mustard-500 rounded-full animate-spin"></div>
             <p className="text-slate-400 text-sm font-medium mt-4">Carregando clientes...</p>
           </motion.div>
         ) : error ? (
@@ -318,11 +318,11 @@ const Clients: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-200"
+            className="flex flex-col items-center justify-center py-24 bg-white dark:bg-slate-900/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 transition-colors"
           >
-            <span className="material-symbols-outlined text-6xl text-slate-200 mb-4">groups</span>
-            <h3 className="text-xl font-bold text-slate-900">Nenhum cliente encontrado</h3>
-            <p className="text-slate-500 mt-2 max-w-xs mx-auto text-center">Tente ajustar seus filtros ou cadastre um novo cliente.</p>
+            <span className="material-symbols-outlined text-6xl text-slate-200 dark:text-slate-800 mb-4">groups</span>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Nenhum cliente encontrado</h3>
+            <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-xs mx-auto text-center font-medium">Tente ajustar seus filtros ou cadastre um novo cliente.</p>
           </motion.div>
         ) : (
           <motion.div
@@ -330,36 +330,36 @@ const Clients: React.FC = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+            className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden"
           >
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Empresa / Razão Social</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">CNPJ</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Inscrição Estadual</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cidade/UF</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Score</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Ações</th>
+                  <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Empresa / Razão Social</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">CNPJ</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Inscrição Estadual</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Cidade/UF</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Score</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                   {paginatedClients.map((client) => (
-                    <tr key={client.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <tr key={client.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                       <td className="px-6 py-4">
                         <div>
-                          <p className="font-bold text-slate-900 group-hover:text-emerald-900 transition-colors">{client.company_name}</p>
-                          <p className="text-xs text-slate-500">{client.address_complement || 'Sem complemento'}</p>
+                          <p className="font-bold text-slate-900 dark:text-white group-hover:text-mustard-500 transition-colors">{client.company_name}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{client.address_complement || 'Sem complemento'}</p>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-slate-600">{client.cnpj}</td>
-                      <td className="px-6 py-4 text-sm font-medium text-slate-600">{client.state_subscription || 'ISENTO'}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">{client.cnpj}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-slate-600 dark:text-slate-400">{client.state_subscription || 'ISENTO'}</td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-slate-300 text-[18px]">location_on</span>
-                          <span className="text-sm font-medium text-slate-600">
+                          <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-[18px]">location_on</span>
+                          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                             {client.address_city ? `${client.address_city}/${client.address_state}` : 'Não informado'}
                           </span>
                         </div>
@@ -377,10 +377,10 @@ const Clients: React.FC = () => {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${client.active
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                          : 'bg-slate-50 text-slate-400 border border-slate-100'
+                          ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20'
+                          : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-100 dark:border-slate-700'
                           }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${client.active ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${client.active ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}></span>
                           {client.active ? 'Ativo' : 'Inativo'}
                         </span>
                       </td>
@@ -388,7 +388,7 @@ const Clients: React.FC = () => {
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => navigate(`/clientes/${client.id}`)}
-                            className="p-2 text-slate-400 hover:text-emerald-900 hover:bg-emerald-50 rounded-lg transition-all"
+                            className="p-2 text-slate-400 dark:text-slate-500 hover:text-mustard-600 dark:hover:text-mustard-400 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 rounded-lg transition-all"
                             title="Ver Detalhes / Editar"
                           >
                             <span className="material-symbols-outlined text-[20px]">edit</span>
@@ -402,21 +402,21 @@ const Clients: React.FC = () => {
             </div>
 
             {/* Pagination Controls */}
-            <div className="bg-slate-50/50 px-6 py-4 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
+            <div className="bg-slate-50/50 dark:bg-slate-800/50 px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-4 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                 <div className="flex items-center gap-2">
                   <span>Itens por página:</span>
                   <select
                     value={itemsPerPage}
                     onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                    className="bg-white border border-slate-200 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-emerald-900/20 text-slate-600 transition-all cursor-pointer"
+                    className="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-mustard-500/20 text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
                   >
                     {[10, 25, 50, 100].map(size => (
                       <option key={size} value={size}>{size}</option>
                     ))}
                   </select>
                 </div>
-                <div className="w-px h-4 bg-slate-200" />
+                <div className="w-px h-4 bg-slate-200 dark:bg-slate-700" />
                 <span>
                   Mostrando {Math.min(filteredClients.length, (currentPage - 1) * itemsPerPage + 1)} - {Math.min(filteredClients.length, currentPage * itemsPerPage)} de {filteredClients.length}
                 </span>
@@ -426,7 +426,7 @@ const Clients: React.FC = () => {
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="p-2 text-slate-400 hover:text-emerald-900 hover:bg-white rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-2 text-slate-400 hover:text-mustard-600 dark:hover:text-mustard-400 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <span className="material-symbols-outlined">chevron_left</span>
                 </button>
@@ -444,8 +444,8 @@ const Clients: React.FC = () => {
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
                         className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === pageNum
-                          ? 'bg-emerald-900 text-white shadow-md'
-                          : 'text-slate-400 hover:text-slate-600 hover:bg-white'
+                          ? 'bg-mustard-500 text-white shadow-mustard-500/20'
+                          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-white dark:hover:bg-slate-800'
                           }`}
                       >
                         {pageNum}
@@ -457,7 +457,7 @@ const Clients: React.FC = () => {
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className="p-2 text-slate-400 hover:text-emerald-900 hover:bg-white rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-2 text-mustard-600 dark:text-mustard-400 hover:text-mustard-700 dark:hover:text-mustard-300 hover:bg-white dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <span className="material-symbols-outlined">chevron_right</span>
                 </button>

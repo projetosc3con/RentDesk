@@ -60,12 +60,12 @@ function SearchableSelect<T extends { id: string }>({
       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">{label} {required && '*'}</label>
       <div 
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-4 py-2.5 bg-slate-50 border rounded-xl flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-emerald-900 ring-2 ring-emerald-900/10 bg-white' : 'border-slate-200 hover:border-slate-300'}`}
+        className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-mustard-500 ring-2 ring-mustard-500/10 dark:bg-slate-900' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}
       >
-        <span className={`text-sm ${selectedItem ? 'text-slate-900 font-medium' : 'text-slate-400'}`}>
+        <span className={`text-sm ${selectedItem ? 'text-slate-900 dark:text-white font-medium' : 'text-slate-400 dark:text-slate-500'}`}>
           {selectedItem ? getDisplayValue(selectedItem) : placeholder}
         </span>
-        <span className="material-symbols-outlined text-slate-400 transition-transform text-[20px]">expand_more</span>
+        <span className={`material-symbols-outlined text-slate-400 dark:text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''} text-[20px]`}>expand_more</span>
       </div>
 
       <AnimatePresence>
@@ -74,18 +74,18 @@ function SearchableSelect<T extends { id: string }>({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden"
+            className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden"
           >
-            <div className="p-2 border-b border-slate-100 bg-slate-50">
+            <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm">search</span>
                 <input 
                   autoFocus
                   type="text" 
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Pesquisar..."
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:border-emerald-900 transition-all"
+                  className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-mustard-500 transition-all dark:text-white"
                 />
               </div>
             </div>
@@ -99,14 +99,14 @@ function SearchableSelect<T extends { id: string }>({
                       setIsOpen(false);
                       setSearchTerm('');
                     }}
-                    className={`px-4 py-2.5 text-xs cursor-pointer hover:bg-emerald-50 transition-colors flex flex-col gap-0.5 ${selectedId === item.id ? 'bg-emerald-50/50 border-l-4 border-emerald-900' : 'border-l-4 border-transparent'}`}
+                    className={`px-4 py-2.5 text-xs cursor-pointer hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-colors flex flex-col gap-0.5 ${selectedId === item.id ? 'bg-mustard-50/50 dark:bg-mustard-500/20 border-l-4 border-mustard-500' : 'border-l-4 border-transparent'}`}
                   >
-                    <span className="font-bold text-slate-900">{getDisplayValue(item)}</span>
-                    <span className="text-[10px] text-slate-400 font-mono">{getSearchValue(item)}</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{getDisplayValue(item)}</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{getSearchValue(item)}</span>
                   </div>
                 ))
               ) : (
-                <div className="p-4 text-center text-xs text-slate-400 italic">Nenhum resultado encontrado.</div>
+                <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500 italic">Nenhum resultado encontrado.</div>
               )}
             </div>
           </motion.div>
@@ -252,8 +252,8 @@ const RentalEdit: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400 gap-4">
-        <div className="w-12 h-12 border-4 border-emerald-900/10 border-t-emerald-900 rounded-full animate-spin" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400 dark:text-slate-500 gap-4">
+        <div className="w-12 h-12 border-4 border-mustard-500/10 border-t-mustard-500 rounded-full animate-spin" />
         <p className="font-bold text-xs uppercase tracking-widest">Carregando dados...</p>
       </div>
     );
@@ -263,12 +263,12 @@ const RentalEdit: React.FC = () => {
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-5xl mx-auto space-y-6 pb-20">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/locacoes')} className="p-2 hover:bg-white rounded-full transition-colors text-slate-400 hover:text-slate-600">
+        <button onClick={() => navigate('/locacoes')} className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Editar Locação</h1>
-          <p className="text-slate-500 mt-1">Atualize as informações do faturamento Nº {formData.invoice_number}.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Editar Locação</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Atualize as informações do faturamento Nº {formData.invoice_number}.</p>
         </div>
       </div>
 
@@ -283,10 +283,10 @@ const RentalEdit: React.FC = () => {
         {/* Left Column: Main Data */}
         <div className="lg:col-span-2 space-y-6">
           {/* Section: Client & Equipment */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="p-6 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-900 text-xl">person_pin_circle</span>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-t-2xl">
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-mustard-500 text-xl">person_pin_circle</span>
                 Vínculos Principais
               </h3>
             </div>
@@ -312,47 +312,47 @@ const RentalEdit: React.FC = () => {
                 required
               />
               <div className="md:col-span-2 space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Obra / Local de Uso</label>
-                <input type="text" name="work_site" value={formData.work_site} onChange={handleChange} placeholder="Ex: Condomínio Solar das Águas" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm" />
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest ml-1">Obra / Local de Uso</label>
+                <input type="text" name="work_site" value={formData.work_site} onChange={handleChange} placeholder="Ex: Condomínio Solar das Águas" className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600" />
               </div>
             </div>
           </div>
 
           {/* Section: Dates & Status */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="p-6 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-900 text-xl">event_available</span>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-t-2xl">
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-mustard-500 text-xl">event_available</span>
                 Período e Status
               </h3>
             </div>
             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Início do Período *</label>
-                <input required type="date" name="billing_period_start" value={formData.billing_period_start} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm" />
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest ml-1">Início do Período *</label>
+                <input required type="date" name="billing_period_start" value={formData.billing_period_start} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm [color-scheme:light] dark:[color-scheme:dark]" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Fim do Período *</label>
-                <input required type="date" name="billing_period_end" value={formData.billing_period_end} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm" />
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest ml-1">Fim do Período *</label>
+                <input required type="date" name="billing_period_end" value={formData.billing_period_end} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm [color-scheme:light] dark:[color-scheme:dark]" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Status Faturamento</label>
-                <select name="billing_status" value={formData.billing_status} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-emerald-900/10 transition-all cursor-pointer">
-                  {BILLING_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest ml-1">Status Faturamento</label>
+                <select name="billing_status" value={formData.billing_status} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-mustard-500/10 transition-all cursor-pointer dark:text-white">
+                  {BILLING_STATUSES.map(s => <option key={s} value={s} className="dark:bg-slate-900">{s}</option>)}
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Data de Devolução (se houver)</label>
-                <input type="date" name="return_date" value={formData.return_date} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm" />
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest ml-1">Data de Devolução (se houver)</label>
+                <input type="date" name="return_date" value={formData.return_date} onChange={handleChange} className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm [color-scheme:light] dark:[color-scheme:dark]" />
               </div>
             </div>
           </div>
 
           {/* Section: Costs */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="p-6 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-900 text-xl">monetization_on</span>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-t-2xl">
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-mustard-500 text-xl">monetization_on</span>
                 Composição de Valores (R$)
               </h3>
             </div>
@@ -366,10 +366,10 @@ const RentalEdit: React.FC = () => {
                 { name: 'cost_training', label: 'Treinamento' },
               ].map(cost => (
                 <div key={cost.name} className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">{cost.label}</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-500 uppercase tracking-widest ml-1">{cost.label}</label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">R$</span>
-                    <input type="number" step="0.01" name={cost.name} value={(formData as any)[cost.name]} onChange={handleChange} className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-900/10 transition-all" />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs font-bold">R$</span>
+                    <input type="number" step="0.01" name={cost.name} value={(formData as any)[cost.name]} onChange={handleChange} className="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all dark:text-white" />
                   </div>
                 </div>
               ))}
@@ -377,10 +377,10 @@ const RentalEdit: React.FC = () => {
           </div>
 
           {/* Section: Notes */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
-            <div className="p-6 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                <span className="material-symbols-outlined text-emerald-900 text-xl">description</span>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-t-2xl">
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-mustard-500 text-xl">description</span>
                 Observações Internas
               </h3>
             </div>
@@ -391,7 +391,7 @@ const RentalEdit: React.FC = () => {
                 onChange={handleChange} 
                 rows={5} 
                 placeholder="Detalhes sobre a negociação, descontos ou condições especiais..." 
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-900/10 transition-all resize-none outline-none" 
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all resize-none outline-none dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600" 
               />
             </div>
           </div>
@@ -399,7 +399,7 @@ const RentalEdit: React.FC = () => {
 
         {/* Right Column: Invoicing Summary */}
         <div className="space-y-6">
-          <div className="bg-emerald-900 rounded-2xl p-6 text-white shadow-xl shadow-emerald-900/20 space-y-6 sticky top-6">
+          <div className="bg-mustard-600 dark:bg-mustard-500 rounded-2xl p-6 text-white shadow-xl shadow-mustard-500/20 space-y-6 sticky top-6">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest opacity-60">Valor Total da Fatura</h3>
               <p className="text-4xl font-black mt-1">
@@ -410,7 +410,7 @@ const RentalEdit: React.FC = () => {
             <div className="space-y-4 pt-4 border-t border-white/10">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-widest opacity-60">Nº Fatura / Contrato</label>
-                <input type="text" name="invoice_number" value={formData.invoice_number} onChange={handleChange} placeholder="Nº da Fatura" className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:bg-white/20 transition-all" />
+                <input type="text" name="invoice_number" value={formData.invoice_number} onChange={handleChange} placeholder="Nº da Fatura" className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-2 text-sm outline-none focus:bg-white/20 transition-all placeholder:text-white/40" />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-widest opacity-60">Vencimento *</label>
@@ -434,8 +434,8 @@ const RentalEdit: React.FC = () => {
             </div>
 
             <div className="pt-4 space-y-4">
-              <button type="submit" disabled={saving} className="w-full py-4 bg-white text-emerald-900 rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-emerald-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-70">
-                {saving ? <div className="w-5 h-5 border-2 border-emerald-900/30 border-t-emerald-900 rounded-full animate-spin" /> : 'Salvar Alterações'}
+              <button type="submit" disabled={saving} className="w-full py-4 bg-white text-mustard-600 dark:text-mustard-500 rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-70">
+                {saving ? <div className="w-5 h-5 border-2 border-mustard-500/30 border-t-mustard-500 rounded-full animate-spin" /> : 'Salvar Alterações'}
               </button>
               <button type="button" onClick={() => navigate('/locacoes')} className="w-full py-2 text-[10px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity">
                 Cancelar e Voltar

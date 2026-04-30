@@ -20,17 +20,17 @@ const ChatWidget: React.FC = () => {
             initial={{ opacity: 0, scale: 0.8, y: 20, transformOrigin: 'bottom right' }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className="w-[350px] sm:w-[400px] h-[500px] bg-white rounded-3xl shadow-2xl border border-slate-100 flex flex-col overflow-hidden"
+            className="w-[350px] sm:w-[400px] h-[500px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="p-4 bg-emerald-900 text-white flex items-center justify-between">
+            <div className="p-4 bg-mustard-500 text-white flex items-center justify-between shadow-lg shadow-mustard-500/10">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-md">
                   <span className="material-symbols-outlined">forum</span>
                 </div>
                 <div>
                   <h3 className="font-bold text-sm leading-tight">Assistente C3LOC</h3>
-                  <p className="text-[10px] text-emerald-100 uppercase tracking-widest font-bold">{profile?.access_level}</p>
+                  <p className="text-[10px] text-mustard-50 uppercase tracking-widest font-bold">{profile?.access_level}</p>
                 </div>
               </div>
               <button
@@ -42,46 +42,46 @@ const ChatWidget: React.FC = () => {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 p-4 bg-slate-50 overflow-y-auto space-y-4">
+            <div className="flex-1 p-4 bg-slate-50 dark:bg-slate-800/50 overflow-y-auto space-y-4">
               <div className="flex flex-col gap-1">
-                <div className="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 max-w-[85%]">
-                  <p className="text-xs text-slate-600 leading-relaxed">
+                <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 dark:border-slate-700 max-w-[85%]">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                     Olá <strong>{profile.full_name.split(' ')[0]}</strong>! Bem-vindo ao MCP C3Loc. Como posso ajudar hoje?
                   </p>
                 </div>
-                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest ml-1">Assistente C3Loc • 15:30</span>
+                <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest ml-1">Assistente C3Loc • 15:30</span>
               </div>
 
               {/* Mock incoming message */}
               <div className="flex flex-col gap-1 items-end">
-                <div className="bg-emerald-900 p-3 rounded-2xl rounded-tr-none shadow-md text-white max-w-[85%]">
-                  <p className="text-xs leading-relaxed">
+                <div className="bg-mustard-600 dark:bg-mustard-500 p-3 rounded-2xl rounded-tr-none shadow-md text-white max-w-[85%]">
+                  <p className="text-xs leading-relaxed font-medium">
                     Gere um excel com todas as OS que estão em aberto.
                   </p>
                 </div>
-                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mr-1">Você • 15:32</span>
+                <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mr-1">Você • 15:32</span>
               </div>
 
               {/* Mock incoming message */}
               <div className="flex flex-col gap-1 items-end">
-                <div className="bg-emerald-900 p-3 rounded-2xl rounded-tr-none shadow-md text-white max-w-[85%]">
-                  <p className="text-xs leading-relaxed">
+                <div className="bg-mustard-600 dark:bg-mustard-500 p-3 rounded-2xl rounded-tr-none shadow-md text-white max-w-[85%]">
+                  <p className="text-xs leading-relaxed font-medium">
                     Altere o periodo da locação 566/2025 para 10/08/2026 a 10/12/2026.
                   </p>
                 </div>
-                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mr-1">Você • 15:32</span>
+                <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mr-1">Você • 15:32</span>
               </div>
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-white border-t border-slate-100">
+            <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Digite sua mensagem..."
-                  className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 outline-none transition-all"
+                  className="w-full pl-4 pr-12 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 outline-none transition-all dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
-                <button className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-emerald-900 text-white flex items-center justify-center hover:bg-emerald-800 transition-colors">
+                <button className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-mustard-500 text-white flex items-center justify-center hover:bg-mustard-600 transition-colors shadow-lg shadow-mustard-500/20">
                   <span className="material-symbols-outlined text-[18px]">send</span>
                 </button>
               </div>
@@ -96,8 +96,8 @@ const ChatWidget: React.FC = () => {
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
         className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 ${isOpen
-          ? 'bg-slate-100 text-slate-600 rotate-90'
-          : 'bg-emerald-900 text-white hover:bg-emerald-800'
+          ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rotate-90'
+          : 'bg-mustard-500 text-white hover:bg-mustard-600'
           }`}
       >
         <span className="material-symbols-outlined text-[28px]">

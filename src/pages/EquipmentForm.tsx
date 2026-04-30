@@ -106,18 +106,18 @@ const EquipmentForm: React.FC = () => {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/equipamentos')}
-          className="p-2 hover:bg-white rounded-full transition-colors text-slate-400 hover:text-slate-600"
+          className="p-2 hover:bg-white dark:hover:bg-slate-900 rounded-full transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
         >
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Novo Equipamento</h1>
-          <p className="text-slate-500 mt-1">Cadastre uma nova máquina no estoque da empresa.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Novo Equipamento</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">Cadastre uma nova máquina no estoque da empresa.</p>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-100 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-3">
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-3 font-medium">
           <span className="material-symbols-outlined text-red-500">error</span>
           {error}
         </div>
@@ -128,15 +128,15 @@ const EquipmentForm: React.FC = () => {
 
           {/* Coluna Esquerda: Foto */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2 mb-4">
-                <span className="material-symbols-outlined text-emerald-900 text-xl">photo_camera</span>
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
+                <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-500 text-xl">photo_camera</span>
                 Foto do Equipamento
               </h3>
 
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="relative w-full aspect-square rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-900/30 hover:bg-emerald-50/30 transition-all overflow-hidden group"
+                className="relative w-full aspect-square rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex flex-col items-center justify-center cursor-pointer hover:border-mustard-500/30 hover:bg-mustard-50/30 dark:hover:bg-mustard-500/10 transition-all overflow-hidden group"
               >
                 {photoPreview ? (
                   <>
@@ -148,9 +148,9 @@ const EquipmentForm: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-4xl text-slate-300 group-hover:text-emerald-900/50 transition-colors">add_photo_alternate</span>
-                    <p className="text-xs text-slate-400 mt-2 font-medium">Clique para adicionar</p>
-                    <p className="text-[10px] text-slate-300 mt-0.5">PNG, JPG até 5MB</p>
+                    <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-700 group-hover:text-mustard-500 transition-colors">add_photo_alternate</span>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">Clique para adicionar</p>
+                    <p className="text-[10px] text-slate-300 dark:text-slate-600 mt-0.5">PNG, JPG até 5MB</p>
                   </>
                 )}
               </div>
@@ -167,7 +167,7 @@ const EquipmentForm: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleRemovePhoto}
-                  className="w-full mt-3 py-2 text-xs font-bold text-red-500 hover:text-red-600 uppercase tracking-widest transition-colors"
+                  className="w-full mt-3 py-2 text-xs font-bold text-red-500 hover:text-red-600 dark:hover:text-red-400 uppercase tracking-widest transition-colors"
                 >
                   Remover Foto
                 </button>
@@ -175,12 +175,12 @@ const EquipmentForm: React.FC = () => {
             </div>
 
             {/* Card Informativo */}
-            <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-100">
+            <div className="bg-mustard-50 dark:bg-mustard-500/10 rounded-xl p-5 border border-mustard-100 dark:border-mustard-500/20">
               <div className="flex gap-3">
-                <span className="material-symbols-outlined text-emerald-600 shrink-0">info</span>
+                <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-400 shrink-0">info</span>
                 <div>
-                  <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-widest">Dica</h4>
-                  <p className="text-xs text-emerald-800/70 mt-1 leading-relaxed">
+                  <h4 className="text-xs font-bold text-mustard-900 dark:text-mustard-400 uppercase tracking-widest">Dica</h4>
+                  <p className="text-xs text-mustard-800/70 dark:text-slate-400 mt-1 leading-relaxed">
                     Utilize uma foto frontal nítida do equipamento. Isso facilitará a identificação visual na listagem e nos contratos de locação.
                   </p>
                 </div>
@@ -192,17 +192,17 @@ const EquipmentForm: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
 
             {/* Seção: Identificação */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-slate-100">
-                <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-900 text-xl">precision_manufacturing</span>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-500 text-xl">precision_manufacturing</span>
                   Identificação
                 </h3>
               </div>
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nº Patrimônio *</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Nº Patrimônio *</label>
                     <input
                       required
                       type="text"
@@ -210,11 +210,11 @@ const EquipmentForm: React.FC = () => {
                       value={formData.asset_number}
                       onChange={handleChange}
                       placeholder="Ex: PAT-001"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nome do Equipamento *</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Nome do Equipamento *</label>
                     <input
                       required
                       type="text"
@@ -222,19 +222,19 @@ const EquipmentForm: React.FC = () => {
                       value={formData.name}
                       onChange={handleChange}
                       placeholder="Ex: Plataforma Tesoura 26ft"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Tipo</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Tipo</label>
                     <div className="relative">
                       <select
                         name="type"
                         value={formData.type}
                         onChange={handleChange}
-                        className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm appearance-none cursor-pointer"
+                        className="w-full pl-4 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm appearance-none cursor-pointer"
                       >
                         <option value="">Selecione o tipo</option>
                         {EQUIPMENT_TYPES.map(t => (
@@ -245,14 +245,14 @@ const EquipmentForm: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Modelo</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Modelo</label>
                     <input
                       type="text"
                       name="model"
                       value={formData.model}
                       onChange={handleChange}
                       placeholder="Ex: JLG 2630ES"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>
                 </div>
@@ -260,28 +260,28 @@ const EquipmentForm: React.FC = () => {
             </div>
 
             {/* Seção: Especificações Técnicas */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-slate-100">
-                <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-900 text-xl">engineering</span>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-500 text-xl">engineering</span>
                   Especificações Técnicas
                 </h3>
               </div>
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nº de Série</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Nº de Série</label>
                     <input
                       type="text"
                       name="serial_number"
                       value={formData.serial_number}
                       onChange={handleChange}
                       placeholder="S/N do fabricante"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Altura (m)</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Altura (m)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -289,11 +289,11 @@ const EquipmentForm: React.FC = () => {
                       value={formData.height}
                       onChange={handleChange}
                       placeholder="Ex: 10.06"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Ano de Fabricação</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Ano de Fabricação</label>
                     <input
                       type="number"
                       name="manufacture_year"
@@ -302,7 +302,7 @@ const EquipmentForm: React.FC = () => {
                       placeholder="Ex: 2022"
                       min="1990"
                       max={new Date().getFullYear()}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>
                 </div>
@@ -310,17 +310,17 @@ const EquipmentForm: React.FC = () => {
             </div>
 
             {/* Seção: Financeiro e Observações */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-slate-100">
-                <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-emerald-900 text-xl">payments</span>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-500 text-xl">payments</span>
                   Financeiro e Observações
                 </h3>
               </div>
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Valor do Equipamento (R$)</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Valor do Equipamento (R$)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -328,46 +328,46 @@ const EquipmentForm: React.FC = () => {
                       value={formData.value}
                       onChange={handleChange}
                       placeholder="0,00"
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Unidade</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Unidade</label>
                     <input
                       type="text"
                       name="unit"
                       value={formData.unit}
                       onChange={handleChange}
-                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Observações</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Observações</label>
                   <textarea
                     name="notes"
                     value={formData.notes}
                     onChange={handleChange}
                     rows={4}
                     placeholder="Informações adicionais sobre o equipamento, condição, acessórios inclusos..."
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm resize-none"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm resize-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
                   />
                 </div>
               </div>
 
               {/* Botões de Ação */}
-              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+              <div className="p-6 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => navigate('/equipamentos')}
-                  className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors font-bold text-xs uppercase tracking-wider"
+                  className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-3 bg-emerald-900 text-white rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-emerald-800 active:scale-[0.98] transition-all shadow-lg shadow-emerald-900/10 flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
+                  className="px-8 py-3 bg-mustard-500 text-white rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-mustard-600 active:scale-[0.98] transition-all shadow-lg shadow-mustard-500/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
                 >
                   {loading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

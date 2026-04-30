@@ -63,8 +63,8 @@ const Parts: React.FC = () => {
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.4 }}
         >
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Estoque de Peças</h1>
-          <p className="text-slate-500 mt-1">Gerencie o estoque de peças e suprimentos para manutenção.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Estoque de Peças</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">Gerencie o estoque de peças e suprimentos para manutenção.</p>
         </motion.div>
         <motion.div
           initial={{ x: 20, opacity: 0 }}
@@ -74,7 +74,7 @@ const Parts: React.FC = () => {
         >
           <button
             onClick={() => navigate('/pecas/novo')}
-            className="bg-emerald-900 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-emerald-800 transition-all shadow-md shadow-emerald-900/20"
+            className="bg-mustard-500 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-mustard-600 active:scale-[0.98] transition-all shadow-lg shadow-mustard-500/20"
           >
             <span className="material-symbols-outlined text-[20px]">add</span>
             <span>Nova Peça</span>
@@ -86,7 +86,7 @@ const Parts: React.FC = () => {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.1 }}
-        className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between"
+        className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between"
       >
         <div className="flex items-center gap-4 w-full md:w-auto flex-1">
           <div className="relative flex-1 max-w-md">
@@ -96,23 +96,23 @@ const Parts: React.FC = () => {
               placeholder="Buscar por descrição, código ou PN..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 transition-all text-sm"
+              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 transition-all text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"
             />
             {search && (
-              <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+              <button onClick={() => setSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 rounded-xl border border-slate-100 w-full md:w-auto">
-          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-emerald-700 text-[18px]">inventory</span>
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 w-full md:w-auto">
+          <div className="w-8 h-8 rounded-full bg-mustard-100 dark:bg-mustard-500/20 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-400 text-[18px]">inventory</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-0.5">Total na Busca</span>
-            <span className="text-sm font-black text-slate-700 leading-none">{totalQuantity} un</span>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-0.5">Total na Busca</span>
+            <span className="text-sm font-black text-slate-700 dark:text-slate-300 leading-none">{totalQuantity} un</span>
           </div>
         </div>
       </motion.div>
@@ -126,7 +126,7 @@ const Parts: React.FC = () => {
             exit={{ opacity: 0 }}
             className="flex flex-col items-center justify-center py-20 text-slate-400 gap-4"
           >
-            <div className="w-12 h-12 border-4 border-emerald-900/10 border-t-emerald-900 rounded-full animate-spin" />
+            <div className="w-12 h-12 border-4 border-mustard-500/10 border-t-mustard-500 rounded-full animate-spin" />
             <p className="font-bold text-xs uppercase tracking-widest">Carregando estoque...</p>
           </motion.div>
         ) : error ? (
@@ -135,7 +135,7 @@ const Parts: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="bg-red-50 text-red-600 p-6 rounded-2xl text-center font-medium flex flex-col items-center gap-2"
+            className="bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 p-6 rounded-2xl text-center font-medium flex flex-col items-center gap-2 border border-red-100 dark:border-red-500/20"
           >
             <span className="material-symbols-outlined text-4xl">error</span>
             {error}
@@ -146,13 +146,13 @@ const Parts: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col items-center justify-center py-20 text-slate-400 bg-white border border-slate-200 rounded-2xl border-dashed"
+            className="flex flex-col items-center justify-center py-20 text-slate-400 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl border-dashed"
           >
-            <span className="material-symbols-outlined text-6xl mb-4 text-slate-300">inventory_2</span>
-            <p className="font-bold text-lg text-slate-600">Nenhuma peça encontrada</p>
-            <p className="text-sm mt-1">Ajuste os filtros ou cadastre uma nova peça.</p>
+            <span className="material-symbols-outlined text-6xl mb-4 text-slate-300 dark:text-slate-800">inventory_2</span>
+            <p className="font-bold text-lg text-slate-600 dark:text-slate-300">Nenhuma peça encontrada</p>
+            <p className="text-sm mt-1 dark:text-slate-500 font-medium">Ajuste os filtros ou cadastre uma nova peça.</p>
             {search && (
-              <button onClick={clearFilters} className="mt-4 text-emerald-700 font-bold hover:underline">
+              <button onClick={clearFilters} className="mt-4 text-mustard-600 dark:text-mustard-400 font-bold hover:underline">
                 Limpar Busca
               </button>
             )}
@@ -164,42 +164,42 @@ const Parts: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Código</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Descrição</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Part Number</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Qtd</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-right">Valor Un.</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
+                    <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Código</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Descrição</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Part Number</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Qtd</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Valor Un.</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Ações</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {filteredParts.map((part) => (
-                      <tr key={part.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <tr key={part.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                         <td className="px-6 py-4">
-                          <span className="text-sm font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded text-[11px] font-mono">{part.internal_code}</span>
+                          <span className="text-sm font-medium text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-[11px] font-mono">{part.internal_code}</span>
                         </td>
-                        <td className="px-6 py-4 text-sm font-bold text-slate-900 group-hover:text-emerald-900 transition-colors">
+                        <td className="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white group-hover:text-mustard-600 dark:group-hover:text-mustard-400 transition-colors">
                           {part.description}
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{part.part_number || '-'}</td>
+                        <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{part.part_number || '-'}</td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-xs font-bold ${part.quantity > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                          <span className={`inline-flex items-center justify-center px-2 py-1 rounded text-xs font-bold ${part.quantity > 0 ? 'bg-mustard-50 dark:bg-mustard-500/10 text-mustard-700 dark:text-mustard-400' : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400'}`}>
                             {part.quantity}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm font-bold text-slate-900 text-right">
+                        <td className="px-6 py-4 text-sm font-bold text-slate-900 dark:text-white text-right">
                           {part.unit_value ? `R$ ${part.unit_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => setSelectedPart(part)}
-                              className="p-2 text-slate-400 hover:text-emerald-900 hover:bg-emerald-50 rounded-lg transition-all"
+                              className="p-2 text-slate-400 hover:text-mustard-600 dark:hover:text-mustard-400 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 rounded-lg transition-all"
                               title="Ver Detalhes"
                             >
                               <span className="material-symbols-outlined text-[20px]">visibility</span>
@@ -234,45 +234,45 @@ const Parts: React.FC = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-800"
             >
               <div className="p-8 overflow-y-auto">
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="text-xs font-mono font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{selectedPart.internal_code}</span>
-                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${selectedPart.quantity > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
+                      <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">{selectedPart.internal_code}</span>
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full ${selectedPart.quantity > 0 ? 'bg-mustard-100 dark:bg-mustard-500/20 text-mustard-800 dark:text-mustard-400' : 'bg-red-100 dark:bg-red-500/20 text-red-800 dark:text-red-400'}`}>
                         {selectedPart.quantity > 0 ? 'Em Estoque' : 'Sem Estoque'}
                       </span>
                     </div>
-                    <h2 className="text-2xl font-black text-slate-900">{selectedPart.description}</h2>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">{selectedPart.description}</h2>
                   </div>
                   <button
                     onClick={() => setSelectedPart(null)}
-                    className="w-10 h-10 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 hover:text-slate-900 transition-colors"
+                    className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-colors"
                   >
                     <span className="material-symbols-outlined text-[20px]">close</span>
                   </button>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Part Number</span>
-                    <span className="text-sm font-bold text-slate-800">{selectedPart.part_number || '-'}</span>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Part Number</span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedPart.part_number || '-'}</span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Quantidade</span>
-                    <span className="text-sm font-bold text-slate-800">{selectedPart.quantity} un</span>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Quantidade</span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedPart.quantity} un</span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Valor Unitário</span>
-                    <span className="text-sm font-bold text-slate-800">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Valor Unitário</span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
                       {selectedPart.unit_value ? `R$ ${selectedPart.unit_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}
                     </span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 col-span-2 md:col-span-3">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Valor Total em Estoque</span>
-                    <span className="text-lg font-black text-emerald-900">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 col-span-2 md:col-span-3">
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Valor Total em Estoque</span>
+                    <span className="text-lg font-black text-mustard-600 dark:text-mustard-500">
                       {selectedPart.total_value ? `R$ ${selectedPart.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'N/A'}
                     </span>
                   </div>
@@ -280,25 +280,25 @@ const Parts: React.FC = () => {
 
                 {/* Notas/Observações */}
                 <div>
-                  <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <h4 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <span className="material-symbols-outlined text-[16px]">notes</span>
                     Observações
                   </h4>
-                  <div className="bg-slate-50 p-5 rounded-2xl text-sm text-slate-600 leading-relaxed italic border-l-4 border-slate-300">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl text-sm text-slate-600 dark:text-slate-400 leading-relaxed italic border-l-4 border-slate-300 dark:border-slate-700">
                     {selectedPart.notes || 'Nenhuma observação cadastrada para esta peça.'}
                   </div>
                 </div>
               </div>
 
               {/* Modal Footer */}
-              <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30 flex justify-end gap-3 shrink-0">
                 <button
                   onClick={() => setSelectedPart(null)}
-                  className="px-6 py-2.5 rounded-xl font-bold text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
+                  className="px-6 py-2.5 rounded-xl font-bold text-sm text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                   Fechar
                 </button>
-                <button className="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-emerald-900 hover:bg-emerald-800 transition-colors flex items-center gap-2 shadow-md shadow-emerald-900/20">
+                <button className="px-6 py-2.5 rounded-xl font-bold text-sm text-white bg-mustard-500 hover:bg-mustard-600 active:scale-[0.98] transition-all flex items-center gap-2 shadow-lg shadow-mustard-500/20">
                   <span className="material-symbols-outlined text-[18px]">edit</span>
                   Editar Peça
                 </button>

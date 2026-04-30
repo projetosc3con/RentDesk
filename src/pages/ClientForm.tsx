@@ -189,7 +189,7 @@ const ClientForm: React.FC = () => {
   if (fetching) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
-        <div className="w-12 h-12 border-4 border-emerald-900/20 border-t-emerald-900 rounded-full animate-spin"></div>
+        <div className="w-12 h-12 border-4 border-mustard-500/20 border-t-mustard-500 rounded-full animate-spin"></div>
         <p className="text-slate-400 text-sm font-medium mt-4">Carregando dados do cliente...</p>
       </div>
     );
@@ -205,15 +205,15 @@ const ClientForm: React.FC = () => {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/clientes')}
-          className="p-2 hover:bg-white rounded-full transition-colors text-slate-400 hover:text-slate-600"
+          className="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-full transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
         >
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             {isEdit ? 'Editar Cliente' : 'Novo Cliente'}
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">
             {isEdit ? 'Atualize as informações do cliente industrial.' : 'Cadastre um novo cliente na sua base comercial.'}
           </p>
         </div>
@@ -228,17 +228,17 @@ const ClientForm: React.FC = () => {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Seção: Identificação da Empresa */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 bg-slate-50/30">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-emerald-900 text-xl">business</span>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-all">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/30">
+            <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-mustard-500 text-xl">business</span>
               Identificação da Empresa
             </h3>
           </div>
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1.5 md:col-span-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Razão Social *</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Razão Social *</label>
                 <input
                   required
                   type="text"
@@ -246,11 +246,11 @@ const ClientForm: React.FC = () => {
                   value={formData.company_name}
                   onChange={handleChange}
                   placeholder="Ex: Indústrias Metalúrgicas S.A."
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">CNPJ *</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">CNPJ *</label>
                 <input
                   required
                   type="text"
@@ -258,23 +258,23 @@ const ClientForm: React.FC = () => {
                   value={formData.cnpj}
                   onChange={handleCnpjChange}
                   placeholder="00.000.000/0000-00"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Inscrição Estadual</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Inscrição Estadual</label>
                 <input
                   type="text"
                   name="state_subscription"
                   value={formData.state_subscription}
                   onChange={handleChange}
                   placeholder="Isento ou Nº"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
               <div className="flex items-center h-5">
                 <input
                   id="active"
@@ -282,58 +282,58 @@ const ClientForm: React.FC = () => {
                   type="checkbox"
                   checked={formData.active}
                   onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.checked }))}
-                  className="w-4 h-4 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 cursor-pointer"
+                  className="w-4 h-4 text-mustard-600 border-slate-300 dark:border-slate-600 rounded focus:ring-mustard-500 cursor-pointer accent-mustard-500"
                 />
               </div>
               <div className="ml-1 text-sm">
-                <label htmlFor="active" className="font-bold text-slate-700 cursor-pointer">Cliente Ativo</label>
-                <p className="text-xs text-slate-500">Desative para suspender novas locações para este cliente.</p>
+                <label htmlFor="active" className="font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Cliente Ativo</label>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Desative para suspender novas locações para este cliente.</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Seção: Contato */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 bg-slate-50/30">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-emerald-900 text-xl">contact_phone</span>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/30">
+            <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-mustard-500 text-xl">contact_phone</span>
               Informações de Contato
             </h3>
           </div>
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-1.5 md:col-span-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Contato Principal</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Contato Principal</label>
                 <input
                   type="text"
                   name="contact_name"
                   value={formData.contact_name}
                   onChange={handleChange}
                   placeholder="Nome do responsável"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Telefone</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Telefone</label>
                 <input
                   type="text"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="(00) 00000-0000"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">E-mail</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">E-mail</label>
                 <input
                   type="email"
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="comercial@empresa.com"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
             </div>
@@ -341,65 +341,65 @@ const ClientForm: React.FC = () => {
         </div>
 
         {/* Seção: Endereço de Faturamento */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 bg-slate-50/30">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-emerald-900 text-xl">location_on</span>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/30">
+            <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-mustard-500 text-xl">location_on</span>
               Endereço de Faturamento
             </h3>
           </div>
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="space-y-1.5 md:col-span-3">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Rua / Logradouro</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Rua / Logradouro</label>
                 <input
                   type="text"
                   name="address_street"
                   value={formData.address_street}
                   onChange={handleChange}
                   placeholder="Av. Industrial"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Número</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Número</label>
                 <input
                   type="text"
                   name="address_number"
                   value={formData.address_number}
                   onChange={handleChange}
                   placeholder="123"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Complemento</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Complemento</label>
                 <input
                   type="text"
                   name="address_complement"
                   value={formData.address_complement}
                   onChange={handleChange}
                   placeholder="Sala 01, Bloco B"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Cidade</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Cidade</label>
                   <input
                     type="text"
                     name="address_city"
                     value={formData.address_city}
                     onChange={handleChange}
                     placeholder="São Paulo"
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">UF</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">UF</label>
                   <input
                     type="text"
                     name="address_state"
@@ -407,7 +407,7 @@ const ClientForm: React.FC = () => {
                     onChange={handleChange}
                     placeholder="SP"
                     maxLength={2}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                   />
                 </div>
               </div>
@@ -415,14 +415,14 @@ const ClientForm: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1.5 md:col-span-1">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">CEP</label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">CEP</label>
                 <input
                   type="text"
                   name="address_zip"
                   value={formData.address_zip}
                   onChange={handleChange}
                   placeholder="00000-000"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all outline-none text-sm"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
                 />
               </div>
             </div>
@@ -430,10 +430,10 @@ const ClientForm: React.FC = () => {
         </div>
 
         {/* Seção: Anexos e Documentação */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 bg-slate-50/30">
-            <h3 className="font-bold text-slate-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-emerald-900 text-xl">description</span>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-all">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/30">
+            <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="material-symbols-outlined text-mustard-500 text-xl">description</span>
               Anexos e Documentação
             </h3>
           </div>
@@ -443,14 +443,14 @@ const ClientForm: React.FC = () => {
             </p>
 
             <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-              <label className="relative flex flex-col items-center justify-center w-full md:w-64 h-32 border-2 border-dashed border-slate-200 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50/30 transition-all cursor-pointer group">
+              <label className="relative flex flex-col items-center justify-center w-full md:w-64 h-32 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl hover:border-mustard-500 dark:hover:border-mustard-400 hover:bg-mustard-50/30 dark:hover:bg-mustard-500/5 transition-all cursor-pointer group">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
                   {uploading ? (
-                    <div className="w-8 h-8 border-2 border-emerald-900/20 border-t-emerald-900 rounded-full animate-spin mb-2"></div>
+                    <div className="w-8 h-8 border-2 border-mustard-500/20 border-t-mustard-500 rounded-full animate-spin mb-2"></div>
                   ) : (
-                    <span className="material-symbols-outlined text-slate-400 group-hover:text-emerald-600 text-3xl mb-2">cloud_upload</span>
+                    <span className="material-symbols-outlined text-slate-400 group-hover:text-mustard-500 text-3xl mb-2">cloud_upload</span>
                   )}
-                  <p className="text-xs font-bold text-slate-500 group-hover:text-emerald-900">
+                  <p className="text-xs font-bold text-slate-500 group-hover:text-mustard-600 dark:group-hover:text-mustard-400">
                     {uploading ? 'Enviando...' : 'Clique para anexar'}
                   </p>
                 </div>
@@ -464,18 +464,18 @@ const ClientForm: React.FC = () => {
               </label>
 
               {formData.documentation_url && (
-                <div className="flex-1 w-full bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-center justify-between">
+                <div className="flex-1 w-full bg-mustard-50 dark:bg-mustard-500/10 border border-mustard-100 dark:border-mustard-500/20 p-4 rounded-xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                      <span className="material-symbols-outlined text-emerald-600">attachment</span>
+                    <div className="w-10 h-10 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center shadow-sm">
+                      <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-400">attachment</span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-emerald-900">Documento Anexado</p>
+                      <p className="text-sm font-bold text-mustard-900 dark:text-mustard-100">Documento Anexado</p>
                       <a
                         href={formData.documentation_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
+                        className="text-xs text-mustard-600 dark:text-mustard-400 hover:underline flex items-center gap-1 font-medium"
                       >
                         Visualizar arquivo
                         <span className="material-symbols-outlined text-[14px]">open_in_new</span>
@@ -485,7 +485,7 @@ const ClientForm: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, documentation_url: '' }))}
-                    className="p-2 text-emerald-900/40 hover:text-red-500 transition-colors"
+                    className="p-2 text-mustard-900/40 dark:text-mustard-400/40 hover:text-red-500 transition-colors"
                   >
                     <span className="material-symbols-outlined">delete</span>
                   </button>
@@ -495,18 +495,18 @@ const ClientForm: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+        <div className="p-6 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
           <button
             type="button"
             onClick={() => navigate('/clientes')}
-            className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors font-bold text-xs uppercase tracking-wider"
+            className="px-6 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-8 py-3 bg-emerald-900 text-white rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-emerald-800 active:scale-[0.98] transition-all shadow-lg shadow-emerald-900/10 flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
+            className="px-8 py-3 bg-mustard-500 text-white rounded-xl font-bold text-sm uppercase tracking-wider hover:bg-mustard-600 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:pointer-events-none"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

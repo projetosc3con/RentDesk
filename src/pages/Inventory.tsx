@@ -98,7 +98,7 @@ const Inventory: React.FC = () => {
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'Disponível': return 'bg-emerald-500 text-white border-emerald-400';
+      case 'Disponível': return 'bg-emerald-600 text-white border-emerald-500';
       case 'Locado': return 'bg-slate-800 text-white border-slate-700';
       case 'Em Manutenção': return 'bg-amber-500 text-white border-amber-400';
       default: return 'bg-slate-400 text-white border-slate-300';
@@ -126,8 +126,8 @@ const Inventory: React.FC = () => {
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.4 }}
         >
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Estoque de Máquinas</h1>
-          <p className="text-slate-500 mt-1">Gerencie a frota de equipamentos, status e disponibilidade.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Estoque de Máquinas</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">Gerencie a frota de equipamentos, status e disponibilidade.</p>
         </motion.div>
         <motion.div
           initial={{ x: 20, opacity: 0 }}
@@ -135,16 +135,16 @@ const Inventory: React.FC = () => {
           transition={{ duration: 0.4 }}
           className="flex items-center gap-3"
         >
-          <div className="flex bg-white rounded-xl border border-slate-200 p-1 shadow-sm">
+          <div className="flex bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-1 shadow-sm">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-slate-100 text-emerald-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-slate-100 dark:bg-slate-800 text-mustard-500 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
             >
               <span className="material-symbols-outlined text-[20px]">grid_view</span>
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-slate-100 text-emerald-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-slate-100 dark:bg-slate-800 text-mustard-500 shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
             >
               <span className="material-symbols-outlined text-[20px]">view_list</span>
             </button>
@@ -152,7 +152,7 @@ const Inventory: React.FC = () => {
 
           <button
             onClick={() => navigate('/equipamentos/novo')}
-            className="flex items-center gap-2 bg-emerald-900 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-900/20 hover:bg-emerald-800 transition-all font-bold text-xs uppercase tracking-widest"
+            className="flex items-center gap-2 bg-mustard-500 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-mustard-500/20 hover:bg-mustard-600 transition-all font-bold text-xs uppercase tracking-widest"
           >
             <span className="material-symbols-outlined text-[20px]">add</span>
             Novo Equipamento
@@ -164,21 +164,37 @@ const Inventory: React.FC = () => {
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm"
+        className="flex flex-wrap items-center gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
       >
         <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest px-2">Filtros:</span>
         <button
           onClick={() => setStatusFilter(null)}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${!statusFilter ? 'bg-emerald-900 text-white shadow-md' : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${!statusFilter ? 'bg-mustard-500 text-white shadow-md shadow-mustard-500/20' : 'border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
         >
           Todos
         </button>
         {(['Disponível', 'Locado', 'Em Manutenção', 'Inativo'] as const).map(s => {
           const styles: Record<string, { active: string; inactive: string; icon: string }> = {
-            'Disponível': { active: 'bg-emerald-600 text-white shadow-md', inactive: 'border border-emerald-100 bg-emerald-50 text-emerald-800 hover:bg-emerald-100', icon: 'check_circle' },
-            'Locado': { active: 'bg-slate-800 text-white shadow-md', inactive: 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100', icon: 'schedule' },
-            'Em Manutenção': { active: 'bg-amber-500 text-white shadow-md', inactive: 'border border-amber-100 bg-amber-50 text-amber-800 hover:bg-amber-100', icon: 'build' },
-            'Inativo': { active: 'bg-red-500 text-white shadow-md', inactive: 'border border-red-100 bg-red-50 text-red-700 hover:bg-red-100', icon: 'block' },
+            'Disponível': {
+              active: 'bg-emerald-600 text-white shadow-md',
+              inactive: 'border border-emerald-100 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20',
+              icon: 'check_circle'
+            },
+            'Locado': {
+              active: 'bg-slate-800 dark:bg-slate-700 text-white shadow-md',
+              inactive: 'border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700',
+              icon: 'schedule'
+            },
+            'Em Manutenção': {
+              active: 'bg-amber-500 text-white shadow-md',
+              inactive: 'border border-amber-100 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/20',
+              icon: 'build'
+            },
+            'Inativo': {
+              active: 'bg-red-500 text-white shadow-md',
+              inactive: 'border border-red-100 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20',
+              icon: 'block'
+            },
           };
           const st = styles[s];
           return (
@@ -190,12 +206,12 @@ const Inventory: React.FC = () => {
         })}
         <button
           onClick={() => setShowFilters(true)}
-          className="relative flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50 transition-colors ml-auto"
+          className="relative flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ml-auto"
         >
           <span className="material-symbols-outlined text-[18px]">filter_list</span>
           Mais Filtros
           {activeAdvancedCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-emerald-900 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{activeAdvancedCount}</span>
+            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-mustard-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{activeAdvancedCount}</span>
           )}
         </button>
       </motion.div>
@@ -209,7 +225,7 @@ const Inventory: React.FC = () => {
             exit={{ opacity: 0 }}
             className="flex flex-col items-center justify-center py-20"
           >
-            <div className="w-10 h-10 border-4 border-emerald-900/10 border-t-emerald-900 rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-mustard-500/10 border-t-mustard-500 rounded-full animate-spin"></div>
             <p className="text-slate-400 text-sm font-medium mt-4">Carregando estoque...</p>
           </motion.div>
         ) : error ? (
@@ -233,24 +249,24 @@ const Inventory: React.FC = () => {
             key="empty"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-slate-50 border border-dashed border-slate-200 p-20 rounded-3xl text-center"
+            className="bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-200 dark:border-slate-800 p-20 rounded-3xl text-center transition-colors"
           >
-            <span className="material-symbols-outlined text-6xl text-slate-200 mb-4">inventory_2</span>
-            <h3 className="text-xl font-bold text-slate-900">Nenhum equipamento cadastrado</h3>
-            <p className="text-slate-500 mt-2 max-w-xs mx-auto">Comece adicionando uma nova máquina ao seu estoque operacional.</p>
+            <span className="material-symbols-outlined text-6xl text-slate-200 dark:text-slate-800 mb-4">inventory_2</span>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Nenhum equipamento cadastrado</h3>
+            <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-xs mx-auto font-medium">Comece adicionando uma nova máquina ao seu estoque operacional.</p>
             <button
               onClick={() => navigate('/equipamentos/novo')}
-              className="mt-6 px-8 py-3 bg-emerald-900 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-emerald-800 transition-all"
+              className="mt-6 px-8 py-3 bg-mustard-500 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20"
             >
               Cadastrar Primeiro Equipamento
             </button>
           </motion.div>
         ) : filteredEquipments.length === 0 && equipments.length > 0 ? (
-          <motion.div key="no-results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-50 border border-dashed border-slate-200 p-16 rounded-3xl text-center">
-            <span className="material-symbols-outlined text-5xl text-slate-200 mb-3">search_off</span>
-            <h3 className="text-lg font-bold text-slate-900">Nenhum resultado encontrado</h3>
-            <p className="text-slate-500 mt-1 text-sm">Tente alterar os filtros aplicados.</p>
-            <button onClick={clearAllFilters} className="mt-4 px-6 py-2 bg-emerald-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-emerald-800 transition-all">Limpar Filtros</button>
+          <motion.div key="no-results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-slate-50 dark:bg-slate-900/50 border border-dashed border-slate-200 dark:border-slate-800 p-16 rounded-3xl text-center transition-colors">
+            <span className="material-symbols-outlined text-5xl text-slate-200 dark:text-slate-800 mb-3">search_off</span>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Nenhum resultado encontrado</h3>
+            <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm font-medium">Tente alterar os filtros aplicados.</p>
+            <button onClick={clearAllFilters} className="mt-4 px-6 py-2 bg-mustard-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all">Limpar Filtros</button>
           </motion.div>
         ) : (
           <motion.div
@@ -268,9 +284,9 @@ const Inventory: React.FC = () => {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
-                    className="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col group hover:shadow-xl transition-all duration-300"
+                    className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col group hover:shadow-xl transition-all duration-300"
                   >
-                    <div className="h-48 relative overflow-hidden bg-slate-100">
+                    <div className="h-48 relative overflow-hidden bg-slate-100 dark:bg-slate-800">
                       {equipment.photo_url ? (
                         <img
                           src={equipment.photo_url}
@@ -291,34 +307,34 @@ const Inventory: React.FC = () => {
                     </div>
                     <div className="p-5 flex flex-col flex-1">
                       <div className="mb-4">
-                        <h3 className="text-lg font-bold text-slate-900 leading-tight group-hover:text-emerald-900 transition-colors line-clamp-1">{equipment.name}</h3>
-                        <p className="text-sm font-medium text-slate-500">{equipment.model || 'Modelo não informado'}</p>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight group-hover:text-mustard-500 transition-colors line-clamp-1">{equipment.name}</h3>
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{equipment.model || 'Modelo não informado'}</p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-6 mt-auto border-t border-slate-50 pt-4">
+                      <div className="grid grid-cols-2 gap-y-3 gap-x-4 mb-6 mt-auto border-t border-slate-50 dark:border-slate-800 pt-4">
                         <div>
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Patrimônio</span>
-                          <span className="text-sm font-bold text-slate-800">{equipment.asset_number}</span>
+                          <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Patrimônio</span>
+                          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{equipment.asset_number}</span>
                         </div>
                         <div>
-                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ano</span>
-                          <span className="text-sm font-bold text-slate-800">{equipment.manufacture_year || '-'}</span>
+                          <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Ano</span>
+                          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{equipment.manufacture_year || '-'}</span>
                         </div>
                       </div>
 
                       <div className="flex gap-2">
                         <button
                           onClick={() => setSelectedEquipment(equipment)}
-                          className="flex-1 bg-white border border-slate-200 text-slate-700 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-colors"
+                          className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                         >
                           Detalhes
                         </button>
-                        <button 
+                        <button
                           onClick={() => equipment.status === 'Disponível' && navigate(`/locacoes/novo?equipmentId=${equipment.id}`)}
                           className={`flex-1 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${equipment.status === 'Disponível'
-                          ? 'bg-emerald-900 text-white hover:bg-emerald-800'
-                          : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                          }`}>
+                            ? 'bg-mustard-500 text-white hover:bg-mustard-600'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                            }`}>
                           Locar
                         </button>
                       </div>
@@ -327,39 +343,39 @@ const Inventory: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Equipamento</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Patrimônio</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Modelo</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Status</th>
-                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
+                      <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Equipamento</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Patrimônio</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Modelo</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Status</th>
+                        <th className="px-6 py-4 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                       {filteredEquipments.map((equipment) => (
-                        <tr key={equipment.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <tr key={equipment.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0">
+                              <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0">
                                 {equipment.photo_url ? (
                                   <img src={equipment.photo_url} alt="" className="w-full h-full object-cover" />
                                 ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                  <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-700">
                                     <span className="material-symbols-outlined text-xl">image</span>
                                   </div>
                                 )}
                               </div>
-                              <span className="text-sm font-bold text-slate-900 group-hover:text-emerald-900 transition-colors">{equipment.name}</span>
+                              <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-mustard-500 transition-colors">{equipment.name}</span>
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-sm font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded text-[11px] font-mono">{equipment.asset_number}</span>
+                            <span className="text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded text-[11px] font-mono">{equipment.asset_number}</span>
                           </td>
-                          <td className="px-6 py-4 text-sm text-slate-600">{equipment.model || '-'}</td>
+                          <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{equipment.model || '-'}</td>
                           <td className="px-6 py-4">
                             <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider border ${getStatusStyle(equipment.status)}`}>
                               <span className="material-symbols-outlined text-[14px]">
@@ -416,10 +432,10 @@ const Inventory: React.FC = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
+              className="relative w-full max-w-4xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]"
             >
               {/* Lado Esquerdo: Imagem */}
-              <div className="w-full md:w-1/2 h-64 md:h-auto relative bg-slate-100">
+              <div className="w-full md:w-1/2 h-64 md:h-auto relative bg-slate-100 dark:bg-slate-800">
                 {selectedEquipment.photo_url ? (
                   <img
                     src={selectedEquipment.photo_url}
@@ -453,12 +469,12 @@ const Inventory: React.FC = () => {
               <div className="w-full md:w-1/2 flex flex-col p-8 md:p-10 overflow-y-auto">
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{selectedEquipment.name}</h2>
-                    <p className="text-slate-500 font-medium text-lg mt-1">{selectedEquipment.model || 'Modelo não informado'}</p>
+                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{selectedEquipment.name}</h2>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-lg mt-1">{selectedEquipment.model || 'Modelo não informado'}</p>
                   </div>
                   <button
                     onClick={() => setSelectedEquipment(null)}
-                    className="hidden md:flex w-10 h-10 hover:bg-slate-100 rounded-full items-center justify-center text-slate-400 transition-colors"
+                    className="hidden md:flex w-10 h-10 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full items-center justify-center text-slate-400 transition-colors"
                   >
                     <span className="material-symbols-outlined text-2xl">close</span>
                   </button>
@@ -466,39 +482,39 @@ const Inventory: React.FC = () => {
 
                 {/* Grid de Especificações - Bento Style */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tipo</span>
-                    <span className="text-sm font-bold text-slate-800">{selectedEquipment.type || '-'}</span>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Tipo</span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedEquipment.type || '-'}</span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Unidade</span>
-                    <span className="text-sm font-bold text-slate-800">{selectedEquipment.unit || '-'}</span>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Unidade</span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedEquipment.unit || '-'}</span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Patrimônio</span>
-                    <span className="text-sm font-bold text-slate-800">{selectedEquipment.asset_number}</span>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Patrimônio</span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedEquipment.asset_number}</span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Nº de Série</span>
-                    <span className="text-sm font-bold text-slate-800">{selectedEquipment.serial_number || '-'}</span>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Nº de Série</span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedEquipment.serial_number || '-'}</span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Altura Trabalho</span>
-                    <span className="text-sm font-bold text-slate-800">{selectedEquipment.height ? `${selectedEquipment.height}m` : '-'}</span>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Altura Trabalho</span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedEquipment.height ? `${selectedEquipment.height}m` : '-'}</span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fabricação</span>
-                    <span className="text-sm font-bold text-slate-800">{selectedEquipment.manufacture_year || '-'}</span>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Fabricação</span>
+                    <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedEquipment.manufacture_year || '-'}</span>
                   </div>
                 </div>
 
                 {/* Notas/Observações */}
                 <div className="mb-8">
-                  <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                  <h4 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <span className="material-symbols-outlined text-[16px]">notes</span>
                     Observações Internas
                   </h4>
-                  <div className="bg-slate-50 p-5 rounded-2xl text-sm text-slate-600 leading-relaxed italic border-l-4 border-emerald-900">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl text-sm text-slate-600 dark:text-slate-400 leading-relaxed italic border-l-4 border-mustard-500">
                     {selectedEquipment.notes || 'Nenhuma observação adicional cadastrada para este equipamento.'}
                   </div>
                 </div>
@@ -516,7 +532,7 @@ const Inventory: React.FC = () => {
                     disabled={selectedEquipment.status !== 'Disponível'}
                     onClick={() => navigate(`/locacoes/novo?equipmentId=${selectedEquipment.id}`)}
                     className={`flex-[2] px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${selectedEquipment.status === 'Disponível'
-                      ? 'bg-emerald-900 text-white hover:bg-emerald-800 shadow-emerald-900/20'
+                      ? 'bg-mustard-500 text-white hover:bg-mustard-600 shadow-mustard-500/20'
                       : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
                       }`}
                   >
@@ -546,17 +562,17 @@ const Inventory: React.FC = () => {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl flex flex-col"
+              className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl flex flex-col"
             >
               {/* Header */}
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Filtros Avançados</h2>
-                  <p className="text-xs text-slate-400 mt-0.5">Refine a busca no estoque</p>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">Filtros Avançados</h2>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Refine a busca no estoque</p>
                 </div>
                 <button
                   onClick={() => setShowFilters(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors"
+                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 transition-colors"
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
@@ -574,10 +590,10 @@ const Inventory: React.FC = () => {
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                       placeholder="Digite para buscar..."
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 outline-none focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all"
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                     {search && (
-                      <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500">
+                      <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 dark:hover:text-slate-400">
                         <span className="material-symbols-outlined text-lg">close</span>
                       </button>
                     )}
@@ -586,13 +602,13 @@ const Inventory: React.FC = () => {
 
                 {/* Tipo de Equipamento */}
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Tipo de Equipamento</label>
+                  <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Tipo de Equipamento</label>
                   <div className="grid grid-cols-2 gap-2">
                     {EQUIPMENT_TYPES.map(t => (
                       <button
                         key={t}
                         onClick={() => setTypeFilter(typeFilter === t ? '' : t)}
-                        className={`px-3 py-2.5 rounded-xl text-xs font-bold text-left transition-all ${typeFilter === t ? 'bg-emerald-900 text-white shadow-md' : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+                        className={`px-3 py-2.5 rounded-xl text-xs font-bold text-left transition-all ${typeFilter === t ? 'bg-mustard-500 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
                       >
                         {t}
                       </button>
@@ -602,33 +618,33 @@ const Inventory: React.FC = () => {
 
                 {/* Ano de Fabricação */}
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Ano de Fabricação</label>
+                  <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Ano de Fabricação</label>
                   <div className="flex items-center gap-3">
                     <input
                       type="number"
                       value={yearMin}
                       onChange={(e) => setYearMin(e.target.value)}
                       placeholder="De"
-                      className="min-w-0 w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 outline-none focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all"
+                      className="min-w-0 w-full px-3 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
-                    <span className="text-slate-300 font-bold shrink-0">—</span>
+                    <span className="text-slate-300 dark:text-slate-600 font-bold shrink-0">—</span>
                     <input
                       type="number"
                       value={yearMax}
                       onChange={(e) => setYearMax(e.target.value)}
                       placeholder="Até"
-                      className="min-w-0 w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 outline-none focus:ring-2 focus:ring-emerald-900/10 focus:border-emerald-900 transition-all"
+                      className="min-w-0 w-full px-3 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                     />
                   </div>
                 </div>
 
                 {/* Faixa de Valor */}
                 <div className="space-y-4">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Faixa de Valor (R$)</label>
+                  <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Faixa de Valor (R$)</label>
                   <div className="px-1">
-                    <div className="relative h-2 bg-slate-200 rounded-full">
+                    <div className="relative h-2 bg-slate-200 dark:bg-slate-700 rounded-full">
                       <div
-                        className="absolute h-full bg-emerald-900 rounded-full"
+                        className="absolute h-full bg-mustard-500 rounded-full shadow-sm"
                         style={{
                           left: `${(valueMin / maxEquipmentValue) * 100}%`,
                           right: `${100 - (valueMax > 0 ? valueMax : maxEquipmentValue) / maxEquipmentValue * 100}%`,
@@ -647,7 +663,7 @@ const Inventory: React.FC = () => {
                           if (valueMax > 0 && v > valueMax) return;
                           setValueMin(v);
                         }}
-                        className="absolute w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-emerald-900 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-emerald-900 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer"
+                        className="absolute w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-mustard-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-mustard-500 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer"
                       />
                       <input
                         type="range"
@@ -660,43 +676,43 @@ const Inventory: React.FC = () => {
                           if (v < valueMin) return;
                           setValueMax(v >= maxEquipmentValue ? 0 : v);
                         }}
-                        className="absolute w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-emerald-900 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-emerald-900 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer"
+                        className="absolute w-full appearance-none bg-transparent pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-mustard-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-mustard-500 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:shadow-md [&::-moz-range-thumb]:cursor-pointer"
                       />
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg">
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200/50 dark:border-slate-700/50 transition-colors">
                       R$ {valueMin.toLocaleString('pt-BR')}
                     </span>
-                    <span className="text-[10px] text-slate-300 uppercase tracking-widest">até</span>
-                    <span className="text-sm font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg">
+                    <span className="text-[10px] text-slate-300 dark:text-slate-600 uppercase tracking-widest font-bold">até</span>
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200/50 dark:border-slate-700/50 transition-colors">
                       {valueMax > 0 ? `R$ ${valueMax.toLocaleString('pt-BR')}` : 'Máx'}
                     </span>
                   </div>
                 </div>
 
                 {/* Resumo */}
-                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 border border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-emerald-900 text-lg">info</span>
-                    <span className="text-xs font-bold text-slate-700">Resultados</span>
+                    <span className="material-symbols-outlined text-mustard-500 text-lg">info</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Resultados</span>
                   </div>
-                  <p className="text-2xl font-black text-emerald-900">{filteredEquipments.length}</p>
+                  <p className="text-2xl font-black text-mustard-500">{filteredEquipments.length}</p>
                   <p className="text-[11px] text-slate-400 mt-0.5">equipamento(s) correspondente(s)</p>
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="p-6 border-t border-slate-100 flex gap-3">
+              <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex gap-3">
                 <button
                   onClick={clearAllFilters}
-                  className="flex-1 py-3 border border-slate-200 rounded-xl font-bold text-xs uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all"
+                  className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-xs uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                 >
                   Limpar Tudo
                 </button>
                 <button
                   onClick={() => setShowFilters(false)}
-                  className="flex-[2] py-3 bg-emerald-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-800 transition-all shadow-lg shadow-emerald-900/20"
+                  className="flex-[2] py-3 bg-mustard-500 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-mustard-600 transition-all"
                 >
                   Aplicar Filtros
                 </button>

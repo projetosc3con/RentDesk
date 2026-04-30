@@ -67,29 +67,29 @@ const PartForm: React.FC = () => {
       <div className="flex items-center gap-4">
         <button
           onClick={() => navigate('/pecas')}
-          className="p-2 hover:bg-white rounded-full transition-colors text-slate-400 hover:text-slate-600"
+          className="p-2 hover:bg-white dark:hover:bg-slate-900 rounded-full transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
         >
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Nova Peça</h1>
-          <p className="text-slate-500 mt-1">Cadastre uma nova peça no estoque de manutenção.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Nova Peça</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">Cadastre uma nova peça no estoque de manutenção.</p>
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-100 text-red-700 px-4 py-3 rounded-xl text-sm flex items-center gap-3">
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-3 font-medium">
           <span className="material-symbols-outlined text-red-500">error</span>
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-8">
+        <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-8">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-bold text-slate-700">Descrição da Peça *</label>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Descrição da Peça *</label>
               <input
                 type="text"
                 name="description"
@@ -97,12 +97,12 @@ const PartForm: React.FC = () => {
                 onChange={handleChange}
                 required
                 placeholder="Ex: Filtro de Óleo Diesel"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 transition-all text-slate-900"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Código Interno *</label>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Código Interno *</label>
               <input
                 type="text"
                 name="internal_code"
@@ -110,24 +110,24 @@ const PartForm: React.FC = () => {
                 onChange={handleChange}
                 required
                 placeholder="Ex: P0001"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 transition-all text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 transition-all text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Part Number (PN)</label>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Part Number (PN)</label>
               <input
                 type="text"
                 name="part_number"
                 value={formData.part_number}
                 onChange={handleChange}
                 placeholder="Ex: 211751"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 transition-all text-slate-900 font-mono"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 transition-all text-slate-900 dark:text-white font-mono placeholder:text-slate-400 dark:placeholder:text-slate-600"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Quantidade *</label>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Quantidade *</label>
               <input
                 type="number"
                 name="quantity"
@@ -137,12 +137,12 @@ const PartForm: React.FC = () => {
                 min="0"
                 step="0.01"
                 placeholder="0"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 transition-all text-slate-900"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Valor Unitário (R$)</label>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Valor Unitário (R$)</label>
               <input
                 type="number"
                 name="unit_value"
@@ -151,28 +151,28 @@ const PartForm: React.FC = () => {
                 min="0"
                 step="0.01"
                 placeholder="0.00"
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 transition-all text-slate-900"
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"
               />
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-bold text-slate-700">Valor Total Estimado (R$)</label>
+              <label className="text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">Valor Total Estimado (R$)</label>
               <input
                 type="number"
                 name="total_value"
                 value={formData.total_value}
                 readOnly
-                className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 font-medium"
+                className="w-full px-4 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 dark:text-slate-400 font-bold transition-colors"
               />
-              <p className="text-xs text-slate-400 mt-1">Calculado automaticamente com base na quantidade e valor unitário.</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">Calculado automaticamente com base na quantidade e valor unitário.</p>
             </div>
           </div>
 
-          <hr className="border-slate-100" />
+          <hr className="border-slate-100 dark:border-slate-800" />
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-              <span className="material-symbols-outlined text-slate-400 text-[20px]">notes</span>
+            <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2 ml-1">
+              <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 text-[20px]">notes</span>
               Observações
             </label>
             <textarea
@@ -181,7 +181,7 @@ const PartForm: React.FC = () => {
               onChange={handleChange}
               rows={4}
               placeholder="Anotações sobre a peça, fornecedores ou uso geral..."
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 transition-all text-slate-900 resize-none"
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 transition-all text-slate-900 dark:text-white resize-none placeholder:text-slate-400 dark:placeholder:text-slate-600"
             />
           </div>
 
@@ -189,7 +189,7 @@ const PartForm: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/pecas')}
-              className="px-6 py-3 font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+              className="px-6 py-3 font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-all"
               disabled={loading}
             >
               Cancelar
@@ -197,7 +197,7 @@ const PartForm: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="px-8 py-3 font-bold text-white bg-emerald-900 hover:bg-emerald-800 rounded-xl transition-all shadow-md shadow-emerald-900/20 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="px-8 py-3 font-bold text-white bg-mustard-500 hover:bg-mustard-600 rounded-xl transition-all shadow-lg shadow-mustard-500/20 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98]"
             >
               {loading ? (
                 <>

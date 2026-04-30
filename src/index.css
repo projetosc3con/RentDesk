@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-primary: #012d1d;
   --color-on-primary: #ffffff;
@@ -65,6 +67,17 @@
   --spacing-gutter: 16px;
   --spacing-stack-lg: 32px;
   --spacing-unit: 4px;
+
+  --color-mustard-50: #fef8e6;
+  --color-mustard-100: #fdf1cd;
+  --color-mustard-200: #fae39b;
+  --color-mustard-300: #f3c74d;
+  --color-mustard-400: #dbac18;
+  --color-mustard-500: #bf8110;
+  --color-mustard-600: #99670d;
+  --color-mustard-700: #734d0a;
+  --color-mustard-800: #4d3307;
+  --color-mustard-900: #261a03;
 }
 
 @layer base {
@@ -77,22 +90,45 @@
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
-@layer utilities {
-  .custom-scrollbar::-webkit-scrollbar {
-    height: 4px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #064e3b; /* emerald-900 */
-    border-radius: 10px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-button {
-    display: none;
-  }
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: #064e3b transparent;
-  }
+/* Custom Global Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: white;
+}
+
+:where(.dark, .dark *) ::-webkit-scrollbar-track {
+  background: #0f172a; /* slate-900 */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0; /* slate-200 */
+  border-radius: 10px;
+  border: 2px solid white;
+}
+
+:where(.dark, .dark *) ::-webkit-scrollbar-thumb {
+  background: #1e293b; /* slate-800 */
+  border: 2px solid #0f172a; /* slate-900 */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1; /* slate-300 */
+}
+
+:where(.dark, .dark *) ::-webkit-scrollbar-thumb:hover {
+  background: #334155; /* slate-700 */
+}
+
+/* Firefox Support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 white;
+}
+
+:where(.dark, .dark *) * {
+  scrollbar-color: #1e293b #0f172a;
 }

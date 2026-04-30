@@ -70,22 +70,22 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative bg-white w-full max-w-2xl max-h-[90vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+          className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-emerald-900 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-900/20">
+              <div className="w-12 h-12 bg-mustard-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-mustard-500/20">
                 <span className="material-symbols-outlined">assignment_ind</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-900">Nova Integração</h2>
-                <p className="text-sm text-slate-500">Registre a realização de integração para um colaborador.</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Nova Integração</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Registre a realização de integração para um colaborador.</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-full hover:bg-slate-200 flex items-center justify-center text-slate-400 transition-colors"
+              className="w-10 h-10 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 dark:text-slate-500 transition-colors"
             >
               <span className="material-symbols-outlined">close</span>
             </button>
@@ -96,9 +96,9 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Employee Selection */}
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Colaborador</label>
+                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Colaborador</label>
                 <select
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 outline-none transition-all text-sm font-medium appearance-none"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium appearance-none dark:text-white"
                   value={formData.employeeId}
                   onChange={e => setFormData({ ...formData, employeeId: e.target.value })}
                 >
@@ -111,9 +111,9 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
 
               {/* Integration Type Selection */}
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Tipo de Integração</label>
+                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Tipo de Integração</label>
                 <select
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 outline-none transition-all text-sm font-medium appearance-none"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium appearance-none dark:text-white"
                   value={formData.integrationTypeId}
                   onChange={e => setFormData({ ...formData, integrationTypeId: e.target.value })}
                 >
@@ -126,9 +126,9 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
 
               {/* Client Selection */}
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Cliente / Empresa</label>
+                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Cliente / Empresa</label>
                 <select
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 outline-none transition-all text-sm font-medium appearance-none"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium appearance-none dark:text-white"
                   value={formData.clientId}
                   onChange={e => setFormData({ ...formData, clientId: e.target.value })}
                 >
@@ -141,11 +141,11 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
 
               {/* Location */}
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Local / Obra</label>
+                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Local / Obra</label>
                 <input
                   type="text"
                   placeholder="Ex: Refinaria Replan, Obra 02"
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 outline-none transition-all text-sm font-medium"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium dark:text-white"
                   value={formData.location}
                   onChange={e => setFormData({ ...formData, location: e.target.value })}
                 />
@@ -153,10 +153,10 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
 
               {/* Integration Date */}
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Data da Integração</label>
+                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Data da Integração</label>
                 <input
                   type="date"
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 outline-none transition-all text-sm font-medium"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium dark:text-white"
                   value={formData.completionDate}
                   onChange={e => setFormData({ ...formData, completionDate: e.target.value })}
                 />
@@ -164,9 +164,9 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
 
               {/* Status */}
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Status</label>
                 <select
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 outline-none transition-all text-sm font-medium appearance-none"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium appearance-none dark:text-white"
                   value={formData.status}
                   onChange={e => setFormData({ ...formData, status: e.target.value })}
                 >
@@ -178,15 +178,15 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
 
               {/* Expiry Date */}
               <div className="md:col-span-2 space-y-2">
-                <label className={`text-xs font-black uppercase tracking-widest ml-1 ${selectedType?.requiresExpiry ? 'text-amber-600' : 'text-slate-400'}`}>
+                <label className={`text-xs font-black uppercase tracking-widest ml-1 ${selectedType?.requiresExpiry ? 'text-amber-600 dark:text-amber-500' : 'text-slate-400 dark:text-slate-500'}`}>
                   Data de Vencimento {selectedType?.requiresExpiry ? '*' : '(Se aplicável)'}
                 </label>
                 <input
                   type="date"
-                  className={`w-full px-5 py-4 border rounded-2xl outline-none transition-all text-sm font-medium ${
+                  className={`w-full px-5 py-4 border rounded-2xl outline-none transition-all text-sm font-medium dark:text-white ${
                     selectedType?.requiresExpiry 
-                      ? 'bg-amber-50 border-amber-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500' 
-                      : 'bg-slate-50 border-slate-200 focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 opacity-60'
+                      ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500' 
+                      : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 opacity-60'
                   }`}
                   value={formData.expiryDate}
                   onChange={e => setFormData({ ...formData, expiryDate: e.target.value })}
@@ -197,11 +197,11 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
 
             {/* Certificate Upload Area */}
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Certificado / Crachá (PDF, Imagem)</label>
+              <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Certificado / Crachá (PDF, Imagem)</label>
               <div 
                 onClick={() => fileInputRef.current?.click()}
                 className={`w-full border-2 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all ${
-                  selectedFile ? 'border-emerald-500 bg-emerald-50/50' : 'border-slate-200 bg-slate-50 hover:border-emerald-900'
+                  selectedFile ? 'border-mustard-500 bg-mustard-50/50 dark:bg-mustard-500/10' : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 hover:border-mustard-500'
                 }`}
               >
                 <input 
@@ -211,23 +211,23 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
                   accept=".pdf,image/*"
                   onChange={handleFileSelect}
                 />
-                <span className={`material-symbols-outlined text-3xl mb-2 ${selectedFile ? 'text-emerald-600' : 'text-slate-400'}`}>
+                <span className={`material-symbols-outlined text-3xl mb-2 ${selectedFile ? 'text-mustard-600 dark:text-mustard-400' : 'text-slate-400 dark:text-slate-500'}`}>
                   {selectedFile ? 'verified' : 'upload_file'}
                 </span>
-                <p className="text-sm font-bold text-slate-700">
+                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
                   {selectedFile ? selectedFile.name : 'Anexar comprovante de integração'}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">Formatos aceitos: PDF, JPG, PNG</p>
+                <p className="text-xs text-slate-500 dark:text-slate-500 mt-1">Formatos aceitos: PDF, JPG, PNG</p>
               </div>
             </div>
 
             {/* Notes */}
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Observações</label>
+              <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Observações</label>
               <textarea
                 rows={2}
                 placeholder="Informações adicionais importantes..."
-                className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-emerald-900/20 focus:border-emerald-900 outline-none transition-all text-sm font-medium resize-none"
+                className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium resize-none dark:text-white"
                 value={formData.notes}
                 onChange={e => setFormData({ ...formData, notes: e.target.value })}
               />
@@ -235,15 +235,15 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
           </div>
 
           {/* Footer */}
-          <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex items-center justify-end gap-4">
+          <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-4">
             <button
               onClick={onClose}
-              className="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-700 uppercase tracking-widest transition-colors"
+              className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
             >
               Cancelar
             </button>
             <button
-              className="px-8 py-3 bg-emerald-900 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-emerald-800 transition-all shadow-lg shadow-emerald-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={!formData.employeeId || !formData.integrationTypeId || !formData.completionDate}
             >
               Salvar Registro
