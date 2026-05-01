@@ -242,7 +242,7 @@ const Rentals: React.FC = () => {
                     <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <div className="w-8 h-8 border-4 border-mustard-500/20 border-t-mustard-500 rounded-full animate-spin" />
-                        <p className="text-slate-400 text-sm font-medium mt-4">Carregando locações...</p>
+                        <p className="text-slate-400 text-sm font-medium mt-4">Carregando novidade...</p>
                       </div>
                     </td>
                   </motion.tr>

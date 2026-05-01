@@ -59,7 +59,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400 gap-4">
         <div className="w-12 h-12 border-4 border-mustard-500/10 border-t-mustard-500 rounded-full animate-spin" />
-        <p className="font-bold text-xs uppercase tracking-widest">Carregando indicadores...</p>
+        <p className="font-bold text-xs uppercase tracking-widest">Carregando novidade...</p>
       </div>
     );
   }
@@ -252,10 +252,10 @@ const Dashboard: React.FC = () => {
                     <td className="px-6 py-5">
                       <div className="flex justify-center">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${invoice.billing_status === 'Faturado' || invoice.billing_status === 'Emitida'
-                            ? 'bg-mustard-50 dark:bg-mustard-500/10 text-mustard-700 dark:text-mustard-400'
-                            : invoice.billing_status === 'Cancelada'
-                              ? 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400'
-                              : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                          ? 'bg-mustard-50 dark:bg-mustard-500/10 text-mustard-700 dark:text-mustard-400'
+                          : invoice.billing_status === 'Cancelada'
+                            ? 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400'
+                            : 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'
                           }`}>
                           <span className="material-symbols-outlined text-[14px]">
                             {invoice.billing_status === 'Faturado' || invoice.billing_status === 'Emitida' ? 'check_circle' : invoice.billing_status === 'Cancelada' ? 'cancel' : 'schedule'}
