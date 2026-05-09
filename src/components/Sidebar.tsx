@@ -10,11 +10,17 @@ function cn(...inputs: ClassValue[]) {
 import { motion } from 'framer-motion';
 import { navItems } from '../constants/navigation';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
 import logoLight from '../assets/logo-completo.png';
 import logoDark from '../../config_files/logo-completo-dark.png';
 
 const Sidebar: React.FC = () => {
   const { theme } = useTheme();
+  const { profile } = useAuth();
+
+  const filteredNavItems = navItems.filter(item => 
+    !item.allowedRoles || (profile && item.allowedRoles.includes(profile.access_level))
+  );
 
   return (
     <motion.nav
@@ -34,7 +40,7 @@ const Sidebar: React.FC = () => {
       </div>
 
       <div className="flex-1 flex flex-col gap-1 overflow-y-auto">
-        {navItems.map((item, index) => (
+        {filteredNavItems.map((item, index) => (
           <motion.div
             key={item.path}
             initial={{ x: -10, opacity: 0 }}

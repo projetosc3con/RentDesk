@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
 import type { Client } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 const Clients: React.FC = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -184,13 +186,15 @@ const Clients: React.FC = () => {
             )}
           </button>
 
-          <button
-            onClick={() => navigate('/clientes/novo')}
-            className="flex items-center gap-2 bg-mustard-500 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-mustard-500/20 hover:bg-mustard-600 active:scale-95 transition-all font-bold text-xs uppercase tracking-widest"
-          >
-            <span className="material-symbols-outlined text-[18px]">person_add</span>
-            Novo Cliente
-          </button>
+          {profile?.access_level !== 'Comercial' && (
+            <button
+              onClick={() => navigate('/clientes/novo')}
+              className="flex items-center gap-2 bg-mustard-500 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-mustard-500/20 hover:bg-mustard-600 active:scale-95 transition-all font-bold text-xs uppercase tracking-widest"
+            >
+              <span className="material-symbols-outlined text-[18px]">person_add</span>
+              Novo Cliente
+            </button>
+          )}
         </motion.div>
       </div>
 

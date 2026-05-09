@@ -25,6 +25,14 @@ import {
   IntegrationsTab,
   TrainingsTab
 } from './pages/HR/tabs';
+import CRM from './pages/CRM/CRM';
+import {
+  PipelineTab,
+  LeadsTab,
+  ContactsTab,
+  TasksTab,
+  SettingsTab
+} from './pages/CRM/tabs';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -67,33 +75,62 @@ function App() {
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route element={<PasswordGuard><AppLayout /></PasswordGuard>}>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/locacoes" element={<Rentals />} />
-                <Route path="/locacoes/novo" element={<RentalForm />} />
-                <Route path="/locacoes/editar/:id" element={<RentalEdit />} />
-                <Route path="/equipamentos" element={<Inventory />} />
-                <Route path="/equipamentos/novo" element={<EquipmentForm />} />
-                <Route path="/equipamentos/editar/:id" element={<EquipmentEdit />} />
-                <Route path="/clientes" element={<Clients />} />
-                <Route path="/clientes/novo" element={<ClientForm />} />
-                <Route path="/clientes/:id" element={<ClientForm />} />
-                <Route path="/pecas" element={<Parts />} />
-                <Route path="/pecas/novo" element={<PartForm />} />
-                <Route path="/manutencoes" element={<Maintenance />} />
-                <Route path="/manutencoes/nova" element={<MaintenanceForm />} />
-                <Route path="/manutencoes/editar/:id" element={<MaintenanceForm />} />
-                <Route path="/usuarios" element={<Users />} />
-                <Route path="/usuarios/novo" element={<UserForm />} />
-                <Route path="/perfil" element={<Profile />} />
-                <Route path="/financeiro" element={<Placeholder title="Financeiro" />} />
-                <Route path="/rh" element={<HR />}>
-                  <Route index element={<Navigate to="cargos" replace />} />
-                  <Route path="cargos" element={<PositionsTab />} />
-                  <Route path="documentacao" element={<DocumentsTab />} />
-                  <Route path="integracoes" element={<IntegrationsTab />} />
-                  <Route path="treinamentos" element={<TrainingsTab />} />
+                
+                {/* Routes accessible by all allowed roles (except Financeiro and Usuário) */}
+                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Diretoria', 'Gerente', 'Comercial', 'Manutenção', 'Recursos Humanos']} />}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/perfil" element={<Profile />} />
                 </Route>
-                <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
+
+                {/* FULL ACCESS ONLY: Locações, Equipamentos, Usuários, Financeiro, Configurações */}
+                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Diretoria', 'Gerente']} />}>
+                  <Route path="/locacoes" element={<Rentals />} />
+                  <Route path="/locacoes/novo" element={<RentalForm />} />
+                  <Route path="/locacoes/editar/:id" element={<RentalEdit />} />
+                  <Route path="/equipamentos" element={<Inventory />} />
+                  <Route path="/equipamentos/novo" element={<EquipmentForm />} />
+                  <Route path="/equipamentos/editar/:id" element={<EquipmentEdit />} />
+                  <Route path="/usuarios" element={<Users />} />
+                  <Route path="/usuarios/novo" element={<UserForm />} />
+                  <Route path="/financeiro" element={<Placeholder title="Financeiro" />} />
+                  <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
+                  <Route path="/clientes/novo" element={<ClientForm />} />
+                </Route>
+
+                {/* COMERCIAL ACCESS: CRM and Clientes */}
+                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Diretoria', 'Gerente', 'Comercial']} />}>
+                  <Route path="/clientes" element={<Clients />} />
+                  <Route path="/clientes/:id" element={<ClientForm />} />
+                  <Route path="/crm" element={<CRM />}>
+                    <Route index element={<Navigate to="pipeline" replace />} />
+                    <Route path="pipeline" element={<PipelineTab />} />
+                    <Route path="leads" element={<LeadsTab />} />
+                    <Route path="contatos" element={<ContactsTab />} />
+                    <Route path="tarefas" element={<TasksTab />} />
+                    <Route path="configuracoes" element={<SettingsTab />} />
+                  </Route>
+                </Route>
+
+                {/* MAINTENANCE ACCESS: Peças and Manutenções */}
+                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Diretoria', 'Gerente', 'Manutenção']} />}>
+                  <Route path="/pecas" element={<Parts />} />
+                  <Route path="/pecas/novo" element={<PartForm />} />
+                  <Route path="/manutencoes" element={<Maintenance />} />
+                  <Route path="/manutencoes/nova" element={<MaintenanceForm />} />
+                  <Route path="/manutencoes/editar/:id" element={<MaintenanceForm />} />
+                </Route>
+
+                {/* RH ACCESS: RH Module */}
+                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Diretoria', 'Gerente', 'Recursos Humanos']} />}>
+                  <Route path="/rh" element={<HR />}>
+                    <Route index element={<Navigate to="cargos" replace />} />
+                    <Route path="cargos" element={<PositionsTab />} />
+                    <Route path="documentacao" element={<DocumentsTab />} />
+                    <Route path="integracoes" element={<IntegrationsTab />} />
+                    <Route path="treinamentos" element={<TrainingsTab />} />
+                  </Route>
+                </Route>
+
               </Route>
             </Route>
 
