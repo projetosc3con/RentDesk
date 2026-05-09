@@ -163,7 +163,7 @@ const UserForm: React.FC = () => {
                   onChange={handleChange}
                   className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm appearance-none cursor-pointer"
                 >
-                  <option value="Admin">Admin</option>
+                  <option value="Administrador">Administrador</option>
                   <option value="Diretoria">Diretoria</option>
                   <option value="Gerente">Gerente</option>
                   <option value="Comercial">Comercial</option>

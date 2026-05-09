@@ -33,14 +33,14 @@ function SearchableSelect<T extends { id: string }>({
   const filteredItems = useMemo(() => {
     if (!searchTerm) return items;
     const lowerSearch = searchTerm.toLowerCase();
-    return items.filter(item => 
+    return items.filter(item =>
       getSearchValue(item).toLowerCase().includes(lowerSearch)
     );
   }, [items, searchTerm, getSearchValue]);
 
-  const selectedItem = useMemo(() => 
+  const selectedItem = useMemo(() =>
     items.find(i => i.id === selectedId),
-  [items, selectedId]);
+    [items, selectedId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -55,7 +55,7 @@ function SearchableSelect<T extends { id: string }>({
   return (
     <div className="space-y-1.5 relative" ref={containerRef}>
       <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">{label} {required && '*'}</label>
-      <div 
+      <div
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-mustard-500 ring-2 ring-mustard-500/10 bg-white dark:bg-slate-900' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}
       >
@@ -67,7 +67,7 @@ function SearchableSelect<T extends { id: string }>({
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -76,9 +76,9 @@ function SearchableSelect<T extends { id: string }>({
             <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
-                <input 
+                <input
                   autoFocus
-                  type="text" 
+                  type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Pesquisar..."
@@ -89,7 +89,7 @@ function SearchableSelect<T extends { id: string }>({
             <div className="max-h-60 overflow-y-auto">
               {filteredItems.length > 0 ? (
                 filteredItems.map(item => (
-                  <div 
+                  <div
                     key={item.id}
                     onClick={() => {
                       onSelect(item.id);
@@ -162,11 +162,11 @@ const MaintenanceForm: React.FC = () => {
           api.get('/users'),
           api.get('/parts')
         ]);
-        
+
         setEquipments(eqRes.data);
         // Filter users that are technicians or admins
-        setTechnicians(techRes.data.filter((u: UserProfile) => 
-          u.access_level === 'Manutenção' || u.access_level === 'Admin' || u.access_level === 'Diretoria'
+        setTechnicians(techRes.data.filter((u: UserProfile) =>
+          u.access_level === 'Manutenção' || u.access_level === 'Administrador' || u.access_level === 'Diretoria'
         ));
         setAllParts(partsRes.data);
 
@@ -176,7 +176,7 @@ const MaintenanceForm: React.FC = () => {
             ...data,
             execution_date: data.execution_date ? new Date(data.execution_date).toISOString().split('T')[0] : ''
           });
-          
+
           if (data.parts) {
             setPartsUsed(data.parts.map((p: any) => ({
               part_id: p.part_id,
@@ -209,13 +209,13 @@ const MaintenanceForm: React.FC = () => {
 
   const filteredParts = useMemo(() => {
     const q = partSearch.toLowerCase();
-    const items = !partSearch 
-      ? allParts 
-      : allParts.filter(p => 
-          p.description.toLowerCase().includes(q) || 
-          p.internal_code.toLowerCase().includes(q) ||
-          p.part_number?.toLowerCase().includes(q)
-        );
+    const items = !partSearch
+      ? allParts
+      : allParts.filter(p =>
+        p.description.toLowerCase().includes(q) ||
+        p.internal_code.toLowerCase().includes(q) ||
+        p.part_number?.toLowerCase().includes(q)
+      );
     return items.slice(0, 10);
   }, [allParts, partSearch]);
 
@@ -233,8 +233,8 @@ const MaintenanceForm: React.FC = () => {
   const handleAddPart = (part: Part) => {
     const existing = partsUsed.find(p => p.part_id === part.id);
     if (existing) {
-      setPartsUsed(prev => prev.map(p => 
-        p.part_id === part.id 
+      setPartsUsed(prev => prev.map(p =>
+        p.part_id === part.id
           ? { ...p, quantity_used: p.quantity_used + 1, subtotal: (p.quantity_used + 1) * p.unit_value_at_use }
           : p
       ));
@@ -258,8 +258,8 @@ const MaintenanceForm: React.FC = () => {
 
   const handleUpdatePartQuantity = (partId: string, qty: number) => {
     if (qty < 1) return;
-    setPartsUsed(prev => prev.map(p => 
-      p.part_id === partId 
+    setPartsUsed(prev => prev.map(p =>
+      p.part_id === partId
         ? { ...p, quantity_used: qty, subtotal: qty * p.unit_value_at_use }
         : p
     ));
@@ -312,7 +312,7 @@ const MaintenanceForm: React.FC = () => {
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="max-w-5xl mx-auto space-y-8 pb-20"
@@ -423,7 +423,7 @@ const MaintenanceForm: React.FC = () => {
                     <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-500 text-xl">construction</span>
                     Equipamento & Local
                   </h3>
-                  
+
                   <SearchableSelect
                     label="Equipamento"
                     placeholder="Selecione o equipamento"
@@ -537,7 +537,7 @@ const MaintenanceForm: React.FC = () => {
 
                 <AnimatePresence>
                   {showPartResults && filteredParts.length > 0 && (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -565,11 +565,11 @@ const MaintenanceForm: React.FC = () => {
               <div className="grid grid-cols-1 gap-3">
                 {partsUsed.length > 0 ? (
                   partsUsed.map(part => (
-                    <motion.div 
+                    <motion.div
                       layout
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      key={part.part_id} 
+                      key={part.part_id}
                       className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 group hover:border-mustard-200 dark:hover:border-mustard-500/30 transition-all"
                     >
                       <div className="flex-1">
@@ -578,20 +578,20 @@ const MaintenanceForm: React.FC = () => {
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-6">
                         <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden h-10 shadow-sm">
-                          <button 
+                          <button
                             type="button"
                             onClick={() => handleUpdatePartQuantity(part.part_id, part.quantity_used - 1)}
                             className="px-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-400"
                           >
                             <span className="material-symbols-outlined text-[18px]">remove</span>
                           </button>
-                          <input 
+                          <input
                             type="number"
                             value={part.quantity_used}
                             onChange={(e) => handleUpdatePartQuantity(part.part_id, parseInt(e.target.value) || 0)}
                             className="w-12 text-center text-sm font-black text-slate-700 dark:text-slate-300 bg-transparent outline-none"
                           />
-                          <button 
+                          <button
                             type="button"
                             onClick={() => handleUpdatePartQuantity(part.part_id, part.quantity_used + 1)}
                             className="px-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-400"
@@ -603,7 +603,7 @@ const MaintenanceForm: React.FC = () => {
                           <p className="text-sm font-black text-slate-900 dark:text-white">{part.subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                           <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium whitespace-nowrap">Un: {part.unit_value_at_use.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                         </div>
-                        <button 
+                        <button
                           type="button"
                           onClick={() => handleRemovePart(part.part_id)}
                           className="p-2.5 bg-white dark:bg-slate-900 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all shadow-sm border border-slate-100 dark:border-slate-800"

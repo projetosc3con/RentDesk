@@ -71,7 +71,7 @@ const Users: React.FC = () => {
             <div className="relative">
               <select className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-mustard-500 focus:ring-2 focus:ring-mustard-500/10 focus:outline-none transition-all text-sm font-medium appearance-none cursor-pointer">
                 <option value="">Todos os Níveis</option>
-                <option value="Admin">Admin</option>
+                <option value="Administrador">Administrador</option>
                 <option value="Gerente">Gerente</option>
                 <option value="Operacional">Operacional</option>
                 <option value="Técnico">Técnico</option>
@@ -168,7 +168,7 @@ const Users: React.FC = () => {
                       <div className="text-sm text-slate-700 dark:text-slate-300 font-medium">{user.role_title}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wider uppercase border ${user.access_level === 'Admin' ? 'bg-mustard-50 dark:bg-mustard-500/10 text-mustard-700 dark:text-mustard-400 border-mustard-100 dark:border-mustard-500/20' :
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold tracking-wider uppercase border ${user.access_level === 'Administrador' ? 'bg-mustard-50 dark:bg-mustard-500/10 text-mustard-700 dark:text-mustard-400 border-mustard-100 dark:border-mustard-500/20' :
                         user.access_level === 'Diretoria' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-500/20' :
                           user.access_level === 'Manutenção' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-500/20' :
                             'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'

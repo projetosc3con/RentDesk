@@ -18,7 +18,7 @@ const Sidebar: React.FC = () => {
   const { theme } = useTheme();
   const { profile } = useAuth();
 
-  const filteredNavItems = navItems.filter(item => 
+  const filteredNavItems = navItems.filter(item =>
     !item.allowedRoles || (profile && item.allowedRoles.includes(profile.access_level))
   );
 
@@ -31,14 +31,13 @@ const Sidebar: React.FC = () => {
     >
       <div className="mb-8 px-4 flex items-center justify-center flex-col mt-4">
         <div className="w-full px-4 mb-2">
-          <img 
-            src={theme === 'dark' ? logoDark : logoLight} 
-            alt="C3LOC Logo" 
-            className="w-full h-auto object-contain transition-opacity duration-300" 
+          <img
+            src={theme === 'dark' ? logoDark : logoLight}
+            alt="C3LOC Logo"
+            className="w-full h-auto object-contain transition-opacity duration-300"
           />
         </div>
       </div>
-
       <div className="flex-1 flex flex-col gap-1 overflow-y-auto">
         {filteredNavItems.map((item, index) => (
           <motion.div

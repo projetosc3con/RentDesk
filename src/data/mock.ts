@@ -167,7 +167,7 @@ export const mockUsers: UserProfile[] = [
     address_state: 'SP',
     address_zip: '01310-100',
     role_title: 'Administrador Geral',
-    access_level: 'Admin',
+    access_level: 'Administrador',
     active: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

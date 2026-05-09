@@ -7,10 +7,10 @@ interface PositionHistoryModalProps {
 }
 
 const MOCK_HISTORY = [
-  { id: '1', employee: 'João Silva', oldPos: 'Técnico I', newPos: 'Técnico II', date: '15/04/2026', type: 'Promoção', author: 'Admin' },
-  { id: '2', employee: 'Maria Santos', oldPos: 'Estagiária', newPos: 'Assistente', date: '01/04/2026', type: 'Efetivação', author: 'Admin' },
-  { id: '3', employee: 'Pedro Oliveira', oldPos: 'Analista Jr', newPos: 'Analista Pl', date: '20/03/2026', type: 'Promoção', author: 'Sist.' },
-  { id: '4', employee: 'Ana Costa', oldPos: 'Vendedora', newPos: 'Sup. Vendas', date: '10/03/2026', type: 'Promoção', author: 'Admin' },
+  { id: '1', employee: 'João Silva', oldPos: 'Técnico I', newPos: 'Técnico II', date: '15/04/2026', type: 'Promoção', author: 'Administrador' },
+  { id: '2', employee: 'Maria Santos', oldPos: 'Estagiária', newPos: 'Assistente', date: '01/04/2026', type: 'Efetivação', author: 'Administrador' },
+  { id: '3', employee: 'Pedro Alves', oldPos: 'Analista Pl', newPos: 'Analista Sr', date: '20/03/2026', type: 'Reclassificação', author: 'RH_Sistema' },
+  { id: '4', employee: 'Ana Costa', oldPos: 'Vendedora', newPos: 'Sup. Vendas', date: '10/03/2026', type: 'Promoção', author: 'Administrador' },
 ];
 
 const PositionHistoryModal: React.FC<PositionHistoryModalProps> = ({ isOpen, onClose }) => {

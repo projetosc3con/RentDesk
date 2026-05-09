@@ -75,15 +75,15 @@ function App() {
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route element={<PasswordGuard><AppLayout /></PasswordGuard>}>
-                
+
                 {/* Routes accessible by all allowed roles (except Financeiro and Usuário) */}
-                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Diretoria', 'Gerente', 'Comercial', 'Manutenção', 'Recursos Humanos']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Diretoria', 'Gerente', 'Comercial', 'Manutenção', 'Recursos Humanos']} />}>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/perfil" element={<Profile />} />
                 </Route>
 
                 {/* FULL ACCESS ONLY: Locações, Equipamentos, Usuários, Financeiro, Configurações */}
-                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Diretoria', 'Gerente']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Diretoria', 'Gerente']} />}>
                   <Route path="/locacoes" element={<Rentals />} />
                   <Route path="/locacoes/novo" element={<RentalForm />} />
                   <Route path="/locacoes/editar/:id" element={<RentalEdit />} />
@@ -98,7 +98,7 @@ function App() {
                 </Route>
 
                 {/* COMERCIAL ACCESS: CRM and Clientes */}
-                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Diretoria', 'Gerente', 'Comercial']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Diretoria', 'Gerente', 'Comercial']} />}>
                   <Route path="/clientes" element={<Clients />} />
                   <Route path="/clientes/:id" element={<ClientForm />} />
                   <Route path="/crm" element={<CRM />}>
@@ -112,7 +112,7 @@ function App() {
                 </Route>
 
                 {/* MAINTENANCE ACCESS: Peças and Manutenções */}
-                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Diretoria', 'Gerente', 'Manutenção']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Diretoria', 'Gerente', 'Manutenção']} />}>
                   <Route path="/pecas" element={<Parts />} />
                   <Route path="/pecas/novo" element={<PartForm />} />
                   <Route path="/manutencoes" element={<Maintenance />} />
@@ -121,7 +121,7 @@ function App() {
                 </Route>
 
                 {/* RH ACCESS: RH Module */}
-                <Route element={<ProtectedRoute allowedRoles={['Admin', 'Diretoria', 'Gerente', 'Recursos Humanos']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Diretoria', 'Gerente', 'Recursos Humanos']} />}>
                   <Route path="/rh" element={<HR />}>
                     <Route index element={<Navigate to="cargos" replace />} />
                     <Route path="cargos" element={<PositionsTab />} />

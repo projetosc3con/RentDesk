@@ -1,0 +1,380 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { crmService, type CRMPipelineStage } from '../../services/crm';
+import api from '../../services/api';
+
+interface EditDealModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  deal: any;
+  stages: CRMPipelineStage[];
+}
+
+const EditDealModal: React.FC<EditDealModalProps> = ({ isOpen, onClose, onSuccess, deal, stages }) => {
+  const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const [linkType, setLinkType] = useState<'lead' | 'client'>('lead');
+  const [leads, setLeads] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+
+  const [formData, setFormData] = useState({
+    title: '',
+    stage_id: '',
+    lead_id: '',
+    client_id: '',
+    value: 0,
+    probability_pct: 0,
+    expected_close_date: '',
+    description: '',
+  });
+
+  const [formattedValue, setFormattedValue] = useState('');
+
+  useEffect(() => {
+    if (isOpen && deal) {
+      setFormData({
+        title: deal.title || '',
+        stage_id: deal.stage_id || '',
+        lead_id: deal.lead_id || '',
+        client_id: deal.client_id || '',
+        value: Number(deal.value) || 0,
+        probability_pct: deal.probability_pct || 0,
+        expected_close_date: deal.expected_close_date ? new Date(deal.expected_close_date).toISOString().split('T')[0] : '',
+        description: deal.description || '',
+      });
+
+      const numValue = Number(deal.value) || 0;
+      setFormattedValue(numValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
+      setLinkType(deal.client_id ? 'client' : 'lead');
+      loadLinkData();
+    }
+  }, [isOpen, deal]);
+
+  const loadLinkData = async () => {
+    try {
+      const [leadsRes, clientsRes] = await Promise.all([
+        crmService.getLeads(),
+        api.get('/clients')
+      ]);
+      setLeads(leadsRes);
+      setClients(clientsRes.data);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    }
+  };
+
+  const handleStageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newStageId = e.target.value;
+    const stage = stages.find(s => s.id === newStageId);
+    setFormData(prev => ({
+      ...prev,
+      stage_id: newStageId,
+      probability_pct: stage?.probability_pct || prev.probability_pct
+    }));
+  };
+
+  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let rawValue = e.target.value.replace(/\D/g, '');
+    if (!rawValue) rawValue = '0';
+    const numValue = Number(rawValue) / 100;
+    setFormData(prev => ({ ...prev, value: numValue }));
+    setFormattedValue(numValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title || !formData.stage_id) return;
+
+    try {
+      setLoading(true);
+      const payload = { ...formData };
+
+      if (linkType === 'lead') {
+        payload.client_id = null as any;
+      } else {
+        payload.lead_id = null as any;
+      }
+
+      if (!payload.expected_close_date) {
+        (payload as any).expected_close_date = null;
+      }
+
+      await crmService.updateDeal(deal.id, payload);
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Erro ao atualizar deal:', error);
+      alert('Erro ao atualizar negociação.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      setDeleteLoading(true);
+      await crmService.deleteDeal(deal.id);
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Erro ao excluir deal:', error);
+      alert('Erro ao excluir negociação.');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        />
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 sm:p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-mustard-50 dark:bg-mustard-500/10 rounded-2xl flex items-center justify-center text-mustard-600 dark:text-mustard-400">
+                <span className="material-symbols-outlined text-2xl">edit_note</span>
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-slate-900 dark:text-white">Editar Negociação</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Atualize os detalhes desta oportunidade.</p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white flex items-center justify-center transition-colors"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
+
+          {/* Form */}
+          <form id="edit-deal-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+
+            {/* Vinculação */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-mustard-500">link</span>
+                Vinculação do Negócio
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Vincular a</label>
+                  <select
+                    value={linkType}
+                    onChange={(e) => {
+                      setLinkType(e.target.value as 'lead' | 'client');
+                      setFormData(prev => ({ ...prev, lead_id: '', client_id: '' }));
+                    }}
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-mustard-500/20 outline-none transition-all dark:text-white"
+                  >
+                    <option value="lead">Lead (Prospecção)</option>
+                    <option value="client">Cliente Base</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">
+                    {linkType === 'lead' ? 'Selecione o Lead *' : 'Selecione o Cliente *'}
+                  </label>
+                  <select
+                    value={linkType === 'lead' ? formData.lead_id : formData.client_id}
+                    onChange={(e) => {
+                      if (linkType === 'lead') setFormData(prev => ({ ...prev, lead_id: e.target.value, client_id: '' }));
+                      else setFormData(prev => ({ ...prev, client_id: e.target.value, lead_id: '' }));
+                    }}
+                    required
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-mustard-500/20 outline-none transition-all dark:text-white"
+                  >
+                    <option value="">Selecione...</option>
+                    {linkType === 'lead'
+                      ? leads.map(l => <option key={l.id} value={l.id}>{l.company_name}</option>)
+                      : clients.map(c => <option key={c.id} value={c.id}>{c.company_name}</option>)
+                    }
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-slate-100 dark:border-slate-800" />
+
+            {/* Dados Principais */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-mustard-500">request_quote</span>
+                Detalhes do Negócio
+              </h3>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Título da Oportunidade *</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-mustard-500/20 outline-none transition-all dark:text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Etapa (Pipeline) *</label>
+                  <select
+                    value={formData.stage_id}
+                    onChange={handleStageChange}
+                    required
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-mustard-500/20 outline-none transition-all dark:text-white"
+                  >
+                    {stages.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.probability_pct}%)</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Probabilidade (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.probability_pct}
+                    onChange={(e) => setFormData(prev => ({ ...prev, probability_pct: Number(e.target.value) }))}
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-mustard-500/20 outline-none transition-all dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Valor Estimado</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">R$</span>
+                    <input
+                      type="text"
+                      value={formattedValue}
+                      onChange={handleValueChange}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-mustard-500/20 outline-none transition-all dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Fechamento Previsto</label>
+                  <input
+                    type="date"
+                    value={formData.expected_close_date}
+                    onChange={(e) => setFormData(prev => ({ ...prev, expected_close_date: e.target.value }))}
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-mustard-500/20 outline-none transition-all dark:text-white [color-scheme:light] dark:[color-scheme:dark]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 uppercase tracking-wider">Descrição / Observações</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-mustard-500/20 outline-none transition-all resize-none dark:text-white"
+                />
+              </div>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+              <div className="bg-red-50 dark:bg-red-500/5 rounded-2xl p-6 border border-red-100 dark:border-red-500/20">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="material-symbols-outlined text-red-500">warning</span>
+                  <h4 className="text-sm font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">Zona de Perigo</h4>
+                </div>
+
+                {showDeleteConfirm ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-red-600 dark:text-red-400">
+                      Tem certeza que deseja excluir esta negociação? Esta ação não pode ser desfeita.
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="px-4 py-2 bg-white dark:bg-slate-800 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-bold hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDelete}
+                        disabled={deleteLoading}
+                        className="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-colors flex items-center gap-2"
+                      >
+                        {deleteLoading ? 'Excluindo...' : 'Sim, Excluir'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="flex items-center gap-2 text-red-500 hover:text-red-600 font-bold text-xs transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">delete</span>
+                    Excluir Negociação
+                  </button>
+                )}
+              </div>
+            </div>
+          </form>
+
+          {/* Footer */}
+          <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50/50 dark:bg-slate-800/50">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              form="edit-deal-form"
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2.5 rounded-xl text-sm font-bold bg-mustard-500 hover:bg-mustard-600 text-white shadow-lg shadow-mustard-500/20 transition-all disabled:opacity-50 flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-[18px]">save</span>
+                  Salvar Alterações
+                </>
+              )}
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+};
+
+export default EditDealModal;
