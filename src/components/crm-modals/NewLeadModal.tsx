@@ -75,6 +75,14 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSuccess 
     const unmasked = masked.replace(/\D/g, '');
     if (unmasked.length === 14) {
       try {
+        // Verificar duplicidade no backend primeiro
+        const checkResult = await crmService.checkCnpj(unmasked);
+        if (checkResult.exists) {
+          alert(`Atenção: Já existe um ${checkResult.type === 'lead' ? 'Lead' : 'Cliente'} cadastrado com este CNPJ (${checkResult.name}).`);
+          setFormData(prev => ({ ...prev, cnpj: '', company_name: '' }));
+          return;
+        }
+
         const response = await fetch(`https://api.opencnpj.org/${unmasked}`);
         if (!response.ok) return;
         const data = await response.json();

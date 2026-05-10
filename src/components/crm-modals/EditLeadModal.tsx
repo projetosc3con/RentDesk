@@ -90,6 +90,22 @@ const EditLeadModal: React.FC<EditLeadModalProps> = ({ isOpen, onClose, onSucces
     }
   }, [isOpen, lead]);
 
+  const handleDeleteLead = async () => {
+    if (!lead) return;
+    if (!window.confirm('Tem certeza que deseja excluir este lead permanentemente? Todos os contatos vinculados também serão removidos.')) return;
+
+    try {
+      setLoading(true);
+      await crmService.deleteLead(lead.id);
+      onSuccess();
+      onClose();
+    } catch (err) {
+      console.error('Erro ao excluir lead:', err);
+      alert('Erro ao excluir lead. Verifique se existem negociações (Deals) vinculadas.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCnpjChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const masked = maskCnpj(e.target.value);
@@ -97,6 +113,23 @@ const EditLeadModal: React.FC<EditLeadModalProps> = ({ isOpen, onClose, onSucces
 
     const unmasked = masked.replace(/\D/g, '');
     if (unmasked.length === 14) {
+      // Se for edição e o CNPJ não mudou em relação ao original, não precisa checar duplicidade
+      if (lead && lead.cnpj && lead.cnpj.replace(/\D/g, '') === unmasked) {
+        // Prossegue apenas para buscar dados novos se desejar
+      } else {
+        try {
+          // Verificar duplicidade no backend primeiro
+          const checkResult = await crmService.checkCnpj(unmasked);
+          if (checkResult.exists) {
+            alert(`Atenção: Já existe um ${checkResult.type === 'lead' ? 'Lead' : 'Cliente'} cadastrado com este CNPJ (${checkResult.name}).`);
+            setFormData(prev => ({ ...prev, cnpj: '', company_name: '' }));
+            return;
+          }
+        } catch (err) {
+          console.error('Erro ao validar CNPJ:', err);
+        }
+      }
+
       try {
         const response = await fetch(`https://api.opencnpj.org/${unmasked}`);
         if (!response.ok) return;
@@ -372,6 +405,31 @@ const EditLeadModal: React.FC<EditLeadModalProps> = ({ isOpen, onClose, onSucces
                         placeholder="Informações relevantes sobre a prospecção..."
                       />
                     </div>
+
+                    {/* Danger Zone */}
+                    {(profile?.access_level === 'Administrador' || profile?.access_level === 'Gerente') && (
+                      <div className="md:col-span-2 mt-8 pt-8 border-t border-red-100 dark:border-red-500/20">
+                        <div className="bg-red-50 dark:bg-red-500/5 rounded-3xl p-6 border border-red-100 dark:border-red-500/10">
+                          <h4 className="text-xs font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm">warning</span>
+                            Zona de Perigo
+                          </h4>
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <p className="text-[10px] text-red-800 dark:text-red-300 font-medium leading-relaxed max-w-sm">
+                              A exclusão do lead é permanente e removerá todos os contatos e históricos vinculados. Esta ação não pode ser desfeita.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={handleDeleteLead}
+                              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold uppercase tracking-widest text-[10px] rounded-2xl shadow-lg shadow-red-600/20 transition-all flex items-center justify-center gap-2"
+                            >
+                              <span className="material-symbols-outlined text-sm">delete_forever</span>
+                              Excluir Lead
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-6">

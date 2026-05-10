@@ -7,9 +7,10 @@ interface NewTaskModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialDealId?: string;
 }
 
-const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onSuccess }) => {
+const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onSuccess, initialDealId }) => {
   const [loading, setLoading] = useState(false);
   const { profile } = useAuth();
   
@@ -34,7 +35,7 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onSuccess 
         title: '',
         description: '',
         task_type_id: '',
-        deal_id: '',
+        deal_id: initialDealId || '',
         assigned_to: profile?.id || '',
         due_date: '',
         priority: 'Normal',
@@ -43,7 +44,20 @@ const NewTaskModal: React.FC<NewTaskModalProps> = ({ isOpen, onClose, onSuccess 
       });
       loadData();
     }
-  }, [isOpen, profile]);
+  }, [isOpen, profile, initialDealId]);
+
+  useEffect(() => {
+    if (isOpen && initialDealId && deals.length > 0) {
+      const deal = deals.find(d => d.id === initialDealId);
+      if (deal) {
+        setFormData(prev => ({
+          ...prev,
+          lead_id: deal.lead_id || null,
+          contact_id: deal.primary_contact_id || null
+        }));
+      }
+    }
+  }, [isOpen, initialDealId, deals]);
 
   const loadData = async () => {
     try {

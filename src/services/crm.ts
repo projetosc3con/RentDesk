@@ -11,6 +11,7 @@ import type {
 
 export type { CRMPipeline, CRMPipelineStage, CRMLead, CRMTaskType, CRMLeadSource, CRMLeadStatus, CRMDeal };
 
+// CRM Service Methods
 export const crmService = {
   // Pipelines
   getPipelines: async (): Promise<(CRMPipeline & { stages: number; activeDeals: number; stageList: CRMPipelineStage[] })[]> => {
@@ -55,6 +56,15 @@ export const crmService = {
 
   convertLead: async (id: string) => {
     const response = await api.post(`/crm/leads/${id}/convert`);
+    return response.data;
+  },
+
+  deleteLead: async (id: string) => {
+    await api.delete(`/crm/leads/${id}`);
+  },
+
+  checkCnpj: async (cnpj: string) => {
+    const response = await api.get(`/crm/leads/check-cnpj/${cnpj}`);
     return response.data;
   },
 
@@ -121,5 +131,9 @@ export const crmService = {
   updateTask: async (id: string, taskData: any): Promise<any> => {
     const response = await api.patch(`/crm/tasks/${id}`, taskData);
     return response.data;
+  },
+
+  deleteTask: async (id: string) => {
+    await api.delete(`/crm/tasks/${id}`);
   }
 };

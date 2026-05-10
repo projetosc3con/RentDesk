@@ -107,7 +107,28 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onSucces
 
   const canEdit = () => {
     if (profile?.access_level === 'Administrador' || profile?.access_level === 'Gerente') return true;
-    return task?.assigned_to === profile?.id;
+    return task?.assigned_to === profile?.id || task?.created_by === profile?.id;
+  };
+
+  const canDelete = () => {
+    if (profile?.access_level === 'Administrador' || profile?.access_level === 'Gerente') return true;
+    return task?.created_by === profile?.id;
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Tem certeza que deseja excluir esta tarefa?')) return;
+
+    try {
+      setLoading(true);
+      await crmService.deleteTask(task.id);
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Erro ao excluir tarefa:', error);
+      alert('Erro ao excluir tarefa. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen || !task) return null;
@@ -273,6 +294,17 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({ isOpen, onClose, onSucces
             >
               Fechar
             </button>
+            {canDelete() && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={loading}
+                className="px-6 py-2.5 rounded-xl text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined text-[18px]">delete</span>
+                Excluir
+              </button>
+            )}
             {canEdit() && (
               <button
                 form="edit-task-form"

@@ -30,17 +30,12 @@ const UserForm: React.FC = () => {
     setError(null);
 
     try {
-      // Agora chamamos o nosso próprio Backend Node.js
-      await api.post('/users/invite', {
-        ...formData,
-        redirectTo: window.location.origin
-      });
-
+      await api.post('/users/pre-register', formData);
       setSuccess(true);
-      setTimeout(() => navigate('/usuarios'), 5000);
+      setTimeout(() => navigate('/usuarios'), 4000);
     } catch (err: any) {
-      console.error('Error inviting user:', err);
-      setError(err.response?.data?.error || 'Ocorreu um erro ao enviar o convite.');
+      console.error('Error pre-registering user:', err);
+      setError(err.response?.data?.error || 'Ocorreu um erro ao cadastrar o colaborador.');
     } finally {
       setLoading(false);
     }
@@ -55,17 +50,17 @@ const UserForm: React.FC = () => {
           className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 flex flex-col items-center text-center max-w-sm"
         >
           <div className="w-20 h-20 bg-mustard-50 dark:bg-mustard-500/10 rounded-full flex items-center justify-center mb-6 text-mustard-600 dark:text-mustard-400">
-            <span className="material-symbols-outlined text-5xl">mail</span>
+            <span className="material-symbols-outlined text-5xl">person_add</span>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Convite Enviado!</h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Cadastro Realizado!</h2>
           <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">
-            Um e-mail de convite foi enviado para <strong className="text-slate-900 dark:text-white">{formData.email}</strong>. O usuário poderá finalizar o cadastro através do link recebido.
+            O colaborador <strong className="text-slate-900 dark:text-white">{formData.full_name}</strong> foi pré-cadastrado com sucesso. Ele poderá acessar o sistema pela tela de login utilizando o e-mail <strong className="text-slate-900 dark:text-white">{formData.email}</strong> para completar o primeiro acesso.
           </p>
           <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: '100%' }}
-              transition={{ duration: 5 }}
+              transition={{ duration: 4 }}
               className="h-full bg-mustard-500"
             />
           </div>
@@ -90,7 +85,7 @@ const UserForm: React.FC = () => {
         </button>
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Novo Colaborador</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">Convide um novo membro para a equipe do RentDesk.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">Cadastre um novo membro para a equipe.</p>
         </div>
       </div>
 
@@ -194,12 +189,12 @@ const UserForm: React.FC = () => {
             {loading ? (
               <>
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                Enviando...
+                Cadastrando...
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-[18px]">send</span>
-                Enviar Convite
+                <span className="material-symbols-outlined text-[18px]">person_add</span>
+                Cadastrar Colaborador
               </>
             )}
           </button>
@@ -211,9 +206,9 @@ const UserForm: React.FC = () => {
           <span className="material-symbols-outlined">info</span>
         </div>
         <div>
-          <h4 className="text-sm font-bold text-mustard-900 dark:text-mustard-400 uppercase tracking-widest">Como funciona o convite?</h4>
+          <h4 className="text-sm font-bold text-mustard-900 dark:text-mustard-400 uppercase tracking-widest">Como funciona o cadastro?</h4>
           <p className="text-xs text-mustard-800/70 dark:text-slate-400 mt-1 leading-relaxed">
-            Ao clicar em "Enviar Convite", o sistema enviará um e-mail para o colaborador através do nosso backend. Ele precisará clicar no link do e-mail para definir sua senha e ativar sua conta. O perfil de acesso que você definiu será aplicado automaticamente após a confirmação.
+            Ao cadastrar um novo colaborador, o sistema criará automaticamente o acesso dele no RentDesk. Nenhum e-mail será enviado. O colaborador deve acessar a tela de login, clicar em "Primeiro Acesso" e inserir o e-mail cadastrado aqui para completar seu acesso definindo uma senha.
           </p>
         </div>
       </div>

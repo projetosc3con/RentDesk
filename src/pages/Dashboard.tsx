@@ -2,8 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../services/api';
+import ComercialDashboard from './dashboards/ComercialDashboard';
 
-interface DashboardData {
+// ═══════════════════════════════════════
+// Admin Dashboard Data Interface
+// ═══════════════════════════════════════
+interface AdminDashboardData {
+  type: 'admin';
   kpis: {
     currentMonthTotal: number;
     prevMonthTotal: number;
@@ -31,8 +36,26 @@ interface DashboardData {
   }[];
 }
 
+interface ComercialDashboardData {
+  type: 'comercial';
+  tasks: any[];
+  closedDeals: {
+    totalValue: number;
+    totalCount: number;
+    userValue: number;
+    userCount: number;
+    userPercentage: number;
+  };
+  leadSources: { name: string; count: number }[];
+  activities: any[];
+}
+
+type DashboardData = AdminDashboardData | ComercialDashboardData;
+
+// ═══════════════════════════════════════
+// Main Dashboard (Router)
+// ═══════════════════════════════════════
 const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,11 +72,6 @@ const Dashboard: React.FC = () => {
     };
     fetchDashboard();
   }, []);
-
-  const maxRevenue = useMemo(() => {
-    if (!data) return 1;
-    return Math.max(...data.revenueByMonth.map(m => m.total), 1);
-  }, [data]);
 
   if (loading) {
     return (
@@ -72,7 +90,25 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  // Roteamento por tipo de dashboard
+  if (data.type === 'comercial') {
+    return <ComercialDashboard data={data as ComercialDashboardData} />;
+  }
+
+  // Dashboard Admin / Diretoria / Gerente (padrão)
+  return <AdminDashboard data={data as AdminDashboardData} />;
+};
+
+// ═══════════════════════════════════════
+// Admin Dashboard Component
+// ═══════════════════════════════════════
+const AdminDashboard: React.FC<{ data: AdminDashboardData }> = ({ data }) => {
+  const navigate = useNavigate();
   const { kpis, revenueByMonth, fleetStatus, recentInvoices } = data;
+
+  const maxRevenue = useMemo(() => {
+    return Math.max(...revenueByMonth.map(m => m.total), 1);
+  }, [revenueByMonth]);
 
   const variationLabel = kpis.variation > 0
     ? `+${kpis.variation}% vs mês anterior`
@@ -183,7 +219,7 @@ const Dashboard: React.FC = () => {
               {/* Visual ring proportional to "Locado" */}
               {fleetStatus.total > 0 && (
                 <motion.div
-                  initial={{ rotate: 0, opacity: 0, pathLength: 0 }}
+                  initial={{ rotate: 0, opacity: 0 }}
                   animate={{ rotate: (fleetStatus.locado / fleetStatus.total) * 360, opacity: 1 }}
                   transition={{ delay: 0.6, duration: 1.5, ease: "easeInOut" }}
                   className="absolute inset-[-14px] rounded-full border-[14px] border-mustard-500 border-t-transparent border-l-transparent shadow-lg shadow-mustard-500/10"
@@ -279,6 +315,9 @@ const Dashboard: React.FC = () => {
   );
 };
 
+// ═══════════════════════════════════════
+// Shared Components
+// ═══════════════════════════════════════
 const KpiCard = ({ title, value, trend, trendPositive, icon, color, index }: any) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { crmService, type CRMPipelineStage } from '../../services/crm';
 import api from '../../services/api';
+import NewTaskModal from './NewTaskModal';
 
 interface EditDealModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ const EditDealModal: React.FC<EditDealModalProps> = ({ isOpen, onClose, onSucces
   const [loading, setLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
 
   const [linkType, setLinkType] = useState<'lead' | 'client'>('lead');
   const [leads, setLeads] = useState<any[]>([]);
@@ -347,6 +349,14 @@ const EditDealModal: React.FC<EditDealModalProps> = ({ isOpen, onClose, onSucces
           <div className="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50/50 dark:bg-slate-800/50">
             <button
               type="button"
+              onClick={() => setIsNewTaskModalOpen(true)}
+              className="mr-auto px-4 py-2.5 rounded-xl text-sm font-bold text-mustard-600 dark:text-mustard-400 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-colors flex items-center gap-2 border border-mustard-100 dark:border-mustard-500/20"
+            >
+              <span className="material-symbols-outlined text-[18px]">add_task</span>
+              Nova Tarefa
+            </button>
+            <button
+              type="button"
               onClick={onClose}
               className="px-6 py-2.5 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
@@ -373,6 +383,16 @@ const EditDealModal: React.FC<EditDealModalProps> = ({ isOpen, onClose, onSucces
           </div>
         </motion.div>
       </div>
+
+      <NewTaskModal
+        isOpen={isNewTaskModalOpen}
+        onClose={() => setIsNewTaskModalOpen(false)}
+        onSuccess={() => {
+          setIsNewTaskModalOpen(false);
+          // Opcionalmente recarregar algo, mas tarefas são independentes aqui
+        }}
+        initialDealId={deal?.id}
+      />
     </AnimatePresence>
   );
 };
