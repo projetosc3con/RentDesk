@@ -16,7 +16,7 @@ const UserForm: React.FC = () => {
     cpf: '',
     phone: '',
     role_title: '',
-    access_level: 'Visualizador' as AccessLevel,
+    access_level: 'Usuário' as AccessLevel,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

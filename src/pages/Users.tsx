@@ -72,11 +72,13 @@ const Users: React.FC = () => {
               <select className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-mustard-500 focus:ring-2 focus:ring-mustard-500/10 focus:outline-none transition-all text-sm font-medium appearance-none cursor-pointer">
                 <option value="">Todos os Níveis</option>
                 <option value="Administrador">Administrador</option>
+                <option value="Diretoria">Diretoria</option>
                 <option value="Gerente">Gerente</option>
-                <option value="Operacional">Operacional</option>
-                <option value="Técnico">Técnico</option>
+                <option value="Comercial">Comercial</option>
+                <option value="Manutenção">Manutenção</option>
                 <option value="Financeiro">Financeiro</option>
-                <option value="Visualizador">Visualizador</option>
+                <option value="Recursos Humanos">Recursos Humanos</option>
+                <option value="Usuário">Usuário</option>
               </select>
               <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-lg">expand_more</span>
             </div>
