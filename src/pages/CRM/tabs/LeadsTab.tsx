@@ -4,7 +4,6 @@ import NewLeadModal from '../../../components/crm-modals/NewLeadModal';
 import EditLeadModal from '../../../components/crm-modals/EditLeadModal';
 import ConvertLeadModal from '../../../components/crm-modals/ConvertLeadModal';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 const getStatusStyle = (status: string) => {
   switch (status) {
@@ -31,7 +30,6 @@ const getSourceIcon = (source: string) => {
 
 const LeadsTab: React.FC = () => {
   const { profile, user } = useAuth();
-  const navigate = useNavigate();
   const [leads, setLeads] = useState<(CRMLead & { owner_name?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -394,11 +392,8 @@ const LeadsTab: React.FC = () => {
       <ConvertLeadModal
         isOpen={isConvertModalOpen}
         onClose={() => { setIsConvertModalOpen(false); setSelectedLead(null); }}
-        onSuccess={(client) => {
+        onSuccess={() => {
           fetchLeads();
-          if (confirm('Lead convertido com sucesso! Deseja acessar o cadastro do cliente agora?')) {
-            navigate(`/clientes/${client.id}`);
-          }
         }}
         lead={selectedLead}
       />

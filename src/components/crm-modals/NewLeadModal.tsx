@@ -14,6 +14,26 @@ const maskCnpj = (value: string) => {
     .slice(0, 18);
 };
 
+const formatCurrency = (value: string) => {
+  if (!value) return '';
+  const digits = value.replace(/\D/g, '');
+  if (!digits) return '';
+  const number = (parseInt(digits, 10) / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return number;
+};
+
+const maskPhone = (value: string) => {
+  return value
+    .replace(/\D/g, '')
+    .replace(/(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{5})(\d)/, '$1-$2')
+    .replace(/(-\d{4})\d+?$/, '$1')
+    .slice(0, 15);
+};
+
 interface NewLeadModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,6 +54,7 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSuccess 
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<'info' | 'contacts'>('info');
+  const [formError, setFormError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     company_name: '',
@@ -71,6 +92,7 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSuccess 
   const handleCnpjChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const masked = maskCnpj(e.target.value);
     setFormData(prev => ({ ...prev, cnpj: masked }));
+    setFormError(null);
 
     const unmasked = masked.replace(/\D/g, '');
     if (unmasked.length === 14) {
@@ -78,7 +100,7 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSuccess 
         // Verificar duplicidade no backend primeiro
         const checkResult = await crmService.checkCnpj(unmasked);
         if (checkResult.exists) {
-          alert(`Atenção: Já existe um ${checkResult.type === 'lead' ? 'Lead' : 'Cliente'} cadastrado com este CNPJ (${checkResult.name}).`);
+          setFormError(`Atenção: Já existe um ${checkResult.type === 'lead' ? 'Lead' : 'Cliente'} cadastrado com este CNPJ (${checkResult.name}).`);
           setFormData(prev => ({ ...prev, cnpj: '', company_name: '' }));
           return;
         }
@@ -130,6 +152,7 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSuccess 
       }
     ]);
     setActiveTab('contacts');
+    setFormError(null);
   };
 
   const handleRemoveContact = (index: number) => {
@@ -154,15 +177,19 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSuccess 
     const validContacts = contacts.filter(c => c.full_name.trim() !== '');
     if (validContacts.length === 0) {
       setActiveTab('contacts');
-      alert('É necessário adicionar ao menos um contato para cadastrar o lead.');
+      setFormError('É necessário adicionar ao menos um contato para cadastrar o lead.');
       return;
     }
 
     setLoading(true);
     try {
+      const numericPotential = formData.estimated_potential 
+        ? parseFloat(formData.estimated_potential.replace(/\./g, '').replace(',', '.')) 
+        : 0;
+
       await crmService.createLead({
         ...formData,
-        estimated_potential: formData.estimated_potential ? parseFloat(formData.estimated_potential) : 0,
+        estimated_potential: numericPotential,
         contacts: validContacts
       });
       onSuccess();
@@ -181,7 +208,7 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSuccess 
       setActiveTab('info');
     } catch (err) {
       console.error('Erro ao criar lead:', err);
-      alert('Erro ao criar lead. Verifique os dados e tente novamente.');
+      setFormError('Erro ao criar lead. Verifique os dados e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -307,10 +334,9 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSuccess 
                       <div className="relative">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">R$</span>
                         <input
-                          type="number"
-                          step="0.01"
+                          type="text"
                           value={formData.estimated_potential}
-                          onChange={e => setFormData({ ...formData, estimated_potential: e.target.value })}
+                          onChange={e => setFormData({ ...formData, estimated_potential: formatCurrency(e.target.value) })}
                           className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 transition-all dark:text-white"
                           placeholder="0,00"
                         />
@@ -448,7 +474,7 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSuccess 
                                 <input
                                   type="text"
                                   value={contact.phone}
-                                  onChange={e => handleContactChange(index, 'phone', e.target.value)}
+                                  onChange={e => handleContactChange(index, 'phone', maskPhone(e.target.value))}
                                   className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm dark:text-white"
                                   placeholder="(00) 00000-0000"
                                 />
@@ -489,7 +515,13 @@ const NewLeadModal: React.FC<NewLeadModalProps> = ({ isOpen, onClose, onSuccess 
 
             {/* Footer */}
             <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-              {contacts.length === 0 && (
+              {formError && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400">
+                  <span className="material-symbols-outlined text-sm">error</span>
+                  <p className="text-[10px] font-bold uppercase tracking-widest">{formError}</p>
+                </div>
+              )}
+              {contacts.length === 0 && !formError && (
                 <div className="mb-4 p-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-xl flex items-center gap-2 text-red-600 dark:text-red-400">
                   <span className="material-symbols-outlined text-sm">error</span>
                   <p className="text-[10px] font-bold uppercase tracking-widest">É obrigatório adicionar ao menos um contato.</p>
