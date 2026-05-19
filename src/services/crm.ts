@@ -135,5 +135,48 @@ export const crmService = {
 
   deleteTask: async (id: string) => {
     await api.delete(`/crm/tasks/${id}`);
+  },
+
+  // Contracts
+  getContractForm: async (dealId: string) => {
+    const response = await api.get(`/crm/deals/${dealId}/contract-form`);
+    return response.data;
+  },
+
+  saveContractForm: async (dealId: string, data: any) => {
+    const response = await api.put(`/crm/deals/${dealId}/contract-form`, data);
+    return response.data;
+  },
+
+  generateContractRecord: async (dealId: string) => {
+    const response = await api.post(`/crm/deals/${dealId}/contract/generate`);
+    return response.data;
+  },
+
+  getContracts: async (dealId: string) => {
+    const response = await api.get(`/crm/deals/${dealId}/contracts`);
+    return response.data;
+  },
+
+  uploadSignedContract: async (dealId: string, contractId: string, file: File) => {
+    // We upload to storage first
+    const { supabase } = await import('../lib/supabase');
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('crm-contracts')
+      .upload(`${dealId}/${contractId}/signed.pdf`, file, { upsert: true });
+
+    if (uploadError) throw uploadError;
+
+    // Then call backend
+    const response = await api.post(`/crm/deals/${dealId}/contract/upload`, {
+      contract_id: contractId,
+      file_url: uploadData.path
+    });
+    return response.data;
+  },
+
+  deleteContract: async (dealId: string, contractId: string) => {
+    const response = await api.delete(`/crm/deals/${dealId}/contract/${contractId}`);
+    return response.data;
   }
 };

@@ -11,6 +11,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'logo.png', 'logo-new.png'],
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MiB
+      },
       manifest: {
         name: 'C3LOC ERP — Gestão de Locação',
         short_name: 'C3LOC',
