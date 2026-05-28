@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-
 export interface SearchableSelectProps<T> {
   label: string;
   placeholder: string;
