@@ -123,7 +123,6 @@ const EditDealModal: React.FC<EditDealModalProps> = ({ isOpen, onClose, onSucces
       setContractForm(form);
       const generated = await crmService.getContracts(deal.id);
       setContracts(generated);
-
     } catch (err) {
       console.error('Erro ao carregar dados do contrato:', err);
     } finally {
@@ -476,6 +475,7 @@ const EditDealModal: React.FC<EditDealModalProps> = ({ isOpen, onClose, onSucces
                                             setContractLoading(true);
                                             await crmService.uploadSignedContract(deal.id, contracts[0].id, file);
                                             await loadContractData();
+                                            onSuccess();
                                           } catch (err) {
                                             alert('Erro ao enviar contrato');
                                           } finally {

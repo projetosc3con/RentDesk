@@ -11,6 +11,8 @@ export const navItems = [
   { name: 'Contatos', path: '/crm/contatos', icon: 'contacts', allowedRoles: ['Comercial'] },
   { name: 'Tarefas', path: '/crm/tarefas', icon: 'task_alt', allowedRoles: ['Comercial'] },
 
+  { name: 'Logística', path: '/logistica', icon: 'local_shipping', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Logística'] },
+
   { name: 'Peças', path: '/pecas', icon: 'settings_input_component', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Manutenção'] },
   { name: 'Manutenções', path: '/manutencoes', icon: 'build', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Manutenção'] },
   { name: 'Usuários', path: '/usuarios', icon: 'manage_accounts', allowedRoles: ['Administrador', 'Diretoria', 'Gerente'] },

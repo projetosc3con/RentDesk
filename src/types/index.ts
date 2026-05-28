@@ -123,7 +123,7 @@ export interface Client {
   updated_at: string;
 }
 
-export type AccessLevel = 'Administrador' | 'Diretoria' | 'Gerente' | 'Comercial' | 'Manutenção' | 'Financeiro' | 'Recursos Humanos' | 'Usuário';
+export type AccessLevel = 'Administrador' | 'Diretoria' | 'Gerente' | 'Comercial' | 'Logística' | 'Manutenção' | 'Financeiro' | 'Recursos Humanos' | 'Usuário';
 
 export interface UserProfile {
   id: string;

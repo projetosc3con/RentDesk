@@ -18,6 +18,8 @@ import Parts from './pages/Parts';
 import PartForm from './pages/PartForm';
 import MaintenanceForm from './pages/MaintenanceForm';
 import Maintenance from './pages/Maintenance';
+import Logistics from './pages/Logistics';
+import LogisticsTriagem from './pages/LogisticsTriagem';
 import HR from './pages/HR/HR';
 import {
   PositionsTab,
@@ -77,7 +79,7 @@ function App() {
               <Route element={<PasswordGuard><AppLayout /></PasswordGuard>}>
 
                 {/* Routes accessible by all allowed roles (except Financeiro and Usuário) */}
-                <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Diretoria', 'Gerente', 'Comercial', 'Manutenção', 'Recursos Humanos']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Diretoria', 'Gerente', 'Comercial', 'Manutenção', 'Recursos Humanos', 'Logística']} />}>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/perfil" element={<Profile />} />
                 </Route>
@@ -129,6 +131,11 @@ function App() {
                     <Route path="integracoes" element={<IntegrationsTab />} />
                     <Route path="treinamentos" element={<TrainingsTab />} />
                   </Route>
+                </Route>
+
+                <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Diretoria', 'Gerente', 'Logística']} />}>
+                  <Route path="/logistica" element={<Logistics />} />
+                  <Route path="/logistica/triagem/:id" element={<LogisticsTriagem />} />
                 </Route>
 
               </Route>

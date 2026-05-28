@@ -162,6 +162,7 @@ const UserForm: React.FC = () => {
                   <option value="Diretoria">Diretoria</option>
                   <option value="Gerente">Gerente</option>
                   <option value="Comercial">Comercial</option>
+                  <option value="Logística">Logística</option>
                   <option value="Manutenção">Manutenção</option>
                   <option value="Financeiro">Financeiro</option>
                   <option value="Recursos Humanos">Recursos Humanos</option>

@@ -190,6 +190,23 @@ const ContractDocument: React.FC<ContractDocumentProps> = ({ data, generatedAt }
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
   };
 
+  const buildCostsText = () => {
+    const items = [
+      { value: data.costs?.rental, label: 'Locação' },
+      { value: data.costs?.insurance, label: 'Seguro' },
+      { value: data.costs?.freight, label: 'Frete' },
+      { value: data.costs?.rcd, label: 'RCD' },
+      { value: data.costs?.third_party, label: 'Terceiros' },
+      { value: data.costs?.training, label: 'Treinamento' },
+    ];
+
+    const parts = items
+      .filter(item => item.value !== undefined && item.value !== null && Number(item.value) > 0)
+      .map(item => `${item.label}: ${formatCurrency(Number(item.value))}`);
+
+    return `${parts.join(' + ')} = ${formatCurrency(Number(data.costs?.total || 0))}`;
+  };
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
     const [year, month, day] = dateStr.split('-');
@@ -300,7 +317,7 @@ const ContractDocument: React.FC<ContractDocumentProps> = ({ data, generatedAt }
           </View>
           <View style={styles.row}>
             <Text style={styles.propost_label}>Valor da locação: </Text>
-            <Text style={styles.value}>{data.notes} = {formatCurrency(data.costs?.total)}</Text>
+            <Text style={styles.value}>{buildCostsText()}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.propost_label}>Dados bancarios: </Text>
@@ -319,7 +336,7 @@ const ContractDocument: React.FC<ContractDocumentProps> = ({ data, generatedAt }
           </View>
           <View style={styles.location_right_cell}>
             <Text style={styles.location_value}>{data.work_site}</Text>
-            <Text style={styles.location_value}></Text>
+            <Text style={styles.location_value}>{data.site_contact_name} | {data.site_contact_phone}</Text>
           </View>
         </View>
 
