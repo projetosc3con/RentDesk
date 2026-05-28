@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export interface SearchableSelectProps<T> {
@@ -33,17 +33,17 @@ function SearchableSelect<T extends { id: string }>({
     const lowerSearch = searchTerm.toLowerCase();
     return items.filter(item => {
       const matchSearchValue = getSearchValue(item).toLowerCase().includes(lowerSearch);
-      
+
       const modelMatch = ('model' in item) && String((item as any).model).toLowerCase().includes(lowerSearch);
       const heightMatch = ('height' in item) && String((item as any).height).toLowerCase().includes(lowerSearch);
-      
+
       return matchSearchValue || modelMatch || heightMatch;
     });
   }, [items, searchTerm, getSearchValue]);
 
-  const selectedItem = useMemo(() => 
+  const selectedItem = useMemo(() =>
     items.find(i => i.id === selectedId),
-  [items, selectedId]);
+    [items, selectedId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,13 +58,13 @@ function SearchableSelect<T extends { id: string }>({
   return (
     <div className="space-y-1.5 relative" ref={containerRef}>
       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">{label} {required && '*'}</label>
-      <div 
+      <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl flex items-center justify-between transition-all ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${isOpen ? 'border-mustard-500 ring-2 ring-mustard-500/10 dark:bg-slate-900' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}
       >
         <span className={`text-sm ${selectedItem ? 'text-slate-900 dark:text-white font-medium' : 'text-slate-400 dark:text-slate-500'}`}>
-          {selectedItem 
-            ? `${getDisplayValue(selectedItem)}${('model' in selectedItem) && (selectedItem as any).model ? ` | ${(selectedItem as any).model}` : ''}${('height' in selectedItem) && (selectedItem as any).height ? ` - Altura: ${(selectedItem as any).height}m` : ''}` 
+          {selectedItem
+            ? `${getDisplayValue(selectedItem)}${('model' in selectedItem) && (selectedItem as any).model ? ` | ${(selectedItem as any).model}` : ''}${('height' in selectedItem) && (selectedItem as any).height ? ` - Altura: ${(selectedItem as any).height}m` : ''}`
             : placeholder}
         </span>
         <span className={`material-symbols-outlined text-slate-400 dark:text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}>expand_more</span>
@@ -72,7 +72,7 @@ function SearchableSelect<T extends { id: string }>({
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -81,9 +81,9 @@ function SearchableSelect<T extends { id: string }>({
             <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm">search</span>
-                <input 
+                <input
                   autoFocus
-                  type="text" 
+                  type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Pesquisar..."
@@ -94,7 +94,7 @@ function SearchableSelect<T extends { id: string }>({
             <div className="max-h-60 overflow-y-auto">
               {filteredItems.length > 0 ? (
                 filteredItems.map(item => (
-                  <div 
+                  <div
                     key={item.id}
                     onClick={() => {
                       onSelect(item.id);
