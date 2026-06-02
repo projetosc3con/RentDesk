@@ -34,10 +34,12 @@ export interface Part {
 export type BillingStatus = 'Pendente' | 'Faturado' | 'Emitida' | 'Cancelada';
 export type ReconciliationStatus = 'Pendente' | 'Atrasado' | 'Recebido' | 'Divergente' | 'No prazo';
 export type ServiceOrderStatus = 'Aberta' | 'Em Andamento' | 'Aguardando Peças' | 'Concluída' | 'Cancelada';
+export type ServiceOrderType = 'Interna' | 'Externa';
 
 export interface ServiceOrder {
   id: string;
   os_number: number;
+  order_type: ServiceOrderType;
   equipment_id?: string;
   equipment_asset_number?: string;
   equipment_name?: string;
@@ -50,10 +52,53 @@ export interface ServiceOrder {
   status: ServiceOrderStatus;
   description?: string;
   notes?: string;
+  // Horímetro
+  hour_meter_before?: number;
+  hour_meter_after?: number;
+  // Dados do cliente
+  client_name?: string;
+  client_address?: string;
+  client_contact_name?: string;
+  client_phone?: string;
+  // Diagnóstico
+  client_request?: string;
+  diagnosis?: string;
+  services_executed?: string;
+  // Observações técnicas
+  tech_observation?: string;
+  tech_observation_ok?: boolean;
+  equipment_functional?: boolean;
+  // Campos exclusivos EXTERNA
+  client_observation?: string;
+  client_observation_ok?: boolean;
+  checklist_equipment_conditions?: boolean;
+  checklist_safe_work?: boolean;
+  checklist_epi?: boolean;
+  checklist_adequate_environment?: boolean;
+  checklist_well_served?: boolean;
+  vehicle_plate?: string;
+  vehicle_km_start?: number;
+  vehicle_km_end?: number;
+  // Assinaturas
+  signer_client_name?: string;
+  signer_client_rg?: string;
+  signer_client_role?: string;
+  signer_tech_name?: string;
+  signer_tech_role?: string;
+  // Campos exclusivos INTERNA
+  parts_pending?: boolean;
+  // Análise Crítica
+  critical_analysis?: string;
+  cost_company?: number;
+  cost_client?: number;
+  has_pending?: boolean;
+  // Timestamps
   created_at: string;
   updated_at: string;
   // Included fields
   parts?: ServiceOrderPart[];
+  service_order_parts?: ServiceOrderPart[];
+  service_order_labor?: ServiceOrderLabor[];
 }
 
 export interface ServiceOrderPart {
@@ -63,10 +108,23 @@ export interface ServiceOrderPart {
   quantity_used: number;
   unit_value_at_use: number;
   subtotal: number;
+  was_used?: boolean;
   // Denormalized for UI
   part_description?: string;
   part_number?: string;
   internal_code?: string;
+  parts?: Part;
+}
+
+export interface ServiceOrderLabor {
+  id?: string;
+  service_order_id?: string;
+  technician_name: string;
+  labor_date?: string;
+  start_time?: string;
+  end_time?: string;
+  labor_type: string;
+  created_at?: string;
 }
 
 export interface RentalInvoice {

@@ -1,117 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { pdf } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
 import api from '../services/api';
-import type { Equipment, UserProfile, Part, ServiceOrder, ServiceOrderStatus } from '../types';
-
-// Reusable Searchable Select Component
-interface SearchableSelectProps<T> {
-  label: string;
-  placeholder: string;
-  items: T[];
-  selectedId: string;
-  onSelect: (id: string) => void;
-  getDisplayValue: (item: T) => string;
-  getSearchValue: (item: T) => string;
-  required?: boolean;
-}
-
-function SearchableSelect<T extends { id: string }>({
-  label,
-  placeholder,
-  items,
-  selectedId,
-  onSelect,
-  getDisplayValue,
-  getSearchValue,
-  required
-}: SearchableSelectProps<T>) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const filteredItems = useMemo(() => {
-    if (!searchTerm) return items;
-    const lowerSearch = searchTerm.toLowerCase();
-    return items.filter(item =>
-      getSearchValue(item).toLowerCase().includes(lowerSearch)
-    );
-  }, [items, searchTerm, getSearchValue]);
-
-  const selectedItem = useMemo(() =>
-    items.find(i => i.id === selectedId),
-    [items, selectedId]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  return (
-    <div className="space-y-1.5 relative" ref={containerRef}>
-      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">{label} {required && '*'}</label>
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-mustard-500 ring-2 ring-mustard-500/10 bg-white dark:bg-slate-900' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}
-      >
-        <span className={`text-sm ${selectedItem ? 'text-slate-900 dark:text-white font-medium' : 'text-slate-400'}`}>
-          {selectedItem ? getDisplayValue(selectedItem) : placeholder}
-        </span>
-        <span className={`material-symbols-outlined text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>expand_more</span>
-      </div>
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl overflow-hidden"
-          >
-            <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-              <div className="relative">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
-                <input
-                  autoFocus
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Pesquisar..."
-                  className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-mustard-500 transition-all text-slate-900 dark:text-white"
-                />
-              </div>
-            </div>
-            <div className="max-h-60 overflow-y-auto">
-              {filteredItems.length > 0 ? (
-                filteredItems.map(item => (
-                  <div
-                    key={item.id}
-                    onClick={() => {
-                      onSelect(item.id);
-                      setIsOpen(false);
-                      setSearchTerm('');
-                    }}
-                    className={`px-4 py-2.5 text-xs cursor-pointer hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-colors flex flex-col gap-0.5 ${selectedId === item.id ? 'bg-mustard-50/50 dark:bg-mustard-500/20 border-l-4 border-mustard-500' : 'border-l-4 border-transparent'}`}
-                  >
-                    <span className="font-bold text-slate-900 dark:text-white">{getDisplayValue(item)}</span>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">{getSearchValue(item)}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="p-4 text-center text-xs text-slate-400 italic">Nenhum resultado encontrado.</div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+import type { Equipment, UserProfile, Part, ServiceOrder, ServiceOrderStatus, ServiceOrderType, ServiceOrderLabor } from '../types';
+import SearchableSelect from '../components/SearchableSelect';
+import ServiceOrderDocument from '../components/maintenance/ServiceOrderDocument';
 
 interface OSPartItem {
   part_id: string;
@@ -120,38 +15,104 @@ interface OSPartItem {
   quantity_used: number;
   unit_value_at_use: number;
   subtotal: number;
+  was_used: boolean;
 }
+
+type TabKey = 'geral' | 'diagnostico' | 'pecas' | 'mao_de_obra' | 'observacoes' | 'analise';
+
+const TABS: { key: TabKey; label: string; icon: string }[] = [
+  { key: 'geral', label: 'Informações Gerais', icon: 'info' },
+  { key: 'diagnostico', label: 'Diagnóstico', icon: 'troubleshoot' },
+  { key: 'pecas', label: 'Peças', icon: 'inventory_2' },
+  { key: 'mao_de_obra', label: 'Mão de Obra', icon: 'engineering' },
+  { key: 'observacoes', label: 'Observações', icon: 'checklist' },
+  { key: 'analise', label: 'Análise Crítica', icon: 'assessment' },
+];
+
+const InputField = ({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) => (
+  <div className="space-y-1.5">
+    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">{label}</label>
+    <input
+      {...props}
+      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white outline-none transition-all focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500"
+    />
+  </div>
+);
+
+const TextareaField = ({ label, rows = 4, ...props }: { label: string; rows?: number } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) => (
+  <div className="space-y-1.5">
+    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">{label}</label>
+    <textarea
+      rows={rows}
+      {...props}
+      className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm text-slate-900 dark:text-white outline-none resize-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all leading-relaxed placeholder:text-slate-400 dark:placeholder:text-slate-600"
+    />
+  </div>
+);
+
+const BooleanToggle = ({ label, value, onChange }: { label: string; value?: boolean; onChange: (v: boolean) => void }) => (
+  <div className="flex items-center justify-between py-3 px-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 transition-colors">
+    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</span>
+    <div className="flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${value === true ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600'}`}
+      >Sim</button>
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${value === false ? 'bg-red-500 text-white shadow-md shadow-red-500/20' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-600'}`}
+      >Não</button>
+    </div>
+  </div>
+);
+
+const SectionCard = ({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) => (
+  <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+    <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm uppercase tracking-wider">
+      <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-500 text-xl">{icon}</span>
+      {title}
+    </h3>
+    {children}
+  </div>
+);
 
 const MaintenanceForm: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
 
-  // States
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [activeTab, setActiveTab] = useState<'geral' | 'pecas' | 'relatorio'>('geral');
+  const [activeTab, setActiveTab] = useState<TabKey>('geral');
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [viewingPdf, setViewingPdf] = useState(false);
 
-  // Form Data
+
   const [formData, setFormData] = useState<Partial<ServiceOrder>>({
+    order_type: 'Interna',
     status: 'Aberta',
     execution_date: new Date().toISOString().split('T')[0],
-    execution_location: 'Oficina Central',
+    execution_location: '',
   });
 
   const [partsUsed, setPartsUsed] = useState<OSPartItem[]>([]);
+  const [laborEntries, setLaborEntries] = useState<ServiceOrderLabor[]>([]);
 
-  // Master Data
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [technicians, setTechnicians] = useState<UserProfile[]>([]);
   const [allParts, setAllParts] = useState<Part[]>([]);
 
-  // Search/Selectors
   const [partSearch, setPartSearch] = useState('');
   const [showPartResults, setShowPartResults] = useState(false);
   const partContainerRef = useRef<HTMLDivElement>(null);
+
+  const updateField = (field: string, value: unknown) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -164,7 +125,6 @@ const MaintenanceForm: React.FC = () => {
         ]);
 
         setEquipments(eqRes.data);
-        // Filter users that are technicians or admins
         setTechnicians(techRes.data.filter((u: UserProfile) =>
           u.access_level === 'Manutenção' || u.access_level === 'Administrador' || u.access_level === 'Diretoria'
         ));
@@ -177,14 +137,25 @@ const MaintenanceForm: React.FC = () => {
             execution_date: data.execution_date ? new Date(data.execution_date).toISOString().split('T')[0] : ''
           });
 
-          if (data.parts) {
-            setPartsUsed(data.parts.map((p: any) => ({
+          if (data.service_order_parts) {
+            setPartsUsed(data.service_order_parts.map((p: any) => ({
               part_id: p.part_id,
-              description: p.part_description,
-              internal_code: p.internal_code,
+              description: p.parts?.description || p.part_description || '',
+              internal_code: p.parts?.internal_code || p.internal_code || '',
               quantity_used: p.quantity_used,
               unit_value_at_use: p.unit_value_at_use,
-              subtotal: p.subtotal
+              subtotal: p.quantity_used * p.unit_value_at_use,
+              was_used: p.was_used !== false
+            })));
+          }
+
+          if (data.service_order_labor) {
+            setLaborEntries(data.service_order_labor.map((l: any) => ({
+              technician_name: l.technician_name,
+              labor_date: l.labor_date || '',
+              start_time: l.start_time || '',
+              end_time: l.end_time || '',
+              labor_type: l.labor_type || 'T',
             })));
           }
         }
@@ -245,7 +216,8 @@ const MaintenanceForm: React.FC = () => {
         internal_code: part.internal_code,
         quantity_used: 1,
         unit_value_at_use: part.unit_value,
-        subtotal: part.unit_value
+        subtotal: part.unit_value,
+        was_used: true
       }]);
     }
     setPartSearch('');
@@ -265,12 +237,42 @@ const MaintenanceForm: React.FC = () => {
     ));
   };
 
-  const totalPartsValue = useMemo(() => {
-    return partsUsed.reduce((acc, p) => acc + p.subtotal, 0);
-  }, [partsUsed]);
+  const totalPartsValue = useMemo(() => partsUsed.reduce((acc, p) => acc + p.subtotal, 0), [partsUsed]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAddLabor = () => {
+    setLaborEntries(prev => [...prev, {
+      technician_name: '',
+      labor_date: new Date().toISOString().split('T')[0],
+      start_time: '',
+      end_time: '',
+      labor_type: 'T',
+    }]);
+  };
+
+  const handleUpdateLabor = (index: number, field: string, value: string) => {
+    setLaborEntries(prev => prev.map((l, i) => i === index ? { ...l, [field]: value } : l));
+  };
+
+  const handleRemoveLabor = (index: number) => {
+    setLaborEntries(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+    
+    if (value.length > 2) {
+      value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+    }
+    if (value.length > 10) {
+      value = `${value.slice(0, 10)}-${value.slice(10)}`;
+    }
+    
+    updateField('client_phone', value);
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!formData.equipment_id) {
       setError('Por favor, selecione um equipamento.');
       setActiveTab('geral');
@@ -283,7 +285,8 @@ const MaintenanceForm: React.FC = () => {
 
       const payload = {
         ...formData,
-        parts: partsUsed
+        parts: partsUsed,
+        labor: laborEntries.filter(l => l.technician_name.trim() !== ''),
       };
 
       if (isEdit) {
@@ -302,6 +305,47 @@ const MaintenanceForm: React.FC = () => {
     }
   };
 
+  const handleDownloadPdf = async () => {
+    try {
+      setGeneratingPdf(true);
+      const blob = await pdf(
+        <ServiceOrderDocument
+          data={formData as ServiceOrder}
+          parts={partsUsed}
+          labor={laborEntries}
+        />
+      ).toBlob();
+      const fileName = `OS-${formData.os_number || 'nova'}-${formData.order_type || 'Interna'}.pdf`;
+      saveAs(blob, fileName);
+    } catch (err) {
+      console.error('Erro ao gerar PDF:', err);
+      setError('Erro ao gerar o PDF.');
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
+
+  const handleViewPdf = async () => {
+    try {
+      setViewingPdf(true);
+      const blob = await pdf(
+        <ServiceOrderDocument
+          data={formData as ServiceOrder}
+          parts={partsUsed}
+          labor={laborEntries}
+        />
+      ).toBlob();
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+    } catch (err) {
+      console.error('Erro ao abrir PDF:', err);
+      setError('Erro ao visualizar o PDF.');
+    } finally {
+      setViewingPdf(false);
+    }
+  };
+
+
   if (fetching) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
@@ -310,6 +354,8 @@ const MaintenanceForm: React.FC = () => {
       </div>
     );
   }
+
+  const isExterna = formData.order_type === 'Externa';
 
   return (
     <motion.div
@@ -328,7 +374,7 @@ const MaintenanceForm: React.FC = () => {
           </button>
           <div>
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {isEdit ? `Ordem de Serviço #${formData.os_number}` : 'Nova Ordem de Serviço'}
+              {isEdit ? `OS #${formData.os_number}` : 'Nova Ordem de Serviço'}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">
               {isEdit ? 'Atualize os detalhes da manutenção executada.' : 'Registre uma nova atividade de manutenção.'}
@@ -336,7 +382,37 @@ const MaintenanceForm: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {isEdit && (
+            <>
+              <button
+                type="button"
+                onClick={handleViewPdf}
+                disabled={viewingPdf}
+                className="px-5 py-2.5 border border-mustard-500 text-mustard-600 dark:text-mustard-400 bg-white dark:bg-slate-900 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-all flex items-center gap-2 disabled:opacity-60"
+              >
+                {viewingPdf ? (
+                  <div className="w-4 h-4 border-2 border-slate-300/30 border-t-slate-500 rounded-full animate-spin" />
+                ) : (
+                  <span className="material-symbols-outlined text-[18px]">visibility</span>
+                )}
+                Visualizar PDF
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={generatingPdf}
+                className="px-5 py-2.5 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all border border-slate-200 dark:border-slate-800 flex items-center gap-2 disabled:opacity-60"
+              >
+                {generatingPdf ? (
+                  <div className="w-4 h-4 border-2 border-slate-300/30 border-t-slate-500 rounded-full animate-spin" />
+                ) : (
+                  <span className="material-symbols-outlined text-[18px]">download</span>
+                )}
+                Baixar PDF
+              </button>
+            </>
+          )}
           <button
             type="button"
             onClick={() => navigate('/manutencoes')}
@@ -376,61 +452,52 @@ const MaintenanceForm: React.FC = () => {
       )}
 
       {/* Tabs Navigation */}
-      <div className="flex items-center border-b border-slate-200 dark:border-slate-800 gap-8">
-        <button
-          onClick={() => setActiveTab('geral')}
-          className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all relative ${activeTab === 'geral' ? 'text-mustard-600 dark:text-mustard-500' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          Informações Gerais
-          {activeTab === 'geral' && (
-            <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-1 bg-mustard-500 rounded-full" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('pecas')}
-          className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all relative ${activeTab === 'pecas' ? 'text-mustard-600 dark:text-mustard-500' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          Peças e Insumos
-          <span className="ml-2 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[10px] rounded-md text-slate-500 dark:text-slate-400">{partsUsed.length}</span>
-          {activeTab === 'pecas' && (
-            <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-1 bg-mustard-500 rounded-full" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveTab('relatorio')}
-          className={`pb-4 text-sm font-bold uppercase tracking-widest transition-all relative ${activeTab === 'relatorio' ? 'text-mustard-600 dark:text-mustard-500' : 'text-slate-400 hover:text-slate-600'}`}
-        >
-          Relatório Técnico
-          {activeTab === 'relatorio' && (
-            <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-1 bg-mustard-500 rounded-full" />
-          )}
-        </button>
+      <div className="flex items-center border-b border-slate-200 dark:border-slate-800 gap-1 overflow-x-auto pb-px">
+        {TABS.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`pb-3 px-3 text-xs font-bold uppercase tracking-widest transition-all relative whitespace-nowrap flex items-center gap-1.5 ${activeTab === tab.key ? 'text-mustard-600 dark:text-mustard-500' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
+            {tab.label}
+            {activeTab === tab.key && (
+              <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-1 bg-mustard-500 rounded-full" />
+            )}
+          </button>
+        ))}
       </div>
 
       <div className="min-h-[400px]">
         <AnimatePresence mode="wait">
+          {/* TAB 1: Informações Gerais */}
           {activeTab === 'geral' && (
-            <motion.div
-              key="geral"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="space-y-6"
-            >
+            <motion.div key="geral" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-                  <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm uppercase tracking-wider mb-2">
-                    <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-500 text-xl">construction</span>
-                    Equipamento & Local
-                  </h3>
+                <SectionCard title="Tipo & Equipamento" icon="construction">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Tipo da Ordem *</label>
+                    <div className="flex gap-3">
+                      {(['Interna', 'Externa'] as ServiceOrderType[]).map(type => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => updateField('order_type', type)}
+                          className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold uppercase tracking-wider transition-all border ${formData.order_type === type ? 'bg-mustard-500 text-white border-mustard-500 shadow-lg shadow-mustard-500/20' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-mustard-300 dark:hover:border-mustard-500/30'}`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
                   <SearchableSelect
                     label="Equipamento"
                     placeholder="Selecione o equipamento"
                     items={equipments}
                     selectedId={formData.equipment_id || ''}
-                    onSelect={(id) => {
-                      const eq = equipments.find(e => e.id === id);
+                    onSelect={(eqId) => {
+                      const eq = equipments.find(e => e.id === eqId);
                       if (eq) handleSelectEquipment(eq);
                     }}
                     getDisplayValue={(eq) => `${eq.asset_number} - ${eq.name}`}
@@ -438,40 +505,23 @@ const MaintenanceForm: React.FC = () => {
                     required
                   />
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Data de Execução</label>
-                      <input
-                        type="date"
-                        value={formData.execution_date}
-                        onChange={(e) => setFormData(prev => ({ ...prev, execution_date: e.target.value }))}
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white outline-none transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Local</label>
-                      <input
-                        type="text"
-                        placeholder="Ex: Oficina, Campo..."
-                        value={formData.execution_location}
-                        onChange={(e) => setFormData(prev => ({ ...prev, execution_location: e.target.value }))}
-                        className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white outline-none transition-all"
-                      />
-                    </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputField label="Horímetro Anterior" type="number" placeholder="Ex: 1500" value={formData.hour_meter_before || ''} onChange={(e) => updateField('hour_meter_before', e.target.value ? Number(e.target.value) : null)} />
+                    <InputField label="Horímetro Atual" type="number" placeholder="Ex: 1530" value={formData.hour_meter_after || ''} onChange={(e) => updateField('hour_meter_after', e.target.value ? Number(e.target.value) : null)} />
                   </div>
-                </div>
+                </SectionCard>
 
-                <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-                  <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm uppercase tracking-wider mb-2">
-                    <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-500 text-xl">settings</span>
-                    Controle da OS
-                  </h3>
+                <SectionCard title="Controle da OS" icon="settings">
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputField label="Data de Abertura" type="date" value={formData.execution_date || ''} onChange={(e) => updateField('execution_date', e.target.value)} />
+                    <InputField label="Local" type="text" placeholder="Ex: Oficina, Campo..." value={formData.execution_location || ''} onChange={(e) => updateField('execution_location', e.target.value)} />
+                  </div>
 
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Status da OS</label>
                     <select
                       value={formData.status}
-                      onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as ServiceOrderStatus }))}
+                      onChange={(e) => updateField('status', e.target.value as ServiceOrderStatus)}
                       className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 outline-none"
                     >
                       <option value="Aberta">Aberta</option>
@@ -485,8 +535,8 @@ const MaintenanceForm: React.FC = () => {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Técnico Responsável</label>
                     <select
-                      value={formData.executed_by}
-                      onChange={(e) => setFormData(prev => ({ ...prev, executed_by: e.target.value }))}
+                      value={formData.executed_by || ''}
+                      onChange={(e) => updateField('executed_by', e.target.value)}
                       className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 outline-none"
                     >
                       <option value="">Selecione o técnico</option>
@@ -495,177 +545,241 @@ const MaintenanceForm: React.FC = () => {
                       ))}
                     </select>
                   </div>
-                </div>
+                </SectionCard>
               </div>
+
+              {/* Dados do cliente (visíveis para ambos os tipos, mas mais relevante em Externa) */}
+              <SectionCard title="Dados do Cliente / Obra" icon="business">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField label="Cliente" placeholder="Nome do cliente" value={formData.client_name || ''} onChange={(e) => updateField('client_name', e.target.value)} />
+                  <InputField label="Endereço" placeholder="Endereço da obra" value={formData.client_address || ''} onChange={(e) => updateField('client_address', e.target.value)} />
+                  <InputField label="Nome do Contato" placeholder="Contato no local" value={formData.client_contact_name || ''} onChange={(e) => updateField('client_contact_name', e.target.value)} />
+                  <InputField label="Telefone" placeholder="(00) 00000-0000" value={formData.client_phone || ''} onChange={handlePhoneChange} />
+                </div>
+              </SectionCard>
             </motion.div>
           )}
 
+          {/* TAB 2: Diagnóstico */}
+          {activeTab === 'diagnostico' && (
+            <motion.div key="diagnostico" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
+              <SectionCard title="Diagnóstico e Serviços" icon="troubleshoot">
+                <TextareaField label="Solicitação Cliente - Falha" rows={4} placeholder="Descreva o problema reportado pelo cliente ou solicitação..." value={formData.client_request || ''} onChange={(e) => updateField('client_request', e.target.value)} />
+                <TextareaField label="Diagnóstico - Causa" rows={4} placeholder="Descreva a causa raiz identificada..." value={formData.diagnosis || ''} onChange={(e) => updateField('diagnosis', e.target.value)} />
+                <TextareaField label="Serviços Executados - Ação" rows={6} placeholder="Descreva detalhadamente todos os serviços executados..." value={formData.services_executed || ''} onChange={(e) => updateField('services_executed', e.target.value)} />
+              </SectionCard>
+            </motion.div>
+          )}
+
+          {/* TAB 3: Peças */}
           {activeTab === 'pecas' && (
-            <motion.div
-              key="pecas"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-8"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-lg">Materiais Utilizados</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Adicione peças e insumos consumidos neste serviço.</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total em Materiais</p>
-                  <p className="text-2xl font-black text-mustard-600 dark:text-mustard-500">{totalPartsValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                </div>
-              </div>
-
-              <div className="relative max-w-xl" ref={partContainerRef}>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">add_shopping_cart</span>
-                  <input
-                    type="text"
-                    placeholder="Busque por código ou nome da peça..."
-                    value={partSearch}
-                    onChange={(e) => {
-                      setPartSearch(e.target.value);
-                      setShowPartResults(true);
-                    }}
-                    onFocus={() => setShowPartResults(true)}
-                    className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 text-slate-900 dark:text-white outline-none transition-all"
-                  />
+            <motion.div key="pecas" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+              <SectionCard title="Peças e Insumos" icon="inventory_2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Adicione peças e insumos consumidos.</p>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total</p>
+                    <p className="text-xl font-black text-mustard-600 dark:text-mustard-500">{totalPartsValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                  </div>
                 </div>
 
-                <AnimatePresence>
-                  {showPartResults && filteredParts.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden"
-                    >
-                      {filteredParts.map(p => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => handleAddPart(p)}
-                          className="w-full px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between group border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors"
-                        >
-                          <div>
-                            <p className="font-bold text-slate-900 dark:text-white text-sm">{p.internal_code} - {p.description}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-500 font-medium">Estoque Atual: {p.quantity} | {p.unit_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                          </div>
-                          <span className="material-symbols-outlined text-mustard-600 opacity-0 group-hover:opacity-100 transition-all transform scale-75 group-hover:scale-100">add_circle</span>
-                        </button>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                <div className="relative max-w-xl" ref={partContainerRef}>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">add_shopping_cart</span>
+                    <input
+                      type="text"
+                      placeholder="Busque por código ou nome da peça..."
+                      value={partSearch}
+                      onChange={(e) => { setPartSearch(e.target.value); setShowPartResults(true); }}
+                      onFocus={() => setShowPartResults(true)}
+                      className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 text-slate-900 dark:text-white outline-none transition-all"
+                    />
+                  </div>
+                  <AnimatePresence>
+                    {showPartResults && filteredParts.length > 0 && (
+                      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+                        {filteredParts.map(p => (
+                          <button key={p.id} type="button" onClick={() => handleAddPart(p)} className="w-full px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between group border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors">
+                            <div>
+                              <p className="font-bold text-slate-900 dark:text-white text-sm">{p.internal_code} - {p.description}</p>
+                              <p className="text-xs text-slate-500 font-medium">Estoque: {p.quantity} | {p.unit_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                            </div>
+                            <span className="material-symbols-outlined text-mustard-600 opacity-0 group-hover:opacity-100 transition-all">add_circle</span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-              <div className="grid grid-cols-1 gap-3">
-                {partsUsed.length > 0 ? (
-                  partsUsed.map(part => (
-                    <motion.div
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      key={part.part_id}
-                      className="flex flex-col sm:flex-row sm:items-center gap-4 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 group hover:border-mustard-200 dark:hover:border-mustard-500/30 transition-all"
-                    >
+                <div className="grid grid-cols-1 gap-3">
+                  {partsUsed.length > 0 ? partsUsed.map(part => (
+                    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={part.part_id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 group hover:border-mustard-200 dark:hover:border-mustard-500/30 transition-all">
                       <div className="flex-1">
                         <p className="text-sm font-bold text-slate-900 dark:text-white">{part.description}</p>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">CÓD: {part.internal_code}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">CÓD: {part.internal_code}</p>
                       </div>
-                      <div className="flex items-center justify-between sm:justify-end gap-6">
-                        <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden h-10 shadow-sm">
-                          <button
-                            type="button"
-                            onClick={() => handleUpdatePartQuantity(part.part_id, part.quantity_used - 1)}
-                            className="px-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-400"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">remove</span>
-                          </button>
-                          <input
-                            type="number"
-                            value={part.quantity_used}
-                            onChange={(e) => handleUpdatePartQuantity(part.part_id, parseInt(e.target.value) || 0)}
-                            className="w-12 text-center text-sm font-black text-slate-700 dark:text-slate-300 bg-transparent outline-none"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleUpdatePartQuantity(part.part_id, part.quantity_used + 1)}
-                            className="px-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-400"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">add</span>
-                          </button>
-                        </div>
-                        <div className="w-28 text-right">
-                          <p className="text-sm font-black text-slate-900 dark:text-white">{part.subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium whitespace-nowrap">Un: {part.unit_value_at_use.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePart(part.part_id)}
-                          className="p-2.5 bg-white dark:bg-slate-900 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all shadow-sm border border-slate-100 dark:border-slate-800"
-                        >
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                      <div className="flex items-center gap-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">Utilizado:</label>
+                        <button type="button" onClick={() => setPartsUsed(prev => prev.map(p => p.part_id === part.part_id ? { ...p, was_used: !p.was_used } : p))} className={`px-2 py-0.5 rounded text-xs font-bold ${part.was_used ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' : 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400'}`}>
+                          {part.was_used ? 'Sim' : 'Não'}
                         </button>
                       </div>
+                      <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden h-10 shadow-sm">
+                        <button type="button" onClick={() => handleUpdatePartQuantity(part.part_id, part.quantity_used - 1)} className="px-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-400"><span className="material-symbols-outlined text-[18px]">remove</span></button>
+                        <input type="number" value={part.quantity_used} onChange={(e) => handleUpdatePartQuantity(part.part_id, parseInt(e.target.value) || 0)} className="w-12 text-center text-sm font-black text-slate-700 dark:text-slate-300 bg-transparent outline-none" />
+                        <button type="button" onClick={() => handleUpdatePartQuantity(part.part_id, part.quantity_used + 1)} className="px-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-400"><span className="material-symbols-outlined text-[18px]">add</span></button>
+                      </div>
+                      <div className="w-24 text-right">
+                        <p className="text-sm font-black text-slate-900 dark:text-white">{part.subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                      </div>
+                      <button type="button" onClick={() => handleRemovePart(part.part_id)} className="p-2 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all"><span className="material-symbols-outlined text-[20px]">delete</span></button>
                     </motion.div>
-                  ))
-                ) : (
-                  <div className="py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-800/30 transition-colors">
-                    <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                      <span className="material-symbols-outlined text-slate-300 dark:text-slate-700 text-3xl">inventory_2</span>
+                  )) : (
+                    <div className="py-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-800/30">
+                      <span className="material-symbols-outlined text-slate-300 dark:text-slate-700 text-3xl mb-2">inventory_2</span>
+                      <h4 className="font-bold text-slate-600 dark:text-slate-400">Nenhum material listado</h4>
+                      <p className="text-xs text-slate-400 mt-1 font-medium">Busque peças acima para incluir.</p>
                     </div>
-                    <h4 className="font-bold text-slate-600 dark:text-slate-400">Nenhum material listado</h4>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">Busque peças acima para incluir nesta ordem de serviço.</p>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              </SectionCard>
             </motion.div>
           )}
 
-          {activeTab === 'relatorio' && (
-            <motion.div
-              key="relatorio"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="bg-white dark:bg-slate-900 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-8"
-            >
-              <div className="flex items-center gap-4 mb-2">
-                <div className="w-12 h-12 bg-mustard-100 dark:bg-mustard-500/20 rounded-2xl flex items-center justify-center">
-                  <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-400">description</span>
+          {/* TAB 4: Mão de Obra */}
+          {activeTab === 'mao_de_obra' && (
+            <motion.div key="mao_de_obra" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+              <SectionCard title="Mão de Obra" icon="engineering">
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Registre as horas trabalhadas.</p>
+                  <button type="button" onClick={handleAddLabor} className="px-4 py-2 bg-mustard-500 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-mustard-600 transition-all flex items-center gap-1.5 shadow-md shadow-mustard-500/20">
+                    <span className="material-symbols-outlined text-[16px]">add</span>
+                    Adicionar
+                  </button>
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-lg">Relatório Técnico</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Descreva detalhadamente as intervenções realizadas.</p>
-                </div>
-              </div>
 
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Descrição Detalhada do Serviço</label>
-                  <textarea
-                    rows={12}
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Relate aqui todos os procedimentos, problemas encontrados e soluções aplicadas..."
-                    className="w-full px-6 py-5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl text-sm text-slate-900 dark:text-white outline-none resize-none focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-mustard-500/5 focus:border-mustard-500 transition-all leading-relaxed placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                  />
+                {laborEntries.length > 0 ? (
+                  <div className="space-y-3">
+                    {laborEntries.map((entry, idx) => (
+                      <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={idx} className="grid grid-cols-1 sm:grid-cols-6 gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                        <div className="sm:col-span-2">
+                          <InputField label="Técnico" placeholder="Nome" value={entry.technician_name} onChange={(e) => handleUpdateLabor(idx, 'technician_name', e.target.value)} />
+                        </div>
+                        <InputField label="Data" type="date" value={entry.labor_date || ''} onChange={(e) => handleUpdateLabor(idx, 'labor_date', e.target.value)} />
+                        <InputField label="Início" type="time" value={entry.start_time || ''} onChange={(e) => handleUpdateLabor(idx, 'start_time', e.target.value)} />
+                        <InputField label="Final" type="time" value={entry.end_time || ''} onChange={(e) => handleUpdateLabor(idx, 'end_time', e.target.value)} />
+                        <div className="flex items-end gap-2">
+                          <div className="flex-1 space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">{isExterna ? 'V/T/I' : 'T/I'}</label>
+                            <select value={entry.labor_type} onChange={(e) => handleUpdateLabor(idx, 'labor_type', e.target.value)} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 outline-none">
+                              {isExterna && <option value="V">V - Viagem</option>}
+                              <option value="T">T - Trabalho</option>
+                              <option value="I">I - Intervalo</option>
+                            </select>
+                          </div>
+                          <button type="button" onClick={() => handleRemoveLabor(idx)} className="p-2.5 text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all mb-px"><span className="material-symbols-outlined text-[20px]">delete</span></button>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-800/30">
+                    <span className="material-symbols-outlined text-slate-300 dark:text-slate-700 text-3xl mb-2">engineering</span>
+                    <h4 className="font-bold text-slate-600 dark:text-slate-400">Nenhuma entrada de mão de obra</h4>
+                    <p className="text-xs text-slate-400 mt-1 font-medium">Clique em "Adicionar" para registrar horas.</p>
+                  </div>
+                )}
+              </SectionCard>
+            </motion.div>
+          )}
+
+          {/* TAB 5: Observações e Checklist */}
+          {activeTab === 'observacoes' && (
+            <motion.div key="observacoes" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
+              <SectionCard title="Observação Técnica" icon="engineering">
+                <TextareaField label="Observação Técnica" rows={4} placeholder="Notas técnicas sobre a manutenção..." value={formData.tech_observation || ''} onChange={(e) => updateField('tech_observation', e.target.value)} />
+                <BooleanToggle label="Observação Técnica OK?" value={formData.tech_observation_ok} onChange={(v) => updateField('tech_observation_ok', v)} />
+                <BooleanToggle label="Equipamento ficou funcional?" value={formData.equipment_functional} onChange={(v) => updateField('equipment_functional', v)} />
+                {!isExterna && (
+                  <BooleanToggle label="Pendência de peças?" value={formData.parts_pending} onChange={(v) => updateField('parts_pending', v)} />
+                )}
+              </SectionCard>
+
+              {isExterna && (
+                <>
+                  <SectionCard title="Observação do Cliente" icon="person">
+                    <TextareaField label="Observação do Cliente" rows={3} placeholder="Observações registradas pelo cliente..." value={formData.client_observation || ''} onChange={(e) => updateField('client_observation', e.target.value)} />
+                    <BooleanToggle label="Observação do Cliente OK?" value={formData.client_observation_ok} onChange={(v) => updateField('client_observation_ok', v)} />
+                  </SectionCard>
+
+                  <SectionCard title="Checklist do Cliente" icon="checklist">
+                    <div className="space-y-2">
+                      <BooleanToggle label="Equipamento ficou em condições?" value={formData.checklist_equipment_conditions} onChange={(v) => updateField('checklist_equipment_conditions', v)} />
+                      <BooleanToggle label="Há condição segura de trabalho?" value={formData.checklist_safe_work} onChange={(v) => updateField('checklist_safe_work', v)} />
+                      <BooleanToggle label="Técnico usava EPIs?" value={formData.checklist_epi} onChange={(v) => updateField('checklist_epi', v)} />
+                      <BooleanToggle label="O ambiente é adequado para operação do equipamento?" value={formData.checklist_adequate_environment} onChange={(v) => updateField('checklist_adequate_environment', v)} />
+                      <BooleanToggle label="Foi bem atendido?" value={formData.checklist_well_served} onChange={(v) => updateField('checklist_well_served', v)} />
+                    </div>
+                  </SectionCard>
+                </>
+              )}
+            </motion.div>
+          )}
+
+          {/* TAB 6: Análise Crítica e Encerramento */}
+          {activeTab === 'analise' && (
+            <motion.div key="analise" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
+              {isExterna && (
+                <>
+                  <SectionCard title="Veículo" icon="directions_car">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <InputField label="Placa" placeholder="ABC-1234" value={formData.vehicle_plate || ''} onChange={(e) => updateField('vehicle_plate', e.target.value)} />
+                      <InputField label="KM Inicial" type="number" value={formData.vehicle_km_start || ''} onChange={(e) => updateField('vehicle_km_start', e.target.value ? Number(e.target.value) : null)} />
+                      <InputField label="KM Final" type="number" value={formData.vehicle_km_end || ''} onChange={(e) => updateField('vehicle_km_end', e.target.value ? Number(e.target.value) : null)} />
+                    </div>
+                  </SectionCard>
+
+                  <SectionCard title="Assinaturas" icon="draw">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Cliente</h4>
+                        <InputField label="Nome" value={formData.signer_client_name || ''} onChange={(e) => updateField('signer_client_name', e.target.value)} />
+                        <InputField label="RG" value={formData.signer_client_rg || ''} onChange={(e) => updateField('signer_client_rg', e.target.value)} />
+                        <InputField label="Cargo / Função" value={formData.signer_client_role || ''} onChange={(e) => updateField('signer_client_role', e.target.value)} />
+                      </div>
+                      <div className="space-y-4">
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Técnico</h4>
+                        <InputField label="Nome" value={formData.signer_tech_name || ''} onChange={(e) => updateField('signer_tech_name', e.target.value)} />
+                        <InputField label="Cargo / Função" value={formData.signer_tech_role || ''} onChange={(e) => updateField('signer_tech_role', e.target.value)} />
+                      </div>
+                    </div>
+                  </SectionCard>
+                </>
+              )}
+
+              {!isExterna && (
+                <SectionCard title="Técnico Responsável" icon="badge">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <InputField label="Nome do Técnico" value={formData.signer_tech_name || ''} onChange={(e) => updateField('signer_tech_name', e.target.value)} />
+                    <InputField label="Função" value={formData.signer_tech_role || ''} onChange={(e) => updateField('signer_tech_role', e.target.value)} />
+                  </div>
+                </SectionCard>
+              )}
+
+              <SectionCard title="Análise Crítica (Gestor)" icon="assessment">
+                <TextareaField label="Análise Crítica" rows={3} placeholder="Observações do gestor..." value={formData.critical_analysis || ''} onChange={(e) => updateField('critical_analysis', e.target.value)} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <InputField label={isExterna ? 'Custo CLM (Empresa)' : 'Custo M (Manutenção)'} type="number" placeholder="0.00" value={formData.cost_company || ''} onChange={(e) => updateField('cost_company', e.target.value ? Number(e.target.value) : 0)} />
+                  <InputField label={isExterna ? 'Custo CLIENTE' : 'Custo C (Compras)'} type="number" placeholder="0.00" value={formData.cost_client || ''} onChange={(e) => updateField('cost_client', e.target.value ? Number(e.target.value) : 0)} />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Observações Internas / Próximos Passos</label>
-                  <textarea
-                    rows={4}
-                    value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Notas para controle interno..."
-                    className="w-full px-6 py-5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl text-sm text-slate-900 dark:text-white outline-none resize-none focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-mustard-500/5 focus:border-mustard-500 transition-all leading-relaxed placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                  />
-                </div>
-              </div>
+                <BooleanToggle label="Há Pendência?" value={formData.has_pending} onChange={(v) => updateField('has_pending', v)} />
+              </SectionCard>
+
+              <SectionCard title="Relatório Técnico" icon="description">
+                <TextareaField label="Descrição Detalhada" rows={8} placeholder="Relate aqui todos os procedimentos, problemas e soluções..." value={formData.description || ''} onChange={(e) => updateField('description', e.target.value)} />
+                <TextareaField label="Observações Internas" rows={3} placeholder="Notas para controle interno..." value={formData.notes || ''} onChange={(e) => updateField('notes', e.target.value)} />
+              </SectionCard>
             </motion.div>
           )}
         </AnimatePresence>

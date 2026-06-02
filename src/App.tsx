@@ -94,6 +94,7 @@ function App() {
                   <Route path="/equipamentos/editar/:id" element={<EquipmentEdit />} />
                   <Route path="/usuarios" element={<Users />} />
                   <Route path="/usuarios/novo" element={<UserForm />} />
+                  <Route path="/usuarios/editar/:id" element={<UserForm />} />
                   <Route path="/financeiro" element={<Placeholder title="Financeiro" />} />
                   <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
                   <Route path="/clientes/novo" element={<ClientForm />} />

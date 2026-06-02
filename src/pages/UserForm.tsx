@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../services/api'; // Importando a API Axios
 import type { AccessLevel } from '../types';
 
 const UserForm: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEdit = Boolean(id);
+
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(isEdit);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -19,6 +23,32 @@ const UserForm: React.FC = () => {
     access_level: 'Usuário' as AccessLevel,
   });
 
+  useEffect(() => {
+    if (isEdit && id) {
+      const fetchUserData = async () => {
+        try {
+          setFetching(true);
+          const { data } = await api.get(`/users/${id}`);
+          setFormData({
+            full_name: data.full_name || '',
+            email: data.email || '',
+            cpf: data.cpf || '',
+            phone: data.phone || '',
+            role_title: data.role_title || '',
+            access_level: (data.access_level || 'Usuário') as AccessLevel,
+          });
+        } catch (err: any) {
+          console.error('Erro ao buscar dados do usuário:', err);
+          setError('Não foi possível carregar os dados do colaborador.');
+        } finally {
+          setFetching(false);
+        }
+      };
+
+      fetchUserData();
+    }
+  }, [id, isEdit]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -30,18 +60,35 @@ const UserForm: React.FC = () => {
     setError(null);
 
     try {
-      await api.post('/users/pre-register', formData);
-      setSuccess(true);
-      setTimeout(() => navigate('/usuarios'), 4000);
+      if (isEdit) {
+        // Na edição, atualizamos o perfil do usuário
+        await api.put(`/users/${id}`, formData);
+        setSuccess(true);
+        setTimeout(() => navigate('/usuarios'), 1500);
+      } else {
+        // No cadastro, criamos o usuário silenciosamente
+        await api.post('/users/pre-register', formData);
+        setSuccess(true);
+        setTimeout(() => navigate('/usuarios'), 4000);
+      }
     } catch (err: any) {
-      console.error('Error pre-registering user:', err);
-      setError(err.response?.data?.error || 'Ocorreu um erro ao cadastrar o colaborador.');
+      console.error('Error saving user data:', err);
+      setError(err.response?.data?.error || 'Ocorreu um erro ao salvar as alterações do colaborador.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (success) {
+  if (fetching) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh]">
+        <div className="w-12 h-12 border-4 border-mustard-500/20 border-t-mustard-500 rounded-full animate-spin"></div>
+        <p className="text-slate-400 text-sm font-medium mt-4">Carregando dados do colaborador...</p>
+      </div>
+    );
+  }
+
+  if (success && !isEdit) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh]">
         <motion.div
@@ -70,6 +117,27 @@ const UserForm: React.FC = () => {
     );
   }
 
+  if (success && isEdit) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[60vh]">
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 flex flex-col items-center text-center max-w-sm"
+        >
+          <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-500/10 rounded-full flex items-center justify-center mb-6 text-emerald-600 dark:text-emerald-400">
+            <span className="material-symbols-outlined text-5xl">check_circle</span>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Alterações Salvas!</h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">
+            Os dados do colaborador foram atualizados com sucesso.
+          </p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-4 uppercase font-bold tracking-widest">Redirecionando...</p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
@@ -84,8 +152,12 @@ const UserForm: React.FC = () => {
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Novo Colaborador</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">Cadastre um novo membro para a equipe.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+            {isEdit ? 'Editar Colaborador' : 'Novo Colaborador'}
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">
+            {isEdit ? 'Atualize as informações do membro da equipe.' : 'Cadastre um novo membro para a equipe.'}
+          </p>
         </div>
       </div>
 
@@ -119,7 +191,8 @@ const UserForm: React.FC = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
+                disabled={isEdit}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600 disabled:opacity-60 disabled:cursor-not-allowed"
                 placeholder="email@empresa.com"
                 type="email"
               />
@@ -190,29 +263,31 @@ const UserForm: React.FC = () => {
             {loading ? (
               <>
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                Cadastrando...
+                Salvando...
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-[18px]">person_add</span>
-                Cadastrar Colaborador
+                <span className="material-symbols-outlined text-[18px]">{isEdit ? 'save' : 'person_add'}</span>
+                {isEdit ? 'Salvar Alterações' : 'Cadastrar Colaborador'}
               </>
             )}
           </button>
         </div>
       </form>
 
-      <div className="bg-mustard-50 dark:bg-mustard-500/10 rounded-2xl p-6 border border-mustard-100 dark:border-mustard-500/20 flex gap-4 shadow-sm">
-        <div className="w-10 h-10 bg-mustard-100 dark:bg-mustard-500/20 rounded-xl flex items-center justify-center shrink-0 text-mustard-600 dark:text-mustard-400">
-          <span className="material-symbols-outlined">info</span>
+      {!isEdit && (
+        <div className="bg-mustard-50 dark:bg-mustard-500/10 rounded-2xl p-6 border border-mustard-100 dark:border-mustard-500/20 flex gap-4 shadow-sm">
+          <div className="w-10 h-10 bg-mustard-100 dark:bg-mustard-500/20 rounded-xl flex items-center justify-center shrink-0 text-mustard-600 dark:text-mustard-400">
+            <span className="material-symbols-outlined">info</span>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-mustard-900 dark:text-mustard-400 uppercase tracking-widest">Como funciona o cadastro?</h4>
+            <p className="text-xs text-mustard-800/70 dark:text-slate-400 mt-1 leading-relaxed">
+              Ao cadastrar um novo colaborador, o sistema criará automaticamente o acesso dele no RentDesk. Nenhum e-mail será enviado. O colaborador deve acessar a tela de login, clicar em "Primeiro Acesso" e inserir o e-mail cadastrado aqui para completar seu acesso definindo uma senha.
+            </p>
+          </div>
         </div>
-        <div>
-          <h4 className="text-sm font-bold text-mustard-900 dark:text-mustard-400 uppercase tracking-widest">Como funciona o cadastro?</h4>
-          <p className="text-xs text-mustard-800/70 dark:text-slate-400 mt-1 leading-relaxed">
-            Ao cadastrar um novo colaborador, o sistema criará automaticamente o acesso dele no RentDesk. Nenhum e-mail será enviado. O colaborador deve acessar a tela de login, clicar em "Primeiro Acesso" e inserir o e-mail cadastrado aqui para completar seu acesso definindo uma senha.
-          </p>
-        </div>
-      </div>
+      )}
     </motion.div>
   );
 };

@@ -1,13 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import type { UserProfile } from '../types';
 
 const Users: React.FC = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Estados de filtros
+  const [search, setSearch] = useState('');
+  const [selectedAccessLevel, setSelectedAccessLevel] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -21,6 +29,68 @@ const Users: React.FC = () => {
     } catch (err: any) {
       console.error('Error fetching users:', err);
       setError(err.response?.data?.error || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      if (search) {
+        const q = search.toLowerCase();
+        const match = (user.full_name || '').toLowerCase().includes(q)
+          || (user.email || '').toLowerCase().includes(q)
+          || (user.cpf || '').toLowerCase().includes(q)
+          || (user.role_title || '').toLowerCase().includes(q);
+        if (!match) return false;
+      }
+      if (selectedAccessLevel && user.access_level !== selectedAccessLevel) {
+        return false;
+      }
+      if (selectedStatus !== '') {
+        const isActive = selectedStatus === 'true';
+        if (user.active !== isActive) return false;
+      }
+      return true;
+    });
+  }, [users, search, selectedAccessLevel, selectedStatus]);
+
+  const handleToggleActive = async (user: UserProfile) => {
+    const actionText = user.active ? 'inativar' : 'ativar';
+    if (!window.confirm(`Deseja realmente ${actionText} o colaborador ${user.full_name}?`)) return;
+
+    try {
+      setLoading(true);
+      const newActiveStatus = !user.active;
+      await api.put(`/users/${user.id}`, { active: newActiveStatus });
+      
+      // Atualizar estado local
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, active: newActiveStatus } : u));
+      
+      setSuccessMessage(`Colaborador ${newActiveStatus ? 'ativado' : 'inativado'} com sucesso!`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      console.error('Erro ao alterar status do colaborador:', err);
+      setErrorMessage(err.response?.data?.error || 'Erro ao alterar status do colaborador.');
+      setTimeout(() => setErrorMessage(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (user: UserProfile) => {
+    if (!window.confirm(`Deseja enviar um e-mail de redefinição de senha para ${user.full_name}?`)) return;
+
+    try {
+      setLoading(true);
+      await api.post(`/users/${user.id}/reset-password`);
+      
+      setSuccessMessage('E-mail de redefinição enviado com sucesso!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err: any) {
+      console.error('Erro ao resetar senha do colaborador:', err);
+      setErrorMessage(err.response?.data?.error || 'Erro ao redefinir a senha.');
+      setTimeout(() => setErrorMessage(null), 3500);
     } finally {
       setLoading(false);
     }
@@ -56,6 +126,20 @@ const Users: React.FC = () => {
         </div>
       </div>
 
+      {successMessage && (
+        <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-xl text-sm flex items-center gap-3 font-medium">
+          <span className="material-symbols-outlined text-emerald-500">check_circle</span>
+          {successMessage}
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm flex items-center gap-3 font-medium">
+          <span className="material-symbols-outlined text-red-500">error</span>
+          {errorMessage}
+        </div>
+      )}
+
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col">
         {/* Filters & Search */}
         <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col md:flex-row gap-4">
@@ -65,11 +149,17 @@ const Users: React.FC = () => {
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-mustard-500 focus:ring-2 focus:ring-mustard-500/10 focus:outline-none transition-all text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
               placeholder="Buscar por nome, e-mail ou CPF..."
               type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <div className="flex gap-4">
             <div className="relative">
-              <select className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-mustard-500 focus:ring-2 focus:ring-mustard-500/10 focus:outline-none transition-all text-sm font-medium appearance-none cursor-pointer">
+              <select
+                value={selectedAccessLevel}
+                onChange={(e) => setSelectedAccessLevel(e.target.value)}
+                className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-mustard-500 focus:ring-2 focus:ring-mustard-500/10 focus:outline-none transition-all text-sm font-medium appearance-none cursor-pointer"
+              >
                 <option value="">Todos os Níveis</option>
                 <option value="Administrador">Administrador</option>
                 <option value="Diretoria">Diretoria</option>
@@ -83,7 +173,11 @@ const Users: React.FC = () => {
               <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-lg">expand_more</span>
             </div>
             <div className="relative">
-              <select className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-mustard-500 focus:ring-2 focus:ring-mustard-500/10 focus:outline-none transition-all text-sm font-medium appearance-none cursor-pointer">
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-mustard-500 focus:ring-2 focus:ring-mustard-500/10 focus:outline-none transition-all text-sm font-medium appearance-none cursor-pointer"
+              >
                 <option value="">Todos os Status</option>
                 <option value="true">Ativo</option>
                 <option value="false">Inativo</option>
@@ -107,7 +201,7 @@ const Users: React.FC = () => {
           {error && (
             <div className="p-12 text-center">
               <span className="material-symbols-outlined text-red-500 text-[48px] mb-3 block">error</span>
-              <p className="text-sm font-medium text-slate-900 dark:text-white">Ocorreu um erro ao carregar os data.</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-white">Ocorreu um erro ao carregar os dados.</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{error}</p>
               <button
                 onClick={fetchUsers}
@@ -131,7 +225,7 @@ const Users: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {!loading && users.length === 0 && (
+                {!loading && filteredUsers.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center">
                       <span className="material-symbols-outlined text-slate-300 dark:text-slate-700 text-[48px] mb-3 block">person_off</span>
@@ -139,7 +233,7 @@ const Users: React.FC = () => {
                     </td>
                   </tr>
                 )}
-                {users.map((user, index) => (
+                {filteredUsers.map((user, index) => (
                   <motion.tr
                     key={user.id}
                     initial={{ opacity: 0 }}
@@ -149,7 +243,7 @@ const Users: React.FC = () => {
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-mustard-50 dark:bg-mustard-500/10 text-mustard-700 dark:text-mustard-400 flex items-center justify-center font-bold text-sm overflow-hidden border border-mustard-100 dark:border-mustard-500/20 shadow-sm transition-transform group-hover:scale-105">
+                        <div className="w-10 h-10 rounded-xl bg-mustard-50 dark:bg-mustard-500/10 text-mustard-700 dark:text-must400 flex items-center justify-center font-bold text-sm overflow-hidden border border-mustard-100 dark:border-mustard-500/20 shadow-sm transition-transform group-hover:scale-105">
                           {user.photo_url ? (
                             <img src={user.photo_url} alt={user.full_name} className="w-full h-full object-cover" />
                           ) : (
@@ -189,18 +283,34 @@ const Users: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-2 text-slate-400 hover:text-mustard-600 dark:hover:text-mustard-400 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 rounded-lg transition-colors" title="Editar">
+                        <button
+                          onClick={() => navigate(`/usuarios/editar/${user.id}`)}
+                          className="p-2 text-slate-400 hover:text-mustard-600 dark:hover:text-mustard-400 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 rounded-lg transition-colors"
+                          title="Editar"
+                        >
                           <span className="material-symbols-outlined text-[20px]">edit</span>
                         </button>
-                        <button className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors" title="Resetar Senha">
+                        <button
+                          onClick={() => handleResetPassword(user)}
+                          className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                          title="Resetar Senha"
+                        >
                           <span className="material-symbols-outlined text-[20px]">key</span>
                         </button>
                         {user.active ? (
-                          <button className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors" title="Inativar">
+                          <button
+                            onClick={() => handleToggleActive(user)}
+                            className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="Inativar"
+                          >
                             <span className="material-symbols-outlined text-[20px]">block</span>
                           </button>
                         ) : (
-                          <button className="p-2 text-slate-400 hover:text-mustard-600 dark:hover:text-mustard-400 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 rounded-lg transition-colors" title="Ativar">
+                          <button
+                            onClick={() => handleToggleActive(user)}
+                            className="p-2 text-slate-400 hover:text-mustard-600 dark:hover:text-mustard-400 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 rounded-lg transition-colors"
+                            title="Ativar"
+                          >
                             <span className="material-symbols-outlined text-[20px]">check_circle</span>
                           </button>
                         )}
@@ -215,7 +325,7 @@ const Users: React.FC = () => {
 
         <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 px-6 py-4">
           <span className="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest">
-            Total de <span className="font-bold text-slate-900 dark:text-white">{users.length}</span> colaboradores cadastrados
+            Total de <span className="font-bold text-slate-900 dark:text-white">{filteredUsers.length}</span> colaboradores na busca
           </span>
         </div>
       </div>

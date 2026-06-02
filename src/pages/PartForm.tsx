@@ -40,11 +40,11 @@ const PartForm: React.FC = () => {
     setError(null);
 
     try {
+      const { total_value, ...restData } = formData;
       const payload = {
-        ...formData,
+        ...restData,
         quantity: formData.quantity ? parseFloat(formData.quantity) : 0,
         unit_value: formData.unit_value ? parseFloat(formData.unit_value) : 0,
-        total_value: formData.total_value ? parseFloat(formData.total_value) : 0,
       };
 
       await api.post('/parts', payload);

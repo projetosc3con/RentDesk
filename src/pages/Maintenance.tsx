@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { pdf } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
 import api from '../services/api';
 import type { ServiceOrder } from '../types';
+import ServiceOrderDocument from '../components/maintenance/ServiceOrderDocument';
 
 const Maintenance: React.FC = () => {
   const navigate = useNavigate();
@@ -10,6 +13,89 @@ const Maintenance: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [generatingPdfId, setGeneratingPdfId] = useState<string | null>(null);
+  const [viewingPdfId, setViewingPdfId] = useState<string | null>(null);
+
+
+  const handleDownloadPdf = async (os: ServiceOrder) => {
+    try {
+      setGeneratingPdfId(os.id);
+      
+      const partsUsed = (os as any).service_order_parts?.map((p: any) => ({
+        part_id: p.part_id,
+        description: p.parts?.description || p.part_description || '',
+        internal_code: p.parts?.internal_code || p.internal_code || '',
+        quantity_used: p.quantity_used,
+        unit_value_at_use: p.unit_value_at_use,
+        subtotal: p.quantity_used * p.unit_value_at_use,
+        was_used: p.was_used !== false
+      })) || [];
+
+      const laborEntries = (os as any).service_order_labor?.map((l: any) => ({
+        technician_name: l.technician_name,
+        labor_date: l.labor_date || '',
+        start_time: l.start_time || '',
+        end_time: l.end_time || '',
+        labor_type: l.labor_type || 'T',
+      })) || [];
+
+      const blob = await pdf(
+        <ServiceOrderDocument
+          data={os}
+          parts={partsUsed}
+          labor={laborEntries}
+        />
+      ).toBlob();
+      
+      const fileName = `OS-${os.os_number || 'nova'}-${os.order_type || 'Interna'}.pdf`;
+      saveAs(blob, fileName);
+    } catch (err) {
+      console.error('Erro ao gerar PDF:', err);
+      alert('Erro ao gerar o PDF da Ordem de Serviço.');
+    } finally {
+      setGeneratingPdfId(null);
+    }
+  };
+
+  const handleViewPdf = async (os: ServiceOrder) => {
+    try {
+      setViewingPdfId(os.id);
+      
+      const partsUsed = (os as any).service_order_parts?.map((p: any) => ({
+        part_id: p.part_id,
+        description: p.parts?.description || p.part_description || '',
+        internal_code: p.parts?.internal_code || p.internal_code || '',
+        quantity_used: p.quantity_used,
+        unit_value_at_use: p.unit_value_at_use,
+        subtotal: p.quantity_used * p.unit_value_at_use,
+        was_used: p.was_used !== false
+      })) || [];
+
+      const laborEntries = (os as any).service_order_labor?.map((l: any) => ({
+        technician_name: l.technician_name,
+        labor_date: l.labor_date || '',
+        start_time: l.start_time || '',
+        end_time: l.end_time || '',
+        labor_type: l.labor_type || 'T',
+      })) || [];
+
+      const blob = await pdf(
+        <ServiceOrderDocument
+          data={os}
+          parts={partsUsed}
+          labor={laborEntries}
+        />
+      ).toBlob();
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+    } catch (err) {
+      console.error('Erro ao abrir PDF:', err);
+      alert('Erro ao visualizar o PDF da Ordem de Serviço.');
+    } finally {
+      setViewingPdfId(null);
+    }
+  };
+
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -167,6 +253,7 @@ const Maintenance: React.FC = () => {
                 <thead className="bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider transition-colors">
                   <tr>
                     <th className="px-6 py-4">OS</th>
+                    <th className="px-6 py-4">Tipo</th>
                     <th className="px-6 py-4">Equipamento</th>
                     <th className="px-6 py-4">Data/Local</th>
                     <th className="px-6 py-4">Status</th>
@@ -179,6 +266,15 @@ const Maintenance: React.FC = () => {
                     <tr key={os.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors group">
                       <td className="px-6 py-4">
                         <span className="font-bold text-slate-900 dark:text-white">#{os.os_number}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
+                          os.order_type === 'Externa'
+                            ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-200/50 dark:border-orange-500/20'
+                            : 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-500/20'
+                        }`}>
+                          {os.order_type || 'Interna'}
+                        </span>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col">
@@ -204,6 +300,31 @@ const Maintenance: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleViewPdf(os)}
+                            disabled={viewingPdfId === os.id}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded transition-colors disabled:opacity-60"
+                            title="Visualizar PDF"
+                          >
+                            {viewingPdfId === os.id ? (
+                              <div className="w-4 h-4 border-2 border-slate-300/30 border-t-slate-500 rounded-full animate-spin" />
+                            ) : (
+                              <span className="material-symbols-outlined text-[20px]">visibility</span>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDownloadPdf(os)}
+                            disabled={generatingPdfId === os.id}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded transition-colors disabled:opacity-60"
+                            title="Baixar PDF"
+                          >
+
+                            {generatingPdfId === os.id ? (
+                              <div className="w-4 h-4 border-2 border-slate-300/30 border-t-slate-500 rounded-full animate-spin" />
+                            ) : (
+                              <span className="material-symbols-outlined text-[20px]">download</span>
+                            )}
+                          </button>
                           <button
                             onClick={() => navigate(`/manutencoes/editar/${os.id}`)}
                             className="p-1.5 text-slate-400 hover:text-mustard-600 dark:hover:text-mustard-400 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 rounded transition-colors"
