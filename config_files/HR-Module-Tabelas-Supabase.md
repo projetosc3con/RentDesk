@@ -97,6 +97,24 @@ Registra cada movimentação de cargo/salário de um colaborador ao longo do tem
 
 ---
 
+### 1.5 `hr_position_document_types` — Documentos exigidos por cargo
+
+Tabela de associação N:N entre cargos e tipos de documento. Permite definir quais documentos são obrigatórios ou opcionais para cada cargo específico.
+
+| Coluna | Tipo | Restrições | Descrição |
+|---|---|---|---|
+| `id` | UUID | PK, default gen_random_uuid() | Identificador único |
+| `position_id` | UUID | FK → hr_positions(id) ON DELETE CASCADE, NOT NULL | Cargo ao qual o documento é associado |
+| `document_type_id` | UUID | FK → hr_document_types(id) ON DELETE CASCADE, NOT NULL | Tipo de documento exigido |
+| `mandatory` | BOOLEAN | NOT NULL, default TRUE | Se o documento é obrigatório para este cargo |
+| `notes` | TEXT | | Observações (ex: "Exigido apenas para operação externa") |
+| `created_at` | TIMESTAMPTZ | NOT NULL, default now() | Data de criação |
+
+> **Constraint UNIQUE:** `(position_id, document_type_id)` — impede duplicidade na associação.  
+> **ON DELETE CASCADE:** se o cargo ou tipo de documento for removido, as associações são automaticamente limpas.
+
+---
+
 ## 2. Monitoramento de Documentação
 
 ### 2.1 `hr_document_types` — Tipos de documento
@@ -238,6 +256,10 @@ Registro de cada treinamento externo concluído por um colaborador.
 CREATE INDEX idx_employee_positions_user     ON hr_employee_positions(user_id);
 CREATE INDEX idx_employee_positions_current  ON hr_employee_positions(user_id) WHERE end_date IS NULL;
 
+-- Documentos exigidos por cargo
+CREATE INDEX idx_pos_doc_types_position      ON hr_position_document_types(position_id);
+CREATE INDEX idx_pos_doc_types_document      ON hr_position_document_types(document_type_id);
+
 -- Documentos
 CREATE INDEX idx_employee_documents_user     ON hr_employee_documents(user_id);
 CREATE INDEX idx_employee_documents_expiry   ON hr_employee_documents(expiry_date) WHERE expiry_date IS NOT NULL;
@@ -265,6 +287,10 @@ users_profiles
     │                        ──→ hr_job_levels
     │
     ├── hr_employee_documents ──→ hr_document_types
+    │                                    ↑
+    │                         hr_position_document_types (N:N)
+    │                                    ↓
+    │                              hr_positions
     │
     ├── hr_employee_integrations ──→ hr_integration_types
     │                            ──→ clients

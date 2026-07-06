@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../services/api';
 
 interface DocumentTypeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialData?: any;
 }
 
-const DocumentTypeModal: React.FC<DocumentTypeModalProps> = ({ isOpen, onClose }) => {
+const DocumentTypeModal: React.FC<DocumentTypeModalProps> = ({ isOpen, onClose, initialData }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -15,6 +17,48 @@ const DocumentTypeModal: React.FC<DocumentTypeModalProps> = ({ isOpen, onClose }
     mandatory: true,
     active: true,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setFormData({
+          name: initialData.name || '',
+          description: initialData.description || '',
+          requires_expiry: initialData.requires_expiry || false,
+          alert_days_before: initialData.alert_days_before || 30,
+          mandatory: initialData.mandatory !== undefined ? initialData.mandatory : true,
+          active: initialData.active !== undefined ? initialData.active : true,
+        });
+      } else {
+        setFormData({
+          name: '',
+          description: '',
+          requires_expiry: false,
+          alert_days_before: 30,
+          mandatory: true,
+          active: true,
+        });
+      }
+    }
+  }, [isOpen, initialData]);
+
+  const handleSubmit = async () => {
+    if (!formData.name) return;
+    setIsSubmitting(true);
+    try {
+      if (initialData?.id) {
+        await api.put(`/hr/document-types/${initialData.id}`, formData);
+      } else {
+        await api.post('/hr/document-types', formData);
+      }
+      onClose();
+    } catch (error) {
+      console.error('Error saving document type:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -35,17 +79,17 @@ const DocumentTypeModal: React.FC<DocumentTypeModalProps> = ({ isOpen, onClose }
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+          className="relative bg-white dark:bg-slate-900 w-full max-w-lg max-h-[85vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-mustard-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-mustard-500/20">
+              <div className="w-10 h-10 bg-mustard-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-mustard-500/20">
                 <span className="material-symbols-outlined">settings</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Novo Tipo</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Configuração de categoria de documento.</p>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Novo Tipo</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Configuração de categoria de documento.</p>
               </div>
             </div>
             <button
@@ -144,18 +188,27 @@ const DocumentTypeModal: React.FC<DocumentTypeModalProps> = ({ isOpen, onClose }
           </div>
 
           {/* Footer */}
-          <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-4">
+          <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-4">
             <button
               onClick={onClose}
-              className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
+              className="px-6 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
+              disabled={isSubmitting}
             >
               Cancelar
             </button>
             <button
-              className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!formData.name}
+              onClick={handleSubmit}
+              className="px-6 py-2 bg-mustard-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              disabled={!formData.name || isSubmitting}
             >
-              Salvar Categoria
+              {isSubmitting ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  Salvando...
+                </>
+              ) : (
+                'Salvar Categoria'
+              )}
             </button>
           </div>
         </motion.div>

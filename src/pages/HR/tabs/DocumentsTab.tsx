@@ -1,10 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import UploadDocumentModal from '../../../components/hr-modals/UploadDocumentModal';
 import DocumentTypeModal from '../../../components/hr-modals/DocumentTypeModal';
+import api from '../../../services/api';
 
 const DocumentsTab: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
+  const [selectedDocumentType, setSelectedDocumentType] = useState<any>(null);
+  const [documentTypes, setDocumentTypes] = useState<any[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(false);
+
+  const fetchDocumentTypes = async () => {
+    setLoadingTypes(true);
+    try {
+      const res = await api.get('/hr/document-types');
+      setDocumentTypes(res.data);
+    } catch (error) {
+      console.error('Failed to fetch document types', error);
+    } finally {
+      setLoadingTypes(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDocumentTypes();
+  }, []);
+
   const mockDocuments = [
     { id: '1', employee: 'João Silva', type: 'CNH - Categoria D', expiry: '20/05/2026', status: 'A Vencer' },
     { id: '2', employee: 'Maria Santos', type: 'ASO - Periódico', expiry: '10/04/2026', status: 'Vencido' },
@@ -108,20 +129,45 @@ const DocumentsTab: React.FC = () => {
                 Tipos de Documento
               </h3>
               <button 
-                onClick={() => setIsTypeModalOpen(true)}
+                onClick={() => {
+                  setSelectedDocumentType(null);
+                  setIsTypeModalOpen(true);
+                }}
                 className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center transition-colors"
               >
                 <span className="material-symbols-outlined text-sm">add</span>
               </button>
             </div>
             <div className="p-6 space-y-4">
-              {['CNH', 'ASO', 'CTPS', 'Certificado NR', 'RG/CPF'].map((type) => (
-                <div key={type} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-xl group hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-colors">
+              {loadingTypes ? (
+                <div className="text-center py-6 text-xs text-slate-500">Carregando tipos...</div>
+              ) : documentTypes.length === 0 ? (
+                <div className="text-center py-6 text-xs text-slate-500 italic">Nenhum tipo de documento cadastrado.</div>
+              ) : documentTypes.map((type) => (
+                <div key={type.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 border border-transparent dark:border-slate-700 rounded-xl group hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-colors">
                   <div className="flex items-center gap-3">
                     <span className="material-symbols-outlined text-slate-400 dark:text-slate-500 text-sm group-hover:text-mustard-600 dark:group-hover:text-mustard-400">article</span>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{type}</span>
+                    <div>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{type.name}</span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {type.mandatory && (
+                          <span className="text-[9px] font-black text-red-500 uppercase tracking-tighter">Obrigatório</span>
+                        )}
+                        {type.requires_expiry && (
+                          <span className="text-[9px] font-black text-amber-500 uppercase tracking-tighter">Tem Validade</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-sm opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+                  <button 
+                    onClick={() => {
+                      setSelectedDocumentType(type);
+                      setIsTypeModalOpen(true);
+                    }}
+                    className="p-1"
+                  >
+                    <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-sm opacity-0 group-hover:opacity-100 transition-opacity">edit</span>
+                  </button>
                 </div>
               ))}
             </div>
@@ -136,7 +182,12 @@ const DocumentsTab: React.FC = () => {
 
       <DocumentTypeModal
         isOpen={isTypeModalOpen}
-        onClose={() => setIsTypeModalOpen(false)}
+        onClose={() => {
+          setIsTypeModalOpen(false);
+          setSelectedDocumentType(null);
+          fetchDocumentTypes();
+        }}
+        initialData={selectedDocumentType}
       />
     </div>
   );

@@ -1,24 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../services/api';
 
 interface NewPositionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialData?: any;
 }
 
-const JOB_LEVELS = [
-  { id: '1', name: 'Estagiário' },
-  { id: '2', name: 'Auxiliar' },
-  { id: '3', name: 'Assistente' },
-  { id: '4', name: 'Júnior' },
-  { id: '5', name: 'Pleno' },
-  { id: '6', name: 'Sênior' },
-  { id: '7', name: 'Especialista' },
-  { id: '8', name: 'Coordenador' },
-  { id: '9', name: 'Gerente' },
-];
-
-const NewPositionModal: React.FC<NewPositionModalProps> = ({ isOpen, onClose }) => {
+const NewPositionModal: React.FC<NewPositionModalProps> = ({ isOpen, onClose, initialData }) => {
   const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: '',
@@ -27,7 +17,102 @@ const NewPositionModal: React.FC<NewPositionModalProps> = ({ isOpen, onClose }) 
     description: '',
   });
 
+  const [jobLevels, setJobLevels] = useState<any[]>([]);
+  const [availableDocs, setAvailableDocs] = useState<any[]>([]);
+  const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [salaryRanges, setSalaryRanges] = useState<Record<string, { min: string; mid: string; max: string }>>({});
+
+  const isEditMode = !!initialData?.id;
+
+  // Fetch levels, documents on open + fetch position details if editing
+  useEffect(() => {
+    if (isOpen) {
+      fetchLevels();
+      fetchDocuments();
+      if (initialData?.id) {
+        fetchPositionDetails(initialData.id);
+      } else {
+        // Reset form for create mode
+        setFormData({ title: '', department: '', cbo_code: '', description: '' });
+        setSelectedLevels([]);
+        setSalaryRanges({});
+        setSelectedDocs([]);
+      }
+    }
+  }, [isOpen, initialData]);
+
+  const fetchLevels = async () => {
+    try {
+      const res = await api.get('/hr/levels');
+      setJobLevels(res.data);
+    } catch (error) {
+      console.error('Failed to fetch job levels', error);
+    }
+  };
+
+  const fetchDocuments = async () => {
+    try {
+      const res = await api.get('/hr/document-types');
+      setAvailableDocs(res.data);
+      // Auto-select mandatory docs (merge with any existing selections)
+      const mandatoryIds = res.data
+        .filter((d: any) => d.mandatory)
+        .map((d: any) => d.id);
+      setSelectedDocs(prev => [...new Set([...prev, ...mandatoryIds])]);
+    } catch (error) {
+      console.error('Failed to fetch document types', error);
+    }
+  };
+
+  const fetchPositionDetails = async (positionId: string) => {
+    try {
+      const res = await api.get(`/hr/positions/${positionId}`);
+      const pos = res.data;
+
+      setFormData({
+        title: pos.title || '',
+        department: pos.department || '',
+        cbo_code: pos.cbo_code || '',
+        description: pos.description || '',
+      });
+
+      // Map salary ranges back using the real level_id UUIDs
+      const levelIds: string[] = [];
+      const rangesMap: Record<string, { min: string; mid: string; max: string }> = {};
+
+      (pos.salaryRanges || []).forEach((sr: any) => {
+        const levelId = sr.level_id;
+        if (levelId) {
+          levelIds.push(levelId);
+          rangesMap[levelId] = {
+            min: sr.salary_min?.toString() || '',
+            mid: sr.salary_mid?.toString() || '',
+            max: sr.salary_max?.toString() || '',
+          };
+        }
+      });
+
+      setSelectedLevels(levelIds);
+      setSalaryRanges(rangesMap);
+
+      // Map document associations
+      const docIds = (pos.documentTypes || []).map((d: any) => d.document_type_id);
+      setSelectedDocs(docIds);
+    } catch (error) {
+      console.error('Failed to fetch position details', error);
+    }
+  };
+
+  const toggleDoc = (docId: string) => {
+    // Don't allow unchecking mandatory docs
+    const doc = availableDocs.find((d: any) => d.id === docId);
+    if (doc?.mandatory && selectedDocs.includes(docId)) return;
+    setSelectedDocs(prev =>
+      prev.includes(docId) ? prev.filter(id => id !== docId) : [...prev, docId]
+    );
+  };
 
   const toggleLevel = (levelId: string) => {
     setSelectedLevels(prev => {
@@ -52,6 +137,48 @@ const NewPositionModal: React.FC<NewPositionModalProps> = ({ isOpen, onClose }) 
     }));
   };
 
+  const handleSubmit = async () => {
+    if (!formData.title || !formData.department || selectedLevels.length === 0) return;
+
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        title: formData.title,
+        department: formData.department,
+        cbo_code: formData.cbo_code,
+        description: formData.description,
+        salaryRanges: selectedLevels.map(levelId => ({
+          level_id: levelId,
+          salary_min: parseFloat(salaryRanges[levelId]?.min) || 0,
+          salary_mid: parseFloat(salaryRanges[levelId]?.mid) || null,
+          salary_max: parseFloat(salaryRanges[levelId]?.max) || 0,
+        })),
+        documentTypes: selectedDocs.map(docId => ({
+          document_type_id: docId,
+          mandatory: true,
+        })),
+      };
+
+      if (isEditMode) {
+        await api.put(`/hr/positions/${initialData.id}`, payload);
+      } else {
+        await api.post('/hr/positions', payload);
+      }
+
+      // Reset form
+      setFormData({ title: '', department: '', cbo_code: '', description: '' });
+      setSelectedLevels([]);
+      setSalaryRanges({});
+      setSelectedDocs([]);
+
+      onClose();
+    } catch (error) {
+      console.error('Error saving position', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -74,14 +201,14 @@ const NewPositionModal: React.FC<NewPositionModalProps> = ({ isOpen, onClose }) 
           className="relative bg-white dark:bg-slate-900 w-full max-w-4xl max-h-[90vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-mustard-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-mustard-500/20">
+              <div className="w-10 h-10 bg-mustard-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-mustard-500/20">
                 <span className="material-symbols-outlined">work</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Novo Cargo</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Defina o título, departamento e faixas salariais.</p>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">{isEditMode ? 'Editar Cargo' : 'Novo Cargo'}</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{isEditMode ? 'Atualize os dados deste cargo.' : 'Defina o título, departamento e faixas salariais.'}</p>
               </div>
             </div>
             <button
@@ -114,10 +241,14 @@ const NewPositionModal: React.FC<NewPositionModalProps> = ({ isOpen, onClose }) 
                   onChange={e => setFormData({ ...formData, department: e.target.value })}
                 >
                   <option value="">Selecione...</option>
-                  <option value="Operações">Operações</option>
+                  <option value="Administrador">Administrador</option>
+                  <option value="Diretoria">Diretoria</option>
+                  <option value="Gerente">Gerente</option>
                   <option value="Comercial">Comercial</option>
-                  <option value="Administrativo">Administrativo</option>
+                  <option value="Logística">Logística</option>
+                  <option value="Manutenção">Manutenção</option>
                   <option value="Financeiro">Financeiro</option>
+                  <option value="Recursos Humanos">Recursos Humanos</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -146,19 +277,58 @@ const NewPositionModal: React.FC<NewPositionModalProps> = ({ isOpen, onClose }) 
             <div className="space-y-4">
               <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Níveis Hierárquicos Aplicáveis</label>
               <div className="flex flex-wrap gap-2">
-                {JOB_LEVELS.map(level => (
+                {jobLevels.map(level => (
                   <button
                     key={level.id}
                     onClick={() => toggleLevel(level.id)}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${selectedLevels.includes(level.id)
-                        ? 'bg-mustard-500 text-white border-mustard-500'
-                        : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-mustard-500 hover:text-mustard-500'
+                      ? 'bg-mustard-500 text-white border-mustard-500'
+                      : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-mustard-500 hover:text-mustard-500'
                       }`}
                   >
                     {level.name}
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Required Documents Selection */}
+            <div className="space-y-4">
+              <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Documentos Exigidos</label>
+              {availableDocs.length === 0 ? (
+                <p className="text-xs text-slate-500 italic ml-1">Nenhum tipo de documento cadastrado. Você pode criá-los na aba Documentos.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {availableDocs.map(doc => {
+                    const isMandatory = doc.mandatory;
+                    const isChecked = selectedDocs.includes(doc.id);
+                    return (
+                      <div
+                        key={doc.id}
+                        onClick={() => toggleDoc(doc.id)}
+                        className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isMandatory ? 'cursor-default' : 'cursor-pointer'
+                          } ${isChecked
+                            ? 'border-mustard-500 bg-mustard-50 dark:bg-mustard-500/10'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-mustard-300'
+                          }`}
+                      >
+                        <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${isChecked ? 'bg-mustard-500 text-white' : 'bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600'
+                          }`}>
+                          {isChecked && <span className="material-symbols-outlined text-[14px]">{isMandatory ? 'lock' : 'check'}</span>}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-bold ${isChecked ? 'text-mustard-700 dark:text-mustard-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                            {doc.name}
+                          </span>
+                          {isMandatory && (
+                            <span className="text-[9px] font-black text-red-500 uppercase tracking-tighter">Obrigatório</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Salary Ranges Table */}
@@ -181,7 +351,7 @@ const NewPositionModal: React.FC<NewPositionModalProps> = ({ isOpen, onClose }) 
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                       {selectedLevels.map(levelId => {
-                        const level = JOB_LEVELS.find(l => l.id === levelId);
+                        const level = jobLevels.find(l => l.id === levelId);
                         return (
                           <tr key={levelId} className="bg-white/50 dark:bg-slate-800/30">
                             <td className="px-6 py-4">
@@ -228,18 +398,27 @@ const NewPositionModal: React.FC<NewPositionModalProps> = ({ isOpen, onClose }) 
           </div>
 
           {/* Footer */}
-          <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-4">
+          <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-4">
             <button
               onClick={onClose}
-              className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
+              className="px-6 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
+              disabled={isSubmitting}
             >
               Cancelar
             </button>
             <button
-              className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!formData.title || !formData.department || selectedLevels.length === 0}
+              onClick={handleSubmit}
+              className="px-6 py-2 bg-mustard-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              disabled={!formData.title || !formData.department || selectedLevels.length === 0 || isSubmitting}
             >
-              Salvar Cargo
+              {isSubmitting ? (
+                <>
+                  <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
+                  Salvando...
+                </>
+              ) : (
+                isEditMode ? 'Atualizar Cargo' : 'Salvar Cargo'
+              )}
             </button>
           </div>
         </motion.div>

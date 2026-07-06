@@ -1,29 +1,59 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import api from '../../services/api';
+
 interface ChangePositionModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const MOCK_EMPLOYEES = [
-  { id: '1', name: 'João Silva', currentPosition: 'Técnico de Campo I', department: 'Operações', salary: 'R$ 3.500,00' },
-  { id: '2', name: 'Maria Santos', currentPosition: 'Assistente Administrativo', department: 'Financeiro', salary: 'R$ 2.800,00' },
-];
-
-const MOCK_POSITIONS = [
-  { id: '101', name: 'Técnico de Campo II', level: 'Pleno' },
-  { id: '102', name: 'Supervisor de Operações', level: 'Sênior' },
-  { id: '103', name: 'Analista de Processos', level: 'Pleno' },
-];
-
 const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedEmployee, setSelectedEmployee] = useState<typeof MOCK_EMPLOYEES[0] | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [newPositionId, setNewPositionId] = useState('');
   const [step, setStep] = useState(1); // 1: Search, 2: Change
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [availablePositions, setAvailablePositions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleSelectEmployee = (emp: typeof MOCK_EMPLOYEES[0]) => {
+  React.useEffect(() => {
+    if (isOpen) {
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          const [empRes, posRes] = await Promise.all([
+            api.get('/hr/employees'),
+            api.get('/hr/positions')
+          ]);
+          
+          // Somente colaboradores que já possuem cargo
+          const eligible = empRes.data.filter((e: any) => e.positionTitle);
+          setEmployees(eligible);
+
+          // Flatten positions e levels
+          const flattened: any[] = [];
+          posRes.data.forEach((p: any) => {
+            if (p.levels && p.levels.length > 0) {
+              p.levels.forEach((l: string) => {
+                flattened.push({ id: `${p.id}|${l}`, name: p.name, level: l });
+              });
+            } else {
+              flattened.push({ id: p.id, name: p.name, level: '' });
+            }
+          });
+          setAvailablePositions(flattened);
+        } catch (error) {
+          console.error('Failed to load modal data', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
+    }
+  }, [isOpen]);
+
+  const handleSelectEmployee = (emp: any) => {
     setSelectedEmployee(emp);
     setStep(2);
   };
@@ -55,17 +85,17 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative bg-white dark:bg-slate-900 w-full max-w-3xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col"
+          className="relative bg-white dark:bg-slate-900 w-full max-w-3xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
         >
           {/* Header */}
-          <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-mustard-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-mustard-500/20">
+              <div className="w-10 h-10 bg-mustard-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-mustard-500/20">
                 <span className="material-symbols-outlined">person_edit</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Alterar Cargo</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Movimentação de colaborador e atualização salarial.</p>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Alterar Cargo</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Movimentação de colaborador e atualização salarial.</p>
               </div>
             </div>
             <button
@@ -93,7 +123,9 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
 
                 <div className="space-y-3">
                   <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-2">Resultados da Pesquisa</p>
-                  {MOCK_EMPLOYEES.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).map(emp => (
+                  {loading ? (
+                    <div className="text-center py-8 text-xs text-slate-500">Carregando colaboradores...</div>
+                  ) : employees.filter(e => e.name.toLowerCase().includes(searchTerm.toLowerCase())).map(emp => (
                     <div 
                       key={emp.id}
                       onClick={() => handleSelectEmployee(emp)}
@@ -101,16 +133,19 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
                     >
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 font-bold group-hover:bg-mustard-50 dark:group-hover:bg-mustard-500/10 group-hover:text-mustard-600 dark:group-hover:text-mustard-400 transition-colors">
-                          {emp.name.split(' ').map(n => n[0]).join('')}
+                          {emp.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
                         </div>
                         <div>
                           <h4 className="font-bold text-slate-900 dark:text-white">{emp.name}</h4>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">{emp.currentPosition} • {emp.department}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{emp.positionTitle} {emp.levelName ? `- ${emp.levelName}` : ''} • {emp.department}</p>
                         </div>
                       </div>
                       <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 group-hover:text-mustard-500 transition-colors">arrow_forward</span>
                     </div>
                   ))}
+                  {!loading && employees.length === 0 && (
+                     <div className="text-center py-8 text-xs text-slate-500">Nenhum colaborador elegível encontrado.</div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -124,10 +159,10 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
                     className="flex-1 p-6 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[32px] relative"
                   >
                     <span className="absolute -top-3 left-6 px-3 py-1 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase rounded-full">Cargo Atual</span>
-                    <h4 className="text-lg font-black text-slate-900 dark:text-white mt-2">{selectedEmployee?.currentPosition}</h4>
+                    <h4 className="text-lg font-black text-slate-900 dark:text-white mt-2">{selectedEmployee?.positionTitle} {selectedEmployee?.levelName ? `- ${selectedEmployee.levelName}` : ''}</h4>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{selectedEmployee?.department}</p>
                     <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-4 uppercase tracking-tighter">Remuneração</p>
-                    <p className="text-sm font-black text-slate-700 dark:text-slate-300">{selectedEmployee?.salary}</p>
+                    <p className="text-sm font-black text-slate-700 dark:text-slate-300">{selectedEmployee?.salary || 'A Consultar'}</p>
                   </motion.div>
 
                   {/* Transition Arrow */}
@@ -147,10 +182,10 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
                     {newPositionId ? (
                       <div>
                         <h4 className="text-lg font-black text-mustard-600 mt-2">
-                          {MOCK_POSITIONS.find(p => p.id === newPositionId)?.name}
+                          {availablePositions.find(p => p.id === newPositionId)?.name}
                         </h4>
                         <p className="text-sm text-mustard-500 font-bold uppercase tracking-widest">
-                          Nível {MOCK_POSITIONS.find(p => p.id === newPositionId)?.level}
+                          {availablePositions.find(p => p.id === newPositionId)?.level ? `Nível ${availablePositions.find(p => p.id === newPositionId)?.level}` : 'Nível Único'}
                         </p>
                         <div className="mt-4 pt-4 border-t border-mustard-500/10 dark:border-mustard-500/20">
                           <p className="text-[10px] font-black text-mustard-600/40 dark:text-mustard-400/40 uppercase tracking-widest">Nova Faixa Salarial</p>
@@ -174,7 +209,7 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
                 <div className="space-y-3">
                   <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-2">Cargos Disponíveis para Promoção/Transferência</p>
                   <div className="grid grid-cols-2 gap-4">
-                    {MOCK_POSITIONS.map(pos => (
+                    {availablePositions.map(pos => (
                       <div 
                         key={pos.id}
                         onClick={() => setNewPositionId(pos.id)}
@@ -183,7 +218,7 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
                         }`}
                       >
                         <h5 className="text-sm font-bold text-slate-900 dark:text-white">{pos.name}</h5>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase">{pos.level}</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase">{pos.level || 'Nível Único'}</p>
                       </div>
                     ))}
                   </div>
@@ -203,7 +238,7 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
           </div>
 
           {/* Footer */}
-          <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
+          <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
             {step === 2 ? (
               <button 
                 onClick={() => setStep(1)}
@@ -217,12 +252,12 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
             <div className="flex items-center gap-4">
               <button
                 onClick={reset}
-                className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
+                className="px-6 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
               >
                 Cancelar
               </button>
               <button
-                className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-mustard-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={step === 1 || !newPositionId}
               >
                 Confirmar Alteração

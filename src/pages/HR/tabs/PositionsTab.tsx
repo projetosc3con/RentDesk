@@ -1,40 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import NewPositionModal from '../../../components/hr-modals/NewPositionModal';
 import ChangePositionModal from '../../../components/hr-modals/ChangePositionModal';
 import PositionHistoryModal from '../../../components/hr-modals/PositionHistoryModal';
-import JobLevelModal from '../../../components/hr-modals/JobLevelModal';
+import api from '../../../services/api';
 
 const PositionsTab: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  
-  // Job Level States
-  const [isLevelModalOpen, setIsLevelModalOpen] = useState(false);
-  const [selectedLevel, setSelectedLevel] = useState<{ id: string; name: string; description: string } | null>(null);
+  const [selectedPosition, setSelectedPosition] = useState<any>(null);
 
-  const mockPositions = [
-    { id: '1', name: 'Técnico de Campo I', levels: ['Júnior', 'Pleno', 'Sênior'], employees: 12 },
-    { id: '2', name: 'Analista Administrativo', levels: ['Júnior', 'Pleno'], employees: 4 },
-    { id: '3', name: 'Supervisor de Logística', levels: ['Sênior'], employees: 2 },
-  ];
+  const [positions, setPositions] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const mockLevels = [
-    { id: '1', name: 'Júnior', description: 'Nível inicial de carreira' },
-    { id: '2', name: 'Pleno', description: 'Profissional com autonomia' },
-    { id: '3', name: 'Sênior', description: 'Especialista e referência' },
-    { id: '4', name: 'Especialista', description: 'Foco técnico profundo' },
-  ];
-
-  const handleEditLevel = (level: typeof mockLevels[0]) => {
-    setSelectedLevel(level);
-    setIsLevelModalOpen(true);
+  const fetchData = async () => {
+    try {
+      const [posRes, empRes, actRes] = await Promise.all([
+        api.get('/hr/positions'),
+        api.get('/hr/employees'),
+        api.get('/hr/recent-activities')
+      ]);
+      setPositions(posRes.data);
+      setEmployees(empRes.data);
+      setActivities(actRes.data);
+    } catch (error) {
+      console.error('Failed to fetch HR data', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddLevel = () => {
-    setSelectedLevel(null);
-    setIsLevelModalOpen(true);
-  };
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -51,8 +51,11 @@ const PositionsTab: React.FC = () => {
                 <p className="text-sm text-slate-500 dark:text-slate-400">Gestão de estrutura hierárquica e ocupacional.</p>
               </div>
             </div>
-            <button 
-              onClick={() => setIsModalOpen(true)}
+            <button
+              onClick={() => {
+                setSelectedPosition(null);
+                setIsModalOpen(true);
+              }}
               className="flex items-center gap-2 px-6 py-3 bg-mustard-500 text-white rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/10"
             >
               <span className="material-symbols-outlined text-[20px]">add</span>
@@ -71,7 +74,11 @@ const PositionsTab: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {mockPositions.map((pos) => (
+                {loading ? (
+                  <tr><td colSpan={4} className="text-center py-6 text-slate-500">Carregando...</td></tr>
+                ) : positions.length === 0 ? (
+                  <tr><td colSpan={4} className="text-center py-6 text-slate-500">Nenhum cargo cadastrado.</td></tr>
+                ) : positions.map((pos) => (
                   <tr key={pos.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                     <td className="px-8 py-6">
                       <p className="text-sm font-bold text-slate-900 dark:text-white">{pos.name}</p>
@@ -89,7 +96,13 @@ const PositionsTab: React.FC = () => {
                       <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{pos.employees}</span>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <button className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-mustard-500 dark:hover:text-mustard-500 hover:border-mustard-500 dark:hover:border-mustard-500 transition-all flex items-center justify-center ml-auto">
+                      <button 
+                        onClick={() => {
+                          setSelectedPosition(pos);
+                          setIsModalOpen(true);
+                        }}
+                        className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-mustard-500 dark:hover:text-mustard-500 hover:border-mustard-500 dark:hover:border-mustard-500 transition-all flex items-center justify-center ml-auto"
+                      >
                         <span className="material-symbols-outlined text-sm">edit</span>
                       </button>
                     </td>
@@ -100,21 +113,47 @@ const PositionsTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Promotion Timeline Mock */}
+        {/* Colaboradores / Onboard */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
           <h3 className="font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-            <span className="material-symbols-outlined text-mustard-500">timeline</span>
-            Atividades Recentes
+            <span className="material-symbols-outlined text-mustard-500">groups</span>
+            Colaboradores Cadastrados
           </h3>
-          <div className="relative pl-6 border-l-2 border-slate-100 dark:border-slate-800 space-y-8">
-            {[1, 2].map((_, i) => (
-              <div key={i} className="relative pl-10">
-                <div className="absolute left-[-33px] top-1 w-10 h-10 bg-white dark:bg-slate-900 border-4 border-slate-50 dark:border-slate-800 rounded-full flex items-center justify-center z-10 shadow-sm">
-                  <div className="w-2.5 h-2.5 bg-mustard-500 rounded-full"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {loading ? (
+              <div className="col-span-2 text-center py-8 text-slate-500">Carregando colaboradores...</div>
+            ) : employees.length === 0 ? (
+              <div className="col-span-2 text-center py-8 text-slate-500">Nenhum colaborador encontrado.</div>
+            ) : employees.map(emp => (
+              <div key={emp.id} className="p-4 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-800/50 flex flex-col justify-between">
+                <div className="flex items-center gap-3">
+                  {emp.photo_url ? (
+                    <img src={emp.photo_url} alt={emp.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 font-bold shrink-0">
+                      {emp.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-slate-900 dark:text-white truncate">{emp.name}</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{emp.email}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">João Silva foi promovido a Técnico II</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Realizado em 15/04/2026 • Motivo: Promoção Vertical</p>
+                <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  {emp.positionTitle ? (
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Cargo Atual</p>
+                      <p className="text-sm font-bold text-mustard-600 dark:text-mustard-400">{emp.positionTitle} - {emp.levelName}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{emp.department}</p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 italic">Nenhum cargo associado</p>
+                      <button className="px-3 py-1.5 bg-mustard-50 dark:bg-mustard-500/10 text-mustard-600 dark:text-mustard-400 rounded-lg text-xs font-bold hover:bg-mustard-500 hover:text-white transition-colors">
+                        Iniciar Onboard
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -128,16 +167,16 @@ const PositionsTab: React.FC = () => {
           <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-white/5 text-9xl">badge</span>
           <h3 className="text-lg font-bold mb-1">Gestão de Pessoal</h3>
           <p className="text-mustard-100/60 text-xs uppercase tracking-widest font-bold mb-6">Movimentações</p>
-          
+
           <div className="space-y-4 relative z-10">
-            <button 
+            <button
               onClick={() => setIsChangeModalOpen(true)}
               className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-sm">person_edit</span>
               Alterar Cargo
             </button>
-            <button 
+            <button
               onClick={() => setIsHistoryModalOpen(true)}
               className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
             >
@@ -147,26 +186,26 @@ const PositionsTab: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Resumo de Níveis</h4>
-            <button 
-              onClick={handleAddLevel}
-              className="w-7 h-7 rounded-lg bg-mustard-50 dark:bg-mustard-500/10 text-mustard-600 dark:text-mustard-400 flex items-center justify-center hover:bg-mustard-500 hover:text-white transition-all shadow-sm shadow-mustard-500/5"
-            >
-              <span className="material-symbols-outlined text-sm">add</span>
-            </button>
-          </div>
-          <div className="space-y-3">
-            {mockLevels.map((level) => (
-              <div key={level.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl group hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-all">
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300 group-hover:text-mustard-600 dark:group-hover:text-mustard-400">{level.name}</span>
-                <button 
-                  onClick={() => handleEditLevel(level)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 dark:text-slate-600 group-hover:text-mustard-500 dark:group-hover:text-mustard-400 hover:bg-white dark:hover:bg-slate-700 transition-all"
-                >
-                  <span className="material-symbols-outlined text-sm">edit</span>
-                </button>
+        {/* Promotion Timeline Mock (Moved to Sidebar) */}
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+          <h3 className="font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2 text-sm">
+            <span className="material-symbols-outlined text-mustard-500 text-lg">timeline</span>
+            Atividades Recentes
+          </h3>
+          <div className="relative pl-6 border-l-2 border-slate-100 dark:border-slate-800 space-y-6">
+            {loading ? (
+              <div className="text-center py-4 text-slate-500 text-xs">Carregando...</div>
+            ) : activities.length === 0 ? (
+              <div className="text-center py-4 text-slate-500 text-xs">Nenhuma atividade recente.</div>
+            ) : activities.map((activity) => (
+              <div key={activity.id} className="relative pl-6">
+                <div className="absolute left-[-29px] top-1 w-8 h-8 bg-white dark:bg-slate-900 border-4 border-slate-50 dark:border-slate-800 rounded-full flex items-center justify-center z-10">
+                  <div className="w-2 h-2 bg-mustard-500 rounded-full"></div>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">{activity.employeeName} foi atribuído(a) a {activity.positionTitle} {activity.levelName ? `- ${activity.levelName}` : ''}</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">{new Date(activity.date).toLocaleDateString('pt-BR')} • {activity.reason}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -174,9 +213,14 @@ const PositionsTab: React.FC = () => {
       </div>
 
       {/* Modals */}
-      <NewPositionModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <NewPositionModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedPosition(null);
+          fetchData();
+        }}
+        initialData={selectedPosition}
       />
 
       <ChangePositionModal
@@ -187,12 +231,6 @@ const PositionsTab: React.FC = () => {
       <PositionHistoryModal
         isOpen={isHistoryModalOpen}
         onClose={() => setIsHistoryModalOpen(false)}
-      />
-
-      <JobLevelModal
-        isOpen={isLevelModalOpen}
-        onClose={() => setIsLevelModalOpen(false)}
-        levelData={selectedLevel}
       />
     </div>
   );

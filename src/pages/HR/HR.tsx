@@ -17,7 +17,6 @@ const HR: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Recursos Humanos</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Gestão de cargos, documentos, integrações e treinamentos da equipe.</p>
       </div>
 
       {/* Tabs Navigation */}
@@ -27,8 +26,8 @@ const HR: React.FC = () => {
             key={tab.id}
             to={tab.path}
             className={({ isActive }) => `flex-1 flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap ${isActive
-                ? 'bg-mustard-500 text-white shadow-lg shadow-mustard-500/20'
-                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+              ? 'bg-mustard-500 text-white shadow-lg shadow-mustard-500/20'
+              : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
           >
             <span className="material-symbols-outlined text-[20px]">{tab.icon}</span>
