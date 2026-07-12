@@ -150,12 +150,12 @@ const Header: React.FC = () => {
                     Meu Perfil
                   </Link>
                   <Link
-                    to="/configuracoes"
+                    to="/ponto"
                     className="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-mustard-500 transition-colors text-sm font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <span className="material-symbols-outlined text-[20px]">settings</span>
-                    Configurações
+                    <span className="material-symbols-outlined text-[20px]">fingerprint</span>
+                    Registrar Ponto
                   </Link>
                 </div>
 

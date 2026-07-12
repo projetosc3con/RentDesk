@@ -12,10 +12,13 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [newPositionId, setNewPositionId] = useState('');
+  const [newSalary, setNewSalary] = useState('');
+  const [changeReason, setChangeReason] = useState('Promoção Vertical');
   const [step, setStep] = useState(1); // 1: Search, 2: Change
   const [employees, setEmployees] = useState<any[]>([]);
   const [availablePositions, setAvailablePositions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -36,10 +39,11 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
           posRes.data.forEach((p: any) => {
             if (p.levels && p.levels.length > 0) {
               p.levels.forEach((l: string) => {
-                flattened.push({ id: `${p.id}|${l}`, name: p.name, level: l });
+                const range = p.ranges?.find((r: any) => r.level === l);
+                flattened.push({ id: `${p.id}|${l}`, name: p.name, level: l, range });
               });
             } else {
-              flattened.push({ id: p.id, name: p.name, level: '' });
+              flattened.push({ id: p.id, name: p.name, level: '', range: null });
             }
           });
           setAvailablePositions(flattened);
@@ -62,8 +66,42 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
     setSearchTerm('');
     setSelectedEmployee(null);
     setNewPositionId('');
+    setNewSalary('');
+    setChangeReason('Promoção Vertical');
     setStep(1);
     onClose();
+  };
+
+  const handleSubmit = async () => {
+    if (!selectedEmployee || !newPositionId || !newSalary) return;
+
+    // Extract position ID and level name from newPositionId format: "UUID|LevelName"
+    const [posId, levelName] = newPositionId.split('|');
+
+    setIsSubmitting(true);
+    try {
+      // Find the level UUID if applicable
+      let levelId = null;
+      if (levelName) {
+        const levelsRes = await api.get('/hr/levels');
+        const levelObj = levelsRes.data.find((l: any) => l.name === levelName);
+        if (levelObj) levelId = levelObj.id;
+      }
+
+      await api.post('/hr/employee-positions', {
+        user_id: selectedEmployee.id,
+        position_id: posId,
+        level_id: levelId,
+        salary: parseFloat(newSalary.replace(',', '.')) || 0,
+        change_reason: changeReason
+      });
+
+      reset();
+    } catch (error) {
+      console.error('Error changing position', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -162,7 +200,11 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
                     <h4 className="text-lg font-black text-slate-900 dark:text-white mt-2">{selectedEmployee?.positionTitle} {selectedEmployee?.levelName ? `- ${selectedEmployee.levelName}` : ''}</h4>
                     <p className="text-sm text-slate-500 dark:text-slate-400">{selectedEmployee?.department}</p>
                     <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-4 uppercase tracking-tighter">Remuneração</p>
-                    <p className="text-sm font-black text-slate-700 dark:text-slate-300">{selectedEmployee?.salary || 'A Consultar'}</p>
+                    <p className="text-sm font-black text-slate-700 dark:text-slate-300">
+                      {selectedEmployee?.salary 
+                        ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedEmployee.salary)
+                        : 'A Consultar'}
+                    </p>
                   </motion.div>
 
                   {/* Transition Arrow */}
@@ -188,11 +230,27 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
                           {availablePositions.find(p => p.id === newPositionId)?.level ? `Nível ${availablePositions.find(p => p.id === newPositionId)?.level}` : 'Nível Único'}
                         </p>
                         <div className="mt-4 pt-4 border-t border-mustard-500/10 dark:border-mustard-500/20">
-                          <p className="text-[10px] font-black text-mustard-600/40 dark:text-mustard-400/40 uppercase tracking-widest">Nova Faixa Salarial</p>
+                          <p className="text-[10px] font-black text-mustard-600/40 dark:text-mustard-400/40 uppercase tracking-widest mb-2">Faixa Salarial de Referência</p>
+                          {(() => {
+                            const selectedPos = availablePositions.find(p => p.id === newPositionId);
+                            if (selectedPos?.range) {
+                              return (
+                                <div className="flex gap-2 mb-4 text-[10px] font-bold text-mustard-600/60 dark:text-mustard-400/60">
+                                  <span>Min: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedPos.range.min || 0)}</span>
+                                  {selectedPos.range.mid && <span>• Méd: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedPos.range.mid)}</span>}
+                                  <span>• Máx: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(selectedPos.range.max || 0)}</span>
+                                </div>
+                              );
+                            }
+                            return <p className="text-[10px] text-mustard-600/40 mb-4">Nenhuma faixa cadastrada.</p>;
+                          })()}
+                          <p className="text-[10px] font-black text-mustard-600/40 dark:text-mustard-400/40 uppercase tracking-widest">Nova Remuneração (Obrigatório)</p>
                           <input 
                             type="text" 
                             placeholder="R$ 0,00"
-                            className="w-full bg-transparent border-none p-0 text-lg font-black text-mustard-600 dark:text-mustard-400 outline-none placeholder:text-mustard-500/20"
+                            className="w-full bg-transparent border-none p-0 text-lg font-black text-mustard-600 dark:text-mustard-400 outline-none placeholder:text-mustard-500/20 mt-1"
+                            value={newSalary}
+                            onChange={(e) => setNewSalary(e.target.value)}
                           />
                         </div>
                       </div>
@@ -226,11 +284,15 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
 
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Motivo da Alteração</label>
-                  <select className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium appearance-none dark:text-white">
-                    <option>Promoção Vertical</option>
-                    <option>Transferência Lateral</option>
-                    <option>Ajuste de Mercado</option>
-                    <option>Mérito</option>
+                  <select 
+                    className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium appearance-none dark:text-white"
+                    value={changeReason}
+                    onChange={(e) => setChangeReason(e.target.value)}
+                  >
+                    <option value="Promoção Vertical">Promoção Vertical</option>
+                    <option value="Transferência Lateral">Transferência Lateral</option>
+                    <option value="Ajuste de Mercado">Ajuste de Mercado</option>
+                    <option value="Mérito">Mérito</option>
                   </select>
                 </div>
               </div>
@@ -257,10 +319,11 @@ const ChangePositionModal: React.FC<ChangePositionModalProps> = ({ isOpen, onClo
                 Cancelar
               </button>
               <button
+                onClick={handleSubmit}
                 className="px-6 py-2 bg-mustard-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={step === 1 || !newPositionId}
+                disabled={step === 1 || !newPositionId || !newSalary || isSubmitting}
               >
-                Confirmar Alteração
+                {isSubmitting ? 'Confirmando...' : 'Confirmar Alteração'}
               </button>
             </div>
           </div>

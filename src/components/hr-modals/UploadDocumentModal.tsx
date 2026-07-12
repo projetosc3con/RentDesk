@@ -1,25 +1,20 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../services/api';
+import { createClient } from '@supabase/supabase-js';
+
+// Setup Supabase Client
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface UploadDocumentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
+  initialEmployeeId?: string;
+  initialDocTypeId?: string;
 }
-
-const MOCK_EMPLOYEES = [
-  { id: '1', name: 'João Silva' },
-  { id: '2', name: 'Maria Santos' },
-  { id: '3', name: 'Pedro Oliveira' },
-  { id: '4', name: 'Ana Costa' },
-];
-
-const MOCK_DOC_TYPES = [
-  { id: '1', name: 'CNH', requiresExpiry: true },
-  { id: '2', name: 'ASO (Atestado de Saúde Ocupacional)', requiresExpiry: true },
-  { id: '3', name: 'CTPS', requiresExpiry: false },
-  { id: '4', name: 'RG/CPF', requiresExpiry: false },
-  { id: '5', name: 'Certificado de Treinamento', requiresExpiry: true },
-];
 
 const STATUS_OPTIONS = [
   'Válido',
@@ -29,10 +24,10 @@ const STATUS_OPTIONS = [
   'Dispensado'
 ];
 
-const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ isOpen, onClose }) => {
+const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ isOpen, onClose, onSuccess, initialEmployeeId, initialDocTypeId }) => {
   const [formData, setFormData] = useState({
-    employeeId: '',
-    docTypeId: '',
+    employeeId: initialEmployeeId || '',
+    docTypeId: initialDocTypeId || '',
     docNumber: '',
     issueDate: '',
     expiryDate: '',
@@ -40,10 +35,94 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ isOpen, onClo
     notes: '',
   });
 
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [documentTypes, setDocumentTypes] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchData = async () => {
+        try {
+          const [empRes, typeRes] = await Promise.all([
+            api.get('/hr/employees'),
+            api.get('/hr/document-types')
+          ]);
+          // Filtra apenas funcionários com cargo ativo
+          const activeEmployees = empRes.data.filter((e: any) => e.positionTitle);
+          setEmployees(activeEmployees);
+          setDocumentTypes(typeRes.data);
+        } catch (error) {
+          console.error('Error fetching modal data:', error);
+        }
+      };
+      fetchData();
+      
+      // Reset form if initial values change or modal opens
+      setFormData({
+        employeeId: initialEmployeeId || '',
+        docTypeId: initialDocTypeId || '',
+        docNumber: '',
+        issueDate: '',
+        expiryDate: '',
+        status: 'Válido',
+        notes: '',
+      });
+      setSelectedFile(null);
+    }
+  }, [isOpen, initialEmployeeId, initialDocTypeId]);
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const selectedDocType = MOCK_DOC_TYPES.find(t => t.id === formData.docTypeId);
+  const selectedDocType = documentTypes.find(t => t.id === formData.docTypeId);
+
+  const handleSubmit = async () => {
+    if (!formData.employeeId || !formData.docTypeId || !selectedFile) return;
+
+    setIsSubmitting(true);
+    try {
+      const emp = employees.find(e => e.id === formData.employeeId);
+      const docType = documentTypes.find(d => d.id === formData.docTypeId);
+      if (!emp || !docType) return;
+
+      const fileExt = selectedFile.name.split('.').pop();
+      const fileName = `${docType.name.replace(/[^a-zA-Z0-9]/g, '_')}.${fileExt}`;
+      const filePath = `${emp.email}/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('employee-documents')
+        .upload(filePath, selectedFile, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('employee-documents')
+        .getPublicUrl(filePath);
+
+      // Salvar metadados no banco via API
+      await api.post('/hr/employee-documents', {
+        user_id: formData.employeeId,
+        document_type_id: formData.docTypeId,
+        document_number: formData.docNumber,
+        issue_date: formData.issueDate,
+        expiry_date: formData.expiryDate,
+        status: formData.status,
+        file_url: publicUrl,
+        notes: formData.notes
+      });
+
+      // Fechar modal
+      onClose();
+      onSuccess?.();
+    } catch (error) {
+      console.error('Error saving document:', error);
+      alert('Erro ao salvar o documento. Tente novamente.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -73,7 +152,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ isOpen, onClo
           className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-mustard-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-mustard-500/20">
                 <span className="material-symbols-outlined">upload_file</span>
@@ -103,7 +182,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ isOpen, onClo
                   onChange={e => setFormData({ ...formData, employeeId: e.target.value })}
                 >
                   <option value="">Selecione o colaborador...</option>
-                  {MOCK_EMPLOYEES.map(emp => (
+                  {employees.map(emp => (
                     <option key={emp.id} value={emp.id}>{emp.name}</option>
                   ))}
                 </select>
@@ -118,7 +197,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ isOpen, onClo
                   onChange={e => setFormData({ ...formData, docTypeId: e.target.value })}
                 >
                   <option value="">Selecione o tipo...</option>
-                  {MOCK_DOC_TYPES.map(type => (
+                  {documentTypes.map(type => (
                     <option key={type.id} value={type.id}>{type.name}</option>
                   ))}
                 </select>
@@ -150,7 +229,7 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ isOpen, onClo
                 </select>
               </div>
 
-              {/* Issue Date */}
+              {/* Issue Date & Expiry Date (conditional) */}
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Data de Emissão</label>
                 <input
@@ -163,8 +242,8 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ isOpen, onClo
 
               {/* Expiry Date (Conditional but clearer) */}
               <div className="space-y-2">
-                <label className={`text-xs font-black uppercase tracking-widest ml-1 ${selectedDocType?.requiresExpiry ? 'text-amber-600 dark:text-amber-500' : 'text-slate-400 dark:text-slate-500'}`}>
-                  Data de Validade {selectedDocType?.requiresExpiry ? '*' : '(Opcional)'}
+                <label className={`text-xs font-black uppercase tracking-widest ml-1 ${selectedDocType?.requires_expiry ? 'text-amber-600 dark:text-amber-500' : 'text-slate-400 dark:text-slate-500'}`}>
+                  Data de Validade {selectedDocType?.requires_expiry ? '*' : '(Opcional)'}
                 </label>
                 <input
                   type="date"
@@ -220,18 +299,19 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ isOpen, onClo
           </div>
 
           {/* Footer */}
-          <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-4">
+          <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-4">
             <button
               onClick={onClose}
-              className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
+              className="px-6 py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
             >
               Cancelar
             </button>
             <button
-              className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!formData.employeeId || !formData.docTypeId || !selectedFile}
+              onClick={handleSubmit}
+              className="px-6 py-2 bg-mustard-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!formData.employeeId || !formData.docTypeId || !selectedFile || isSubmitting}
             >
-              Salvar Documento
+              {isSubmitting ? 'Salvando...' : 'Salvar Documento'}
             </button>
           </div>
         </motion.div>

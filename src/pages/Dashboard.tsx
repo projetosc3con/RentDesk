@@ -77,7 +77,7 @@ const Dashboard: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-400 gap-4">
         <div className="w-12 h-12 border-4 border-mustard-500/10 border-t-mustard-500 rounded-full animate-spin" />
-        <p className="font-bold text-xs uppercase tracking-widest">Carregando novidade...</p>
+        <p className="font-bold text-xs uppercase tracking-widest">Carregando dados...</p>
       </div>
     );
   }

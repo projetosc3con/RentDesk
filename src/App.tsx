@@ -21,6 +21,8 @@ import Maintenance from './pages/Maintenance';
 import Logistics from './pages/Logistics';
 import LogisticsTriagem from './pages/LogisticsTriagem';
 import HR from './pages/HR/HR';
+import EmployeeDetail from './pages/HR/EmployeeDetail';
+import ClockIn from './pages/ClockIn';
 import {
   PositionsTab,
   DocumentsTab,
@@ -76,6 +78,9 @@ function App() {
 
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
+              {/* Clock-in: sem sidebar */}
+              <Route path="/ponto" element={<PasswordGuard><ClockIn /></PasswordGuard>} />
+
               <Route element={<PasswordGuard><AppLayout /></PasswordGuard>}>
 
                 {/* Routes accessible by all allowed roles (except Financeiro and Usuário) */}
@@ -132,6 +137,7 @@ function App() {
                     <Route path="integracoes" element={<IntegrationsTab />} />
                     <Route path="treinamentos" element={<TrainingsTab />} />
                   </Route>
+                  <Route path="/rh/colaboradores/:id" element={<EmployeeDetail />} />
                 </Route>
 
                 <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Diretoria', 'Gerente', 'Logística']} />}>

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import NewPositionModal from '../../../components/hr-modals/NewPositionModal';
 import ChangePositionModal from '../../../components/hr-modals/ChangePositionModal';
 import PositionHistoryModal from '../../../components/hr-modals/PositionHistoryModal';
 import api from '../../../services/api';
 
 const PositionsTab: React.FC = () => {
+  const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
@@ -85,7 +87,7 @@ const PositionsTab: React.FC = () => {
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex gap-2">
-                        {pos.levels.map(level => (
+                        {pos.levels.map((level: string) => (
                           <span key={level} className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded-lg uppercase tracking-tighter">
                             {level}
                           </span>
@@ -96,7 +98,7 @@ const PositionsTab: React.FC = () => {
                       <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{pos.employees}</span>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <button 
+                      <button
                         onClick={() => {
                           setSelectedPosition(pos);
                           setIsModalOpen(true);
@@ -141,10 +143,40 @@ const PositionsTab: React.FC = () => {
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                   {emp.positionTitle ? (
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Cargo Atual</p>
-                      <p className="text-sm font-bold text-mustard-600 dark:text-mustard-400">{emp.positionTitle} - {emp.levelName}</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{emp.department}</p>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Cargo Atual</p>
+                        <p className="text-sm font-bold text-mustard-600 dark:text-mustard-400 truncate">{emp.positionTitle} - {emp.levelName}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{emp.department}</p>
+                      </div>
+                      {emp.missingDocsCount !== null && (
+                        <div
+                          className="relative group cursor-pointer shrink-0 mt-2"
+                          title={emp.missingDocsCount > 0 ? `Faltam ${emp.missingDocsCount} documentos obrigatórios` : 'Documentação completa'}
+                        >
+                          {emp.missingDocsCount > 0 ? (
+                            <>
+                              <span className="material-symbols-outlined text-[22px] text-slate-300 dark:text-slate-600 group-hover:text-slate-400 transition-colors">
+                                attachment
+                              </span>
+                              <span className="absolute -top-1 -right-1.5 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] font-bold border-2 border-white dark:border-slate-800">
+                                {emp.missingDocsCount}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="material-symbols-outlined text-[22px] text-emerald-500">
+                              check_circle
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => navigate(`/rh/colaboradores/${emp.id}`)}
+                        className="p-1.5 text-slate-300 dark:text-slate-600 hover:text-mustard-500 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 rounded-lg transition-all shrink-0 mt-1.5"
+                        title="Ver detalhes do colaborador"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">open_in_new</span>
+                      </button>
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
@@ -199,7 +231,7 @@ const PositionsTab: React.FC = () => {
               <div className="text-center py-4 text-slate-500 text-xs">Nenhuma atividade recente.</div>
             ) : activities.map((activity) => (
               <div key={activity.id} className="relative pl-6">
-                <div className="absolute left-[-29px] top-1 w-8 h-8 bg-white dark:bg-slate-900 border-4 border-slate-50 dark:border-slate-800 rounded-full flex items-center justify-center z-10">
+                <div className="absolute left-[-40px] top-1 w-8 h-8 bg-white dark:bg-slate-900 border-4 border-slate-50 dark:border-slate-800 rounded-full flex items-center justify-center z-10">
                   <div className="w-2 h-2 bg-mustard-500 rounded-full"></div>
                 </div>
                 <div>

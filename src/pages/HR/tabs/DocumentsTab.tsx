@@ -8,40 +8,45 @@ const DocumentsTab: React.FC = () => {
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
   const [selectedDocumentType, setSelectedDocumentType] = useState<any>(null);
   const [documentTypes, setDocumentTypes] = useState<any[]>([]);
-  const [loadingTypes, setLoadingTypes] = useState(false);
+  const [employeeDocuments, setEmployeeDocuments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetchDocumentTypes = async () => {
-    setLoadingTypes(true);
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const res = await api.get('/hr/document-types');
-      setDocumentTypes(res.data);
+      const [typesRes, docsRes] = await Promise.all([
+        api.get('/hr/document-types'),
+        api.get('/hr/employee-documents')
+      ]);
+      setDocumentTypes(typesRes.data);
+      setEmployeeDocuments(docsRes.data);
     } catch (error) {
-      console.error('Failed to fetch document types', error);
+      console.error('Failed to fetch data', error);
     } finally {
-      setLoadingTypes(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDocumentTypes();
+    fetchData();
   }, []);
 
-  const mockDocuments = [
-    { id: '1', employee: 'João Silva', type: 'CNH - Categoria D', expiry: '20/05/2026', status: 'A Vencer' },
-    { id: '2', employee: 'Maria Santos', type: 'ASO - Periódico', expiry: '10/04/2026', status: 'Vencido' },
-    { id: '3', employee: 'Pedro Oliveira', type: 'CTPS', expiry: '-', status: 'Válido' },
-    { id: '4', employee: 'Ana Costa', type: 'Certificado NR-35', expiry: '15/12/2027', status: 'Válido' },
-  ];
+  const stats = {
+    total: employeeDocuments.length,
+    vencidos: employeeDocuments.filter(d => d.status === 'Vencido').length,
+    aVencer: employeeDocuments.filter(d => d.status === 'A Vencer').length,
+    pendentes: employeeDocuments.filter(d => d.status === 'Pendente').length,
+  };
 
   return (
     <div className="space-y-8">
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Documentos', value: '142', icon: 'folder', color: 'bg-blue-500' },
-            { label: 'Vencidos', value: '12', icon: 'error', color: 'bg-red-500' },
-            { label: 'A Vencer (30 dias)', value: '8', icon: 'warning', color: 'bg-amber-500' },
-            { label: 'Pendentes Envio', value: '5', icon: 'pending', color: 'bg-slate-400' },
+            { label: 'Total Documentos', value: stats.total, icon: 'folder', color: 'bg-blue-500' },
+            { label: 'Vencidos', value: stats.vencidos, icon: 'error', color: 'bg-red-500' },
+            { label: 'A Vencer (30 dias)', value: stats.aVencer, icon: 'warning', color: 'bg-amber-500' },
+            { label: 'Pendentes Envio', value: stats.pendentes, icon: 'pending', color: 'bg-slate-400' },
           ].map((stat) => (
             <div key={stat.label} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
               <div className={`w-10 h-10 ${stat.color} rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-current/20`}>
@@ -87,8 +92,21 @@ const DocumentsTab: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {mockDocuments.map((doc) => (
-                    <tr key={doc.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                        Carregando documentos...
+                      </td>
+                    </tr>
+                  ) : employeeDocuments.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                        Nenhum documento de colaborador encontrado.
+                      </td>
+                    </tr>
+                  ) : (
+                    employeeDocuments.map((doc) => (
+                      <tr key={doc.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                       <td className="px-6 py-4">
                         <p className="text-sm font-bold text-slate-900 dark:text-white">{doc.employee}</p>
                       </td>
@@ -108,12 +126,17 @@ const DocumentsTab: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button className="p-2 text-slate-300 dark:text-slate-600 hover:text-mustard-500 transition-colors">
+                        <button 
+                          className={`p-2 transition-colors ${doc.file_url ? 'text-slate-300 dark:text-slate-600 hover:text-mustard-500' : 'text-slate-200 dark:text-slate-700 cursor-not-allowed opacity-50'}`}
+                          onClick={() => doc.file_url && window.open(doc.file_url, '_blank')}
+                          title={doc.file_url ? "Visualizar Documento" : "Documento não anexado"}
+                        >
                           <span className="material-symbols-outlined text-sm">visibility</span>
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  ))
+                )}
                 </tbody>
               </table>
             </div>
@@ -139,7 +162,7 @@ const DocumentsTab: React.FC = () => {
               </button>
             </div>
             <div className="p-6 space-y-4">
-              {loadingTypes ? (
+              {loading ? (
                 <div className="text-center py-6 text-xs text-slate-500">Carregando tipos...</div>
               ) : documentTypes.length === 0 ? (
                 <div className="text-center py-6 text-xs text-slate-500 italic">Nenhum tipo de documento cadastrado.</div>
@@ -178,6 +201,7 @@ const DocumentsTab: React.FC = () => {
       <UploadDocumentModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
+        onSuccess={fetchData}
       />
 
       <DocumentTypeModal
@@ -185,7 +209,7 @@ const DocumentsTab: React.FC = () => {
         onClose={() => {
           setIsTypeModalOpen(false);
           setSelectedDocumentType(null);
-          fetchDocumentTypes();
+          fetchData();
         }}
         initialData={selectedDocumentType}
       />
