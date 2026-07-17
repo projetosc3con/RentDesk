@@ -58,7 +58,7 @@ const PositionsTab: React.FC = () => {
                 setSelectedPosition(null);
                 setIsModalOpen(true);
               }}
-              className="flex items-center gap-2 px-6 py-3 bg-mustard-500 text-white rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/10"
+              className="flex items-center gap-2 px-6 py-3 bg-mustard-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/10"
             >
               <span className="material-symbols-outlined text-[20px]">add</span>
               Novo Cargo

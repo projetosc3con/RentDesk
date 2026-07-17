@@ -1,27 +1,19 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../services/api';
+import { supabase } from '../../lib/supabase';
 
 interface NewEmployeeTrainingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-const MOCK_EMPLOYEES = [
-  { id: '1', name: 'João Silva' },
-  { id: '2', name: 'Maria Santos' },
-  { id: '3', name: 'Pedro Oliveira' },
-  { id: '4', name: 'Ana Costa' },
-];
-
-const MOCK_TRAININGS = [
-  { id: '1', name: 'NR-11 Operação de Empilhadeiras', category: 'Operação', defaultHours: 16 },
-  { id: '2', name: 'NR-35 Trabalho em Altura', category: 'Segurança', defaultHours: 8 },
-  { id: '3', name: 'Gestão de Tempo', category: 'Gestão', defaultHours: 4 },
-];
-
-
-
-const NewEmployeeTrainingModal: React.FC<NewEmployeeTrainingModalProps> = ({ isOpen, onClose }) => {
+const NewEmployeeTrainingModal: React.FC<NewEmployeeTrainingModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [trainings, setTrainings] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const [formData, setFormData] = useState({
     employeeId: '',
     trainingId: '',
@@ -40,9 +32,89 @@ const NewEmployeeTrainingModal: React.FC<NewEmployeeTrainingModalProps> = ({ isO
 
 
 
+  useEffect(() => {
+    if (isOpen) {
+      fetchEmployees();
+      fetchTrainings();
+    }
+  }, [isOpen]);
+
+  const fetchEmployees = async () => {
+    try {
+      const { data } = await api.get('/hr/employees');
+      const activeEmployees = (data || []).filter((emp: any) => emp.positionTitle !== null);
+      setEmployees(activeEmployees);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchTrainings = async () => {
+    try {
+      const { data } = await api.get('/hr/trainings/catalog');
+      setTrainings(data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.employeeId || !formData.trainingId || !formData.completionDate) return;
+    setIsSubmitting(true);
+    setErrorMsg('');
+    try {
+      let certificateUrl = null;
+
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${formData.employeeId}/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('employee-documents')
+          .upload(filePath, selectedFile);
+          
+        if (uploadError) throw uploadError;
+        
+        const { data: urlData } = await supabase.storage.from('employee-documents').createSignedUrl(filePath, 31536000); // 1 year
+        certificateUrl = urlData?.signedUrl;
+      }
+
+      const payload = {
+        user_id: formData.employeeId,
+        training_id: formData.trainingId,
+        provider: formData.provider,
+        instructor: formData.instructor,
+        completion_date: formData.completionDate,
+        workload_hours: formData.workloadHours ? Number(formData.workloadHours) : null,
+        expiry_date: formData.expiryDate || null,
+        status: formData.status,
+        cost: formData.cost ? Number(formData.cost) : null,
+        notes: formData.notes,
+        certificate_url: certificateUrl
+      };
+
+      await api.post('/hr/trainings', payload);
+      
+      if (onSuccess) onSuccess();
+      onClose();
+      // reset form
+      setFormData({
+        employeeId: '', trainingId: '', provider: '', instructor: '', completionDate: '',
+        workloadHours: '', expiryDate: '', status: 'Válido', cost: '', notes: '',
+      });
+      setSelectedFile(null);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.error || err.message || 'Erro ao lançar treinamento');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -98,8 +170,8 @@ const NewEmployeeTrainingModal: React.FC<NewEmployeeTrainingModalProps> = ({ isO
                   onChange={e => setFormData({ ...formData, employeeId: e.target.value })}
                 >
                   <option value="">Selecione o colaborador...</option>
-                  {MOCK_EMPLOYEES.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.name}</option>
+                  {employees.map(emp => (
+                    <option key={emp.id} value={emp.id}>{emp.full_name}</option>
                   ))}
                 </select>
               </div>
@@ -111,16 +183,16 @@ const NewEmployeeTrainingModal: React.FC<NewEmployeeTrainingModalProps> = ({ isO
                   className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium appearance-none dark:text-white"
                   value={formData.trainingId}
                   onChange={e => {
-                    const t = MOCK_TRAININGS.find(x => x.id === e.target.value);
+                    const t = trainings.find(x => x.id === e.target.value);
                     setFormData({ 
                       ...formData, 
                       trainingId: e.target.value,
-                      workloadHours: t?.defaultHours.toString() || ''
+                      workloadHours: t?.workload_hours?.toString() || ''
                     });
                   }}
                 >
                   <option value="">Selecione o treinamento...</option>
-                  {MOCK_TRAININGS.map(t => (
+                  {trainings.map(t => (
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
@@ -235,19 +307,25 @@ const NewEmployeeTrainingModal: React.FC<NewEmployeeTrainingModalProps> = ({ isO
           </div>
 
           {/* Footer */}
-          <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-4">
-            <button
-              onClick={onClose}
-              className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!formData.employeeId || !formData.trainingId || !formData.completionDate}
-            >
-              Lançar Registro
-            </button>
+          <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between gap-4">
+            {errorMsg ? (
+              <p className="text-red-500 text-xs font-bold">{errorMsg}</p>
+            ) : <div />}
+            <div className="flex gap-4">
+              <button
+                onClick={onClose}
+                className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!formData.employeeId || !formData.trainingId || !formData.completionDate || isSubmitting}
+              >
+                {isSubmitting ? 'Lançando...' : 'Lançar Registro'}
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>

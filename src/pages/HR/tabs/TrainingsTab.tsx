@@ -1,16 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import TrainingCatalogModal from '../../../components/hr-modals/TrainingCatalogModal';
 import NewEmployeeTrainingModal from '../../../components/hr-modals/NewEmployeeTrainingModal';
+import api from '../../../services/api';
 
 const TrainingsTab: React.FC = () => {
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
+  const [selectedTraining, setSelectedTraining] = useState<any>(null);
   const [isNewTrainingOpen, setIsNewTrainingOpen] = useState(false);
 
-  const mockTrainings = [
-    { id: '1', employee: 'João Silva', training: 'Operação de Plataforma Elevatória (PTA)', date: '12/03/2026', workload: '8h', status: 'Válido' },
-    { id: '2', employee: 'Maria Santos', training: 'Liderança e Gestão de Equipes', date: '20/02/2026', workload: '16h', status: 'Válido' },
-    { id: '3', employee: 'Pedro Oliveira', training: 'Manutenção Preventiva de Motores', date: '10/01/2026', workload: '24h', status: 'Válido' },
-  ];
+  const [catalog, setCatalog] = useState<any[]>([]);
+  const [trainings, setTrainings] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState({ totalHours: 0, totalCost: 0 });
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [catalogRes, trainingsRes, metricsRes] = await Promise.all([
+        api.get('/hr/trainings/catalog'),
+        api.get('/hr/trainings'),
+        api.get('/hr/trainings/metrics')
+      ]);
+      setCatalog(catalogRes.data || []);
+      setTrainings(trainingsRes.data || []);
+      setMetrics(metricsRes.data || { totalHours: 0, totalCost: 0 });
+    } catch (err) {
+      console.error('Erro ao buscar dados de treinamentos:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -22,24 +45,32 @@ const TrainingsTab: React.FC = () => {
               <span className="material-symbols-outlined text-mustard-500 text-lg">school</span>
               Catálogo de T&D
             </h3>
-            <button 
-              onClick={() => setIsCatalogModalOpen(true)}
+            <button
+              onClick={() => {
+                setSelectedTraining(null);
+                setIsCatalogModalOpen(true);
+              }}
               className="w-8 h-8 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center transition-colors"
             >
               <span className="material-symbols-outlined text-sm">add</span>
             </button>
           </div>
           <div className="p-4 space-y-3">
-            {[
-              { name: 'NR-11 PTA', cat: 'Operação' },
-              { name: 'NR-10 Elétrica', cat: 'Segurança' },
-              { name: 'Gestão Ágil', cat: 'Gestão' },
-              { name: 'Excel Avançado', cat: 'Técnico' },
-              { name: 'Direção Defensiva', cat: 'Segurança' }
-            ].map((t) => (
-              <div key={t.name} className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-mustard-200 dark:hover:border-mustard-500 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-all group cursor-pointer">
+            {loading ? (
+              <p className="text-center text-sm text-slate-500 py-4">Carregando...</p>
+            ) : catalog.length === 0 ? (
+              <p className="text-center text-sm text-slate-500 py-4">Nenhum treinamento cadastrado.</p>
+            ) : catalog.map((t) => (
+              <div 
+                key={t.id} 
+                onClick={() => {
+                  setSelectedTraining(t);
+                  setIsCatalogModalOpen(true);
+                }}
+                className="p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-mustard-200 dark:hover:border-mustard-500 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-all group cursor-pointer"
+              >
                 <p className="text-xs font-bold text-slate-900 dark:text-white">{t.name}</p>
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase group-hover:text-mustard-600 dark:group-hover:text-mustard-400">{t.cat}</span>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase group-hover:text-mustard-600 dark:group-hover:text-mustard-400">{t.category}</span>
               </div>
             ))}
           </div>
@@ -54,9 +85,9 @@ const TrainingsTab: React.FC = () => {
               <h3 className="font-bold text-slate-900 dark:text-white text-lg">Histórico de Capacitações</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400">Registro de todos os treinamentos concluídos pela equipe.</p>
             </div>
-            <button 
+            <button
               onClick={() => setIsNewTrainingOpen(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-mustard-500 text-white rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/10"
+              className="flex items-center gap-2 px-6 py-3 bg-mustard-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/10"
             >
               <span className="material-symbols-outlined text-[20px]">assignment_turned_in</span>
               Lançar Conclusão
@@ -74,7 +105,11 @@ const TrainingsTab: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {mockTrainings.map((t) => (
+                {loading ? (
+                  <tr><td colSpan={5} className="text-center py-6 text-sm text-slate-500">Carregando...</td></tr>
+                ) : trainings.length === 0 ? (
+                  <tr><td colSpan={5} className="text-center py-6 text-sm text-slate-500">Nenhum treinamento lançado.</td></tr>
+                ) : trainings.map((t) => (
                   <tr key={t.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
                     <td className="px-8 py-6">
                       <p className="text-sm font-bold text-slate-900 dark:text-white">{t.employee}</p>
@@ -89,10 +124,14 @@ const TrainingsTab: React.FC = () => {
                       <span className="text-[10px] font-black bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md text-slate-600 dark:text-slate-400">{t.workload}</span>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <button className="text-mustard-600 hover:underline text-xs font-bold flex items-center justify-end gap-1 ml-auto">
-                        <span className="material-symbols-outlined text-sm">download</span>
-                        PDF
-                      </button>
+                      {t.file_url ? (
+                        <a href={t.file_url} target="_blank" rel="noopener noreferrer" className="text-mustard-600 hover:underline text-xs font-bold flex items-center justify-end gap-1 ml-auto">
+                          <span className="material-symbols-outlined text-sm">download</span>
+                          Baixar
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium">-</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -115,11 +154,13 @@ const TrainingsTab: React.FC = () => {
           <div className="flex items-center gap-12">
             <div className="text-right">
               <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Horas Treinadas</p>
-              <p className="text-xl font-black text-slate-900 dark:text-white">342h</p>
+              <p className="text-xl font-black text-slate-900 dark:text-white">{metrics.totalHours}h</p>
             </div>
             <div className="text-right">
               <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Investimento</p>
-              <p className="text-xl font-black text-mustard-600 dark:text-mustard-400">R$ 12.450,00</p>
+              <p className="text-xl font-black text-mustard-600 dark:text-mustard-400">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(metrics.totalCost)}
+              </p>
             </div>
           </div>
         </div>
@@ -129,11 +170,14 @@ const TrainingsTab: React.FC = () => {
       <TrainingCatalogModal
         isOpen={isCatalogModalOpen}
         onClose={() => setIsCatalogModalOpen(false)}
+        onSuccess={fetchData}
+        initialData={selectedTraining}
       />
 
       <NewEmployeeTrainingModal
         isOpen={isNewTrainingOpen}
         onClose={() => setIsNewTrainingOpen(false)}
+        onSuccess={fetchData}
       />
     </div>
   );

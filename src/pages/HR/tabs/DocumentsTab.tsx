@@ -40,23 +40,23 @@ const DocumentsTab: React.FC = () => {
 
   return (
     <div className="space-y-8">
-        {/* Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[
-            { label: 'Total Documentos', value: stats.total, icon: 'folder', color: 'bg-blue-500' },
-            { label: 'Vencidos', value: stats.vencidos, icon: 'error', color: 'bg-red-500' },
-            { label: 'A Vencer (30 dias)', value: stats.aVencer, icon: 'warning', color: 'bg-amber-500' },
-            { label: 'Pendentes Envio', value: stats.pendentes, icon: 'pending', color: 'bg-slate-400' },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className={`w-10 h-10 ${stat.color} rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-current/20`}>
-                <span className="material-symbols-outlined">{stat.icon}</span>
-              </div>
-              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{stat.label}</p>
-              <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stat.value}</p>
+      {/* Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Documentos', value: stats.total, icon: 'folder', color: 'bg-blue-500' },
+          { label: 'Vencidos', value: stats.vencidos, icon: 'error', color: 'bg-red-500' },
+          { label: 'A Vencer (30 dias)', value: stats.aVencer, icon: 'warning', color: 'bg-amber-500' },
+          { label: 'Pendentes Envio', value: stats.pendentes, icon: 'pending', color: 'bg-slate-400' },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className={`w-10 h-10 ${stat.color} rounded-2xl flex items-center justify-center text-white mb-4`}>
+              <span className="material-symbols-outlined">{stat.icon}</span>
             </div>
-          ))}
-        </div>
+            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{stat.label}</p>
+            <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stat.value}</p>
+          </div>
+        ))}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main List */}
@@ -71,7 +71,7 @@ const DocumentsTab: React.FC = () => {
                 <button className="p-2 text-slate-400 dark:text-slate-500 hover:text-mustard-500 transition-colors">
                   <span className="material-symbols-outlined">filter_list</span>
                 </button>
-                <button 
+                <button
                   onClick={() => setIsModalOpen(true)}
                   className="flex items-center gap-2 px-4 py-2 bg-mustard-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all"
                 >
@@ -107,36 +107,35 @@ const DocumentsTab: React.FC = () => {
                   ) : (
                     employeeDocuments.map((doc) => (
                       <tr key={doc.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">{doc.employee}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-xs text-slate-600 dark:text-slate-400">{doc.type}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-xs font-mono text-slate-500 dark:text-slate-500">{doc.expiry}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${
-                          doc.status === 'Válido' ? 'bg-mustard-50 dark:bg-mustard-500/10 text-mustard-600 dark:text-mustard-400' :
-                          doc.status === 'Vencido' ? 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400' :
-                          'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                        }`}>
-                          {doc.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button 
-                          className={`p-2 transition-colors ${doc.file_url ? 'text-slate-300 dark:text-slate-600 hover:text-mustard-500' : 'text-slate-200 dark:text-slate-700 cursor-not-allowed opacity-50'}`}
-                          onClick={() => doc.file_url && window.open(doc.file_url, '_blank')}
-                          title={doc.file_url ? "Visualizar Documento" : "Documento não anexado"}
-                        >
-                          <span className="material-symbols-outlined text-sm">visibility</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                        <td className="px-6 py-4">
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">{doc.employee}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-xs text-slate-600 dark:text-slate-400">{doc.type}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-xs font-mono text-slate-500 dark:text-slate-500">{doc.expiry}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${doc.status === 'Válido' ? 'bg-mustard-50 dark:bg-mustard-500/10 text-mustard-600 dark:text-mustard-400' :
+                              doc.status === 'Vencido' ? 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400' :
+                                'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                            }`}>
+                            {doc.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            className={`p-2 transition-colors ${doc.file_url ? 'text-slate-300 dark:text-slate-600 hover:text-mustard-500' : 'text-slate-200 dark:text-slate-700 cursor-not-allowed opacity-50'}`}
+                            onClick={() => doc.file_url && window.open(doc.file_url, '_blank')}
+                            title={doc.file_url ? "Visualizar Documento" : "Documento não anexado"}
+                          >
+                            <span className="material-symbols-outlined text-sm">visibility</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -151,7 +150,7 @@ const DocumentsTab: React.FC = () => {
                 <span className="material-symbols-outlined text-mustard-500 text-xl">settings</span>
                 Tipos de Documento
               </h3>
-              <button 
+              <button
                 onClick={() => {
                   setSelectedDocumentType(null);
                   setIsTypeModalOpen(true);
@@ -182,7 +181,7 @@ const DocumentsTab: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => {
                       setSelectedDocumentType(type);
                       setIsTypeModalOpen(true);
@@ -198,9 +197,9 @@ const DocumentsTab: React.FC = () => {
         </div>
       </div>
 
-      <UploadDocumentModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <UploadDocumentModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         onSuccess={fetchData}
       />
 

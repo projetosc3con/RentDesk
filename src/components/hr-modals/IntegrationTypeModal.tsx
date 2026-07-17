@@ -1,21 +1,76 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../services/api';
 
 interface IntegrationTypeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
+  initialData?: any;
 }
 
-const IntegrationTypeModal: React.FC<IntegrationTypeModalProps> = ({ isOpen, onClose }) => {
+const IntegrationTypeModal: React.FC<IntegrationTypeModalProps> = ({ isOpen, onClose, onSuccess, initialData }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    validity_days: 365,
+    validity_days: 365 as number | null,
     alert_days_before: 15,
     active: true,
   });
 
   const [hasValidity, setHasValidity] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setFormData({
+          name: initialData.name || '',
+          description: initialData.description || '',
+          validity_days: initialData.validity_days,
+          alert_days_before: initialData.alert_days_before ?? 15,
+          active: initialData.active ?? true,
+        });
+        setHasValidity(initialData.validity_days !== null && initialData.validity_days > 0);
+      } else {
+        setFormData({
+          name: '', description: '', validity_days: 365, alert_days_before: 15, active: true
+        });
+        setHasValidity(true);
+      }
+      setErrorMsg('');
+    }
+  }, [isOpen, initialData]);
+
+  const handleSubmit = async () => {
+    if (!formData.name) return;
+    setIsSubmitting(true);
+    setErrorMsg('');
+    try {
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        validity_days: hasValidity ? (formData.validity_days ? Number(formData.validity_days) : null) : null,
+        alert_days_before: formData.alert_days_before,
+        active: formData.active
+      };
+      
+      if (initialData?.id) {
+        await api.put(`/hr/integrations/types/${initialData.id}`, payload);
+      } else {
+        await api.post('/hr/integrations/types', payload);
+      }
+      
+      if (onSuccess) onSuccess();
+      onClose();
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.error || 'Erro ao salvar tipo de integração');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -36,17 +91,17 @@ const IntegrationTypeModal: React.FC<IntegrationTypeModalProps> = ({ isOpen, onC
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+          className="relative bg-white dark:bg-slate-900 w-full max-w-lg max-h-[90vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-mustard-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-mustard-500/20">
                 <span className="material-symbols-outlined">hub</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Novo Tipo de Integração</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Defina os requisitos base para este tipo de integração.</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{initialData ? 'Editar Tipo de Integração' : 'Novo Tipo de Integração'}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{initialData ? 'Edite os requisitos deste tipo.' : 'Defina os requisitos base para este tipo.'}</p>
               </div>
             </div>
             <button
@@ -58,7 +113,7 @@ const IntegrationTypeModal: React.FC<IntegrationTypeModalProps> = ({ isOpen, onC
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Nome da Integração</label>
               <input
@@ -135,19 +190,25 @@ const IntegrationTypeModal: React.FC<IntegrationTypeModalProps> = ({ isOpen, onC
           </div>
 
           {/* Footer */}
-          <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-4">
-            <button
-              onClick={onClose}
-              className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!formData.name}
-            >
-              Salvar Tipo de Integração
-            </button>
+          <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between gap-4">
+            {errorMsg ? (
+              <p className="text-red-500 text-xs font-bold">{errorMsg}</p>
+            ) : <div />}
+            <div className="flex gap-4">
+              <button
+                onClick={onClose}
+                className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!formData.name || isSubmitting}
+              >
+                {isSubmitting ? 'Salvando...' : 'Salvar Tipo de Integração'}
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>

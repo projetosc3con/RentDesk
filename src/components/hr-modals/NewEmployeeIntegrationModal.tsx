@@ -1,38 +1,20 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../services/api';
+import { supabase } from '../../lib/supabase';
 
 interface NewEmployeeIntegrationModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
-
-const MOCK_EMPLOYEES = [
-  { id: '1', name: 'João Silva' },
-  { id: '2', name: 'Maria Santos' },
-  { id: '3', name: 'Pedro Oliveira' },
-  { id: '4', name: 'Ana Costa' },
-];
-
-const MOCK_CLIENTS = [
-  { id: '1', name: 'Petrobras' },
-  { id: '2', name: 'Vale S.A.' },
-  { id: '3', name: 'Shell' },
-  { id: '4', name: 'Gerdau' },
-];
-
-const MOCK_INTEGRATION_TYPES = [
-  { id: '1', name: 'Integração SST', requiresExpiry: true },
-  { id: '2', name: 'Acesso Planta Sul', requiresExpiry: true },
-  { id: '3', name: 'Treinamento Segurança', requiresExpiry: false },
-];
 
 const STATUS_OPTIONS = ['Válida', 'Vencida', 'A Vencer', 'Cancelada'];
 
-const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = ({ isOpen, onClose }) => {
+const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     employeeId: '',
     integrationTypeId: '',
-    clientId: '',
     location: '',
     completionDate: '',
     expiryDate: '',
@@ -40,14 +22,90 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
     notes: '',
   });
 
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [integrationTypes, setIntegrationTypes] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const selectedType = MOCK_INTEGRATION_TYPES.find(t => t.id === formData.integrationTypeId);
+  useEffect(() => {
+    if (isOpen) {
+      fetchData();
+    }
+  }, [isOpen]);
+
+  const fetchData = async () => {
+    try {
+      const [empRes, typesRes] = await Promise.all([
+        api.get('/hr/employees'),
+        api.get('/hr/integrations/types')
+      ]);
+      const activeEmployees = (empRes.data || []).filter((emp: any) => emp.positionTitle !== null);
+      setEmployees(activeEmployees);
+      setIntegrationTypes(typesRes.data?.filter((t: any) => t.active) || []);
+    } catch (err) {
+      console.error('Error fetching data for modal', err);
+    }
+  };
+
+  const selectedType = integrationTypes.find(t => t.id === formData.integrationTypeId);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formData.employeeId || !formData.integrationTypeId || !formData.completionDate) return;
+    setIsSubmitting(true);
+    setErrorMsg('');
+    try {
+      let fileUrl = null;
+
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `${formData.employeeId}/${fileName}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('employee-documents')
+          .upload(filePath, selectedFile);
+          
+        if (uploadError) throw uploadError;
+        
+        const { data: urlData } = await supabase.storage.from('employee-documents').createSignedUrl(filePath, 31536000); // 1 year
+        fileUrl = urlData?.signedUrl;
+      }
+
+      const payload = {
+        user_id: formData.employeeId,
+        integration_type_id: formData.integrationTypeId,
+        location: formData.location,
+        integration_date: formData.completionDate,
+        expiry_date: formData.expiryDate || null,
+        status: formData.status,
+        notes: formData.notes,
+        file_url: fileUrl
+      };
+
+      await api.post('/hr/integrations', payload);
+      
+      if (onSuccess) onSuccess();
+      onClose();
+      // reset form
+      setFormData({
+        employeeId: '', integrationTypeId: '', location: '', completionDate: '',
+        expiryDate: '', status: 'Válida', notes: '',
+      });
+      setSelectedFile(null);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.error || err.message || 'Erro ao lançar integração');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -73,7 +131,7 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
           className="relative bg-white dark:bg-slate-900 w-full max-w-2xl max-h-[90vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-mustard-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-mustard-500/20">
                 <span className="material-symbols-outlined">assignment_ind</span>
@@ -92,7 +150,7 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Employee Selection */}
               <div className="space-y-2">
@@ -103,7 +161,7 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
                   onChange={e => setFormData({ ...formData, employeeId: e.target.value })}
                 >
                   <option value="">Selecione o colaborador...</option>
-                  {MOCK_EMPLOYEES.map(emp => (
+                  {employees.map(emp => (
                     <option key={emp.id} value={emp.id}>{emp.name}</option>
                   ))}
                 </select>
@@ -115,26 +173,27 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
                 <select
                   className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium appearance-none dark:text-white"
                   value={formData.integrationTypeId}
-                  onChange={e => setFormData({ ...formData, integrationTypeId: e.target.value })}
+                  onChange={e => {
+                    const type = integrationTypes.find(t => t.id === e.target.value);
+                    const hasValidity = type?.validity_days !== null && type?.validity_days > 0;
+                    
+                    let defaultExpiry = '';
+                    if (hasValidity && formData.completionDate) {
+                      const date = new Date(formData.completionDate);
+                      date.setDate(date.getDate() + type.validity_days);
+                      defaultExpiry = date.toISOString().split('T')[0];
+                    }
+
+                    setFormData({ 
+                      ...formData, 
+                      integrationTypeId: e.target.value,
+                      expiryDate: defaultExpiry
+                    });
+                  }}
                 >
                   <option value="">Selecione o tipo...</option>
-                  {MOCK_INTEGRATION_TYPES.map(type => (
+                  {integrationTypes.map(type => (
                     <option key={type.id} value={type.id}>{type.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Client Selection */}
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Cliente / Empresa</label>
-                <select
-                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium appearance-none dark:text-white"
-                  value={formData.clientId}
-                  onChange={e => setFormData({ ...formData, clientId: e.target.value })}
-                >
-                  <option value="">Selecione o cliente (opcional)...</option>
-                  {MOCK_CLIENTS.map(cli => (
-                    <option key={cli.id} value={cli.id}>{cli.name}</option>
                   ))}
                 </select>
               </div>
@@ -158,7 +217,16 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
                   type="date"
                   className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium dark:text-white"
                   value={formData.completionDate}
-                  onChange={e => setFormData({ ...formData, completionDate: e.target.value })}
+                  onChange={e => {
+                    const newDate = e.target.value;
+                    let newExpiry = formData.expiryDate;
+                    if (selectedType?.validity_days) {
+                      const d = new Date(newDate);
+                      d.setDate(d.getDate() + selectedType.validity_days);
+                      newExpiry = d.toISOString().split('T')[0];
+                    }
+                    setFormData({ ...formData, completionDate: newDate, expiryDate: newExpiry });
+                  }}
                 />
               </div>
 
@@ -178,13 +246,13 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
 
               {/* Expiry Date */}
               <div className="md:col-span-2 space-y-2">
-                <label className={`text-xs font-black uppercase tracking-widest ml-1 ${selectedType?.requiresExpiry ? 'text-amber-600 dark:text-amber-500' : 'text-slate-400 dark:text-slate-500'}`}>
-                  Data de Vencimento {selectedType?.requiresExpiry ? '*' : '(Se aplicável)'}
+                <label className={`text-xs font-black uppercase tracking-widest ml-1 ${selectedType?.validity_days ? 'text-amber-600 dark:text-amber-500' : 'text-slate-400 dark:text-slate-500'}`}>
+                  Data de Vencimento {selectedType?.validity_days ? '*' : '(Se aplicável)'}
                 </label>
                 <input
                   type="date"
                   className={`w-full px-5 py-4 border rounded-2xl outline-none transition-all text-sm font-medium dark:text-white ${
-                    selectedType?.requiresExpiry 
+                    selectedType?.validity_days 
                       ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500' 
                       : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 opacity-60'
                   }`}
@@ -235,19 +303,25 @@ const NewEmployeeIntegrationModal: React.FC<NewEmployeeIntegrationModalProps> = 
           </div>
 
           {/* Footer */}
-          <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-4">
-            <button
-              onClick={onClose}
-              className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!formData.employeeId || !formData.integrationTypeId || !formData.completionDate}
-            >
-              Salvar Registro
-            </button>
+          <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between gap-4">
+            {errorMsg ? (
+              <p className="text-red-500 text-xs font-bold">{errorMsg}</p>
+            ) : <div />}
+            <div className="flex gap-4">
+              <button
+                onClick={onClose}
+                className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!formData.employeeId || !formData.integrationTypeId || !formData.completionDate || isSubmitting}
+              >
+                {isSubmitting ? 'Salvando...' : 'Salvar Registro'}
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>

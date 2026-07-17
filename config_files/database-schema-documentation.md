@@ -4,7 +4,7 @@ Este documento descreve a estrutura de tabelas, relacionamentos, chaves primári
 
 ## Sumário das Tabelas
 
-Abaixo estão listadas as 30 tabelas ativas no esquema `public` do banco de dados:
+Abaixo estão listadas as 40 tabelas ativas no esquema `public` do banco de dados:
 
 - [`users_profiles`](#users-profiles)
 - [`clients`](#clients)
@@ -36,6 +36,16 @@ Abaixo estão listadas as 30 tabelas ativas no esquema `public` do banco de dado
 - [`crm_deal_contract_forms`](#crm-deal-contract-forms)
 - [`crm_deal_contracts`](#crm-deal-contracts)
 - [`logistics_triage_photos`](#logistics-triage-photos)
+- [`hr_epi_catalog`](#hr-epi-catalog)
+- [`hr_epi_record_items`](#hr-epi-record-items)
+- [`hr_epi_records`](#hr-epi-records)
+- [`hr_position_document_types`](#hr-position-document-types)
+- [`hr_time_records`](#hr-time-records)
+- [`hr_timesheet_reports`](#hr-timesheet-reports)
+- [`hr_vacation_approvals`](#hr-vacation-approvals)
+- [`hr_vacation_installments`](#hr-vacation-installments)
+- [`hr_vacation_requests`](#hr-vacation-requests)
+- [`service_order_labor`](#service-order-labor)
 
 ---
 
@@ -95,6 +105,15 @@ Abaixo estão listadas as 30 tabelas ativas no esquema `public` do banco de dado
 * [`crm_leads.owner_id`](#crm-leads.owner-id)`(owner_id)` aponta para a coluna local `id` (Constraint: `crm_leads_owner_id_fkey`)
 * [`crm_deals.owner_id`](#crm-deals.owner-id)`(owner_id)` aponta para a coluna local `id` (Constraint: `crm_deals_owner_id_fkey`)
 * [`logistics_triage_photos.uploaded_by`](#logistics-triage-photos.uploaded-by)`(uploaded_by)` aponta para a coluna local `id` (Constraint: `logistics_triage_photos_uploaded_by_fkey`)
+* [`hr_epi_records.user_id`](#hr-epi-records.user-id)`(user_id)` aponta para a coluna local `id` (Constraint: `hr_epi_records_user_id_fkey`)
+* [`hr_epi_records.uploaded_by`](#hr-epi-records.uploaded-by)`(uploaded_by)` aponta para a coluna local `id` (Constraint: `hr_epi_records_uploaded_by_fkey`)
+* [`hr_time_records.user_id`](#hr-time-records.user-id)`(user_id)` aponta para a coluna local `id` (Constraint: `hr_time_records_user_id_fkey`)
+* [`hr_time_records.adjusted_by`](#hr-time-records.adjusted-by)`(adjusted_by)` aponta para a coluna local `id` (Constraint: `hr_time_records_adjusted_by_fkey`)
+* [`hr_timesheet_reports.user_id`](#hr-timesheet-reports.user-id)`(user_id)` aponta para a coluna local `id` (Constraint: `hr_timesheet_reports_user_id_fkey`)
+* [`hr_timesheet_reports.generated_by`](#hr-timesheet-reports.generated-by)`(generated_by)` aponta para a coluna local `id` (Constraint: `hr_timesheet_reports_generated_by_fkey`)
+* [`hr_timesheet_reports.approved_by`](#hr-timesheet-reports.approved-by)`(approved_by)` aponta para a coluna local `id` (Constraint: `hr_timesheet_reports_approved_by_fkey`)
+* [`hr_vacation_approvals.approver_id`](#hr-vacation-approvals.approver-id)`(approver_id)` aponta para a coluna local `id` (Constraint: `hr_vacation_approvals_approver_id_fkey`)
+* [`hr_vacation_requests.user_id`](#hr-vacation-requests.user-id)`(user_id)` aponta para a coluna local `id` (Constraint: `hr_vacation_requests_user_id_fkey`)
 
 #### Gatilhos (Triggers)
 
@@ -319,6 +338,7 @@ Abaixo estão listadas as 30 tabelas ativas no esquema `public` do banco de dado
 #### Relacionamentos de Entrada (Tabelas que Referenciam esta)
 
 * [`service_order_parts.service_order_id`](#service-order-parts.service-order-id)`(service_order_id)` aponta para a coluna local `id` (Constraint: `service_order_parts_service_order_id_fkey`)
+* [`service_order_labor.service_order_id`](#service-order-labor.service-order-id)`(service_order_id)` aponta para a coluna local `id` (Constraint: `service_order_labor_service_order_id_fkey`)
 
 #### Gatilhos (Triggers)
 
@@ -406,6 +426,7 @@ Abaixo estão listadas as 30 tabelas ativas no esquema `public` do banco de dado
 
 * [`hr_employee_positions.position_id`](#hr-employee-positions.position-id)`(position_id)` aponta para a coluna local `id` (Constraint: `hr_employee_positions_position_id_fkey`)
 * [`hr_salary_ranges.position_id`](#hr-salary-ranges.position-id)`(position_id)` aponta para a coluna local `id` (Constraint: `hr_salary_ranges_position_id_fkey`)
+* [`hr_position_document_types.position_id`](#hr-position-document-types.position-id)`(position_id)` aponta para a coluna local `id` (Constraint: `hr_position_document_types_position_id_fkey`)
 
 ---
 
@@ -484,6 +505,7 @@ Abaixo estão listadas as 30 tabelas ativas no esquema `public` do banco de dado
 #### Relacionamentos de Entrada (Tabelas que Referenciam esta)
 
 * [`hr_employee_documents.document_type_id`](#hr-employee-documents.document-type-id)`(document_type_id)` aponta para a coluna local `id` (Constraint: `hr_employee_documents_document_type_id_fkey`)
+* [`hr_position_document_types.document_type_id`](#hr-position-document-types.document-type-id)`(document_type_id)` aponta para a coluna local `id` (Constraint: `hr_position_document_types_document_type_id_fkey`)
 
 ---
 
@@ -1076,6 +1098,349 @@ AS $function$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
+END;
+$function$
+```
+
+
+### hr_epi_catalog
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `name` | `text` | Não | - | ✨ Unique |
+| `ca_number` | `text` | Sim | - |  |
+| `description` | `text` | Sim | - |  |
+| `active` | `boolean` | Não | `true` |  |
+| `created_at` | `timestamp with time zone` | Não | `now()` |  |
+
+#### Relacionamentos de Entrada (Tabelas que Referenciam esta)
+
+* [`hr_epi_record_items.epi_id`](#hr-epi-record-items.epi-id)`(epi_id)` aponta para a coluna local `id` (Constraint: `hr_epi_record_items_epi_id_fkey`)
+
+---
+
+### hr_epi_record_items
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `epi_record_id` | `uuid` | Não | - | ✨ Unique ✨ Unique |
+| `epi_id` | `uuid` | Não | - | ✨ Unique ✨ Unique |
+| `quantity` | `integer` | Não | `1` |  |
+| `notes` | `text` | Sim | - |  |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `epi_id` aponta para [`hr_epi_catalog.id`](#hr-epi-catalog.id) (Constraint: `hr_epi_record_items_epi_id_fkey`)
+* A coluna `epi_record_id` aponta para [`hr_epi_records.id`](#hr-epi-records.id) (Constraint: `hr_epi_record_items_epi_record_id_fkey`)
+
+---
+
+### hr_epi_records
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `user_id` | `uuid` | Não | - |  |
+| `delivery_date` | `date` | Não | - |  |
+| `file_url` | `text` | Não | - |  |
+| `file_uploaded_at` | `timestamp with time zone` | Não | `now()` |  |
+| `uploaded_by` | `uuid` | Não | - |  |
+| `notes` | `text` | Sim | - |  |
+| `created_at` | `timestamp with time zone` | Não | `now()` |  |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `uploaded_by` aponta para [`users_profiles.id`](#users-profiles.id) (Constraint: `hr_epi_records_uploaded_by_fkey`)
+* A coluna `user_id` aponta para [`users_profiles.id`](#users-profiles.id) (Constraint: `hr_epi_records_user_id_fkey`)
+
+#### Relacionamentos de Entrada (Tabelas que Referenciam esta)
+
+* [`hr_epi_record_items.epi_record_id`](#hr-epi-record-items.epi-record-id)`(epi_record_id)` aponta para a coluna local `id` (Constraint: `hr_epi_record_items_epi_record_id_fkey`)
+
+---
+
+### hr_position_document_types
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `position_id` | `uuid` | Não | - | ✨ Unique ✨ Unique |
+| `document_type_id` | `uuid` | Não | - | ✨ Unique ✨ Unique |
+| `mandatory` | `boolean` | Não | `true` |  |
+| `notes` | `text` | Sim | - |  |
+| `created_at` | `timestamp with time zone` | Não | `now()` |  |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `document_type_id` aponta para [`hr_document_types.id`](#hr-document-types.id) (Constraint: `hr_position_document_types_document_type_id_fkey`)
+* A coluna `position_id` aponta para [`hr_positions.id`](#hr-positions.id) (Constraint: `hr_position_document_types_position_id_fkey`)
+
+---
+
+### hr_time_records
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `user_id` | `uuid` | Não | - |  |
+| `record_type` | `text` | Não | - |  |
+| `recorded_at` | `timestamp with time zone` | Não | `now()` |  |
+| `record_date` | `date` | Não | `CURRENT_DATE` |  |
+| `origin` | `text` | Não | `'Sistema'::text` |  |
+| `justification` | `text` | Sim | - |  |
+| `adjusted_by` | `uuid` | Sim | - |  |
+| `created_at` | `timestamp with time zone` | Não | `now()` |  |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `adjusted_by` aponta para [`users_profiles.id`](#users-profiles.id) (Constraint: `hr_time_records_adjusted_by_fkey`)
+* A coluna `user_id` aponta para [`users_profiles.id`](#users-profiles.id) (Constraint: `hr_time_records_user_id_fkey`)
+
+---
+
+### hr_timesheet_reports
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `user_id` | `uuid` | Não | - | ✨ Unique ✨ Unique ✨ Unique |
+| `period_start` | `date` | Não | - | ✨ Unique ✨ Unique ✨ Unique |
+| `period_end` | `date` | Não | - | ✨ Unique ✨ Unique ✨ Unique |
+| `total_days_worked` | `integer` | Não | `0` |  |
+| `total_hours_worked` | `numeric` | Não | `0` |  |
+| `total_overtime_hours` | `numeric` | Não | `0` |  |
+| `total_absence_days` | `integer` | Não | `0` |  |
+| `status` | `text` | Não | `'Gerada'::text` |  |
+| `file_url` | `text` | Sim | - |  |
+| `generated_by` | `uuid` | Não | - |  |
+| `approved_by` | `uuid` | Sim | - |  |
+| `approved_at` | `timestamp with time zone` | Sim | - |  |
+| `notes` | `text` | Sim | - |  |
+| `created_at` | `timestamp with time zone` | Não | `now()` |  |
+| `updated_at` | `timestamp with time zone` | Não | `now()` |  |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `approved_by` aponta para [`users_profiles.id`](#users-profiles.id) (Constraint: `hr_timesheet_reports_approved_by_fkey`)
+* A coluna `generated_by` aponta para [`users_profiles.id`](#users-profiles.id) (Constraint: `hr_timesheet_reports_generated_by_fkey`)
+* A coluna `user_id` aponta para [`users_profiles.id`](#users-profiles.id) (Constraint: `hr_timesheet_reports_user_id_fkey`)
+
+---
+
+### hr_vacation_approvals
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `vacation_request_id` | `uuid` | Não | - | ✨ Unique ✨ Unique |
+| `approver_id` | `uuid` | Não | - | ✨ Unique ✨ Unique |
+| `status` | `text` | Não | `'Pendente'::text` |  |
+| `rejection_reason` | `text` | Sim | - |  |
+| `decided_at` | `timestamp with time zone` | Sim | - |  |
+| `created_at` | `timestamp with time zone` | Não | `now()` |  |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `approver_id` aponta para [`users_profiles.id`](#users-profiles.id) (Constraint: `hr_vacation_approvals_approver_id_fkey`)
+* A coluna `vacation_request_id` aponta para [`hr_vacation_requests.id`](#hr-vacation-requests.id) (Constraint: `hr_vacation_approvals_vacation_request_id_fkey`)
+
+#### Gatilhos (Triggers)
+
+* **`trg_vacation_approval_status`**
+  ```sql
+  CREATE TRIGGER trg_vacation_approval_status AFTER INSERT OR UPDATE ON public.hr_vacation_approvals FOR EACH ROW EXECUTE FUNCTION fn_update_vacation_request_status()
+  ```
+
+---
+
+### hr_vacation_installments
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `vacation_request_id` | `uuid` | Não | - | ✨ Unique ✨ Unique |
+| `installment_number` | `integer` | Não | - | ✨ Unique ✨ Unique |
+| `start_date` | `date` | Não | - |  |
+| `end_date` | `date` | Não | - |  |
+| `duration_days` | `integer` | Não | - |  |
+| `created_at` | `timestamp with time zone` | Não | `now()` |  |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `vacation_request_id` aponta para [`hr_vacation_requests.id`](#hr-vacation-requests.id) (Constraint: `hr_vacation_installments_vacation_request_id_fkey`)
+
+---
+
+### hr_vacation_requests
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `user_id` | `uuid` | Não | - |  |
+| `entitlement_period_start` | `date` | Não | - |  |
+| `entitlement_period_end` | `date` | Não | - |  |
+| `total_entitled_days` | `integer` | Não | `30` |  |
+| `installments_count` | `integer` | Não | - |  |
+| `days_sold` | `integer` | Não | `0` |  |
+| `total_days_requested` | `integer` | Não | - |  |
+| `status` | `text` | Não | `'Pendente'::text` |  |
+| `rejection_reason` | `text` | Sim | - |  |
+| `notes` | `text` | Sim | - |  |
+| `created_at` | `timestamp with time zone` | Não | `now()` |  |
+| `updated_at` | `timestamp with time zone` | Não | `now()` |  |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `user_id` aponta para [`users_profiles.id`](#users-profiles.id) (Constraint: `hr_vacation_requests_user_id_fkey`)
+
+#### Relacionamentos de Entrada (Tabelas que Referenciam esta)
+
+* [`hr_vacation_approvals.vacation_request_id`](#hr-vacation-approvals.vacation-request-id)`(vacation_request_id)` aponta para a coluna local `id` (Constraint: `hr_vacation_approvals_vacation_request_id_fkey`)
+* [`hr_vacation_installments.vacation_request_id`](#hr-vacation-installments.vacation-request-id)`(vacation_request_id)` aponta para a coluna local `id` (Constraint: `hr_vacation_installments_vacation_request_id_fkey`)
+
+---
+
+### service_order_labor
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `service_order_id` | `uuid` | Sim | - |  |
+| `technician_name` | `text` | Não | - |  |
+| `labor_date` | `date` | Sim | - |  |
+| `start_time` | `time without time zone` | Sim | - |  |
+| `end_time` | `time without time zone` | Sim | - |  |
+| `labor_type` | `text` | Sim | `'T'::text` |  |
+| `created_at` | `timestamp with time zone` | Sim | `now()` |  |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `service_order_id` aponta para [`service_orders.id`](#service-orders.id) (Constraint: `service_order_labor_service_order_id_fkey`)
+
+---
+
+## Definição das Funções Auxiliares
+
+Estas funções PL/pgSQL são utilizadas por gatilhos ou como utilitários de segurança:
+
+### Função `fn_update_vacation_request_status()`
+
+```sql
+CREATE OR REPLACE FUNCTION public.fn_update_vacation_request_status()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+DECLARE
+  req_id UUID := NEW.vacation_request_id;
+  total_approvals INTEGER;
+  approved_count INTEGER;
+  rejected_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO total_approvals
+    FROM hr_vacation_approvals WHERE vacation_request_id = req_id;
+
+  SELECT COUNT(*) INTO approved_count
+    FROM hr_vacation_approvals WHERE vacation_request_id = req_id AND status = 'Aprovado';
+
+  SELECT COUNT(*) INTO rejected_count
+    FROM hr_vacation_approvals WHERE vacation_request_id = req_id AND status = 'Rejeitado';
+
+  IF rejected_count > 0 THEN
+    UPDATE hr_vacation_requests
+      SET status = 'Rejeitada',
+          rejection_reason = NEW.rejection_reason,
+          updated_at = now()
+      WHERE id = req_id;
+  ELSIF approved_count = total_approvals THEN
+    UPDATE hr_vacation_requests
+      SET status = 'Aprovada', updated_at = now()
+      WHERE id = req_id;
+  ELSE
+    UPDATE hr_vacation_requests
+      SET status = 'Em Aprovação', updated_at = now()
+      WHERE id = req_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$function$
+```
+
+### Função `get_next_contract_number()`
+
+```sql
+CREATE OR REPLACE FUNCTION public.get_next_contract_number()
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+  next_num INTEGER;
+BEGIN
+  SELECT COALESCE(MAX(CAST(contract_number AS INTEGER)), 0) + 1
+  INTO next_num
+  FROM public.crm_deal_contracts;
+  RETURN LPAD(next_num::TEXT, 3, '0');
+END;
+$function$
+```
+
+### Função `is_hr_admin()`
+
+```sql
+CREATE OR REPLACE FUNCTION public.is_hr_admin()
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+AS $function$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM users_profiles
+    WHERE id = auth.uid()
+    AND access_level IN ('Administrador', 'Gerente', 'Diretoria', 'Recursos Humanos')
+  );
 END;
 $function$
 ```

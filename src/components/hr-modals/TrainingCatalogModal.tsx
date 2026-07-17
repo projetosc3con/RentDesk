@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../../services/api';
 
 interface TrainingCatalogModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
+  initialData?: any;
 }
 
 const CATEGORIES = ['Segurança', 'Operação', 'Gestão', 'Qualidade', 'Técnico', 'Outros'];
 
-const TrainingCatalogModal: React.FC<TrainingCatalogModalProps> = ({ isOpen, onClose }) => {
+const TrainingCatalogModal: React.FC<TrainingCatalogModalProps> = ({ isOpen, onClose, onSuccess, initialData }) => {
   const [formData, setFormData] = useState({
     name: '',
     category: 'Segurança',
@@ -19,6 +22,66 @@ const TrainingCatalogModal: React.FC<TrainingCatalogModalProps> = ({ isOpen, onC
     mandatory: false,
     active: true,
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialData) {
+        setFormData({
+          name: initialData.name || '',
+          category: initialData.category || 'Segurança',
+          description: initialData.description || '',
+          workload_hours: initialData.workload_hours?.toString() || '',
+          validity_days: initialData.validity_days?.toString() || '',
+          alert_days_before: initialData.alert_days_before ?? 30,
+          mandatory: !!initialData.mandatory,
+          active: initialData.active ?? true,
+        });
+      } else {
+        setFormData({
+          name: '', category: 'Segurança', description: '', workload_hours: '',
+          validity_days: '', alert_days_before: 30, mandatory: false, active: true
+        });
+      }
+    }
+  }, [isOpen, initialData]);
+
+  const handleSubmit = async () => {
+    if (!formData.name) return;
+    setIsSubmitting(true);
+    setErrorMsg('');
+    try {
+      const payload = {
+        name: formData.name,
+        category: formData.category,
+        description: formData.description,
+        workload_hours: formData.workload_hours ? Number(formData.workload_hours) : null,
+        validity_days: formData.validity_days ? Number(formData.validity_days) : null,
+        alert_days_before: formData.alert_days_before,
+        mandatory: formData.mandatory,
+        active: formData.active
+      };
+      if (initialData?.id) {
+        await api.put(`/hr/trainings/catalog/${initialData.id}`, payload);
+      } else {
+        await api.post('/hr/trainings/catalog', payload);
+      }
+      if (onSuccess) onSuccess();
+      onClose();
+      // Reset form
+      setFormData({
+        name: '', category: 'Segurança', description: '', workload_hours: '',
+        validity_days: '', alert_days_before: 30, mandatory: false, active: true
+      });
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.error || 'Erro ao salvar no catálogo');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -39,17 +102,17 @@ const TrainingCatalogModal: React.FC<TrainingCatalogModalProps> = ({ isOpen, onC
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative bg-white dark:bg-slate-900 w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
+          className="relative bg-white dark:bg-slate-900 w-full max-w-lg max-h-[90vh] rounded-[32px] shadow-2xl overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-mustard-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-mustard-500/20">
                 <span className="material-symbols-outlined">school</span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Novo Treinamento</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Adicione um novo item ao catálogo de cursos.</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{initialData ? 'Editar Treinamento' : 'Novo Treinamento'}</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{initialData ? 'Altere as informações do treinamento no catálogo.' : 'Adicione um novo item ao catálogo de cursos.'}</p>
               </div>
             </div>
             <button
@@ -61,7 +124,7 @@ const TrainingCatalogModal: React.FC<TrainingCatalogModalProps> = ({ isOpen, onC
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto p-8 space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-5">
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Nome do Treinamento</label>
               <input
@@ -154,19 +217,25 @@ const TrainingCatalogModal: React.FC<TrainingCatalogModalProps> = ({ isOpen, onC
           </div>
 
           {/* Footer */}
-          <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-end gap-4">
-            <button
-              onClick={onClose}
-              className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!formData.name}
-            >
-              Salvar no Catálogo
-            </button>
+          <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between gap-4">
+            {errorMsg ? (
+              <p className="text-red-500 text-xs font-bold">{errorMsg}</p>
+            ) : <div />}
+            <div className="flex gap-4">
+              <button
+                onClick={onClose}
+                className="px-6 py-3 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 uppercase tracking-widest transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-8 py-3 bg-mustard-500 text-white rounded-2xl text-sm font-bold uppercase tracking-widest hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!formData.name || isSubmitting}
+              >
+                {isSubmitting ? 'Salvando...' : 'Salvar no Catálogo'}
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>
