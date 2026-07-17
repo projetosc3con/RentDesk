@@ -4,13 +4,16 @@ Este documento descreve a estrutura de tabelas, relacionamentos, chaves primári
 
 ## Sumário das Tabelas
 
-Abaixo estão listadas as 40 tabelas ativas no esquema `public` do banco de dados:
+Abaixo estão listadas as 43 tabelas ativas no esquema `public` do banco de dados:
 
 - [`users_profiles`](#users-profiles)
 - [`clients`](#clients)
 - [`equipments`](#equipments)
 - [`parts`](#parts)
 - [`rental_invoices`](#rental-invoices)
+- [`invoice_items`](#invoice-items)
+- [`payments`](#payments)
+- [`asaas_webhook_logs`](#asaas-webhook-logs)
 - [`service_orders`](#service-orders)
 - [`service_order_parts`](#service-order-parts)
 - [`invoice_year_counters`](#invoice-year-counters)
@@ -150,6 +153,7 @@ Abaixo estão listadas as 40 tabelas ativas no esquema `public` do banco de dado
 | `state_subscription` | `text` | Sim | - |  |
 | `average_score` | `numeric` | Sim | `0` |  |
 | `documentation_url` | `text` | Sim | - |  |
+| `asaas_customer_id` | `text` | Sim | - | ID do pagador (customer) no Asaas (ex: `cus_000005123`) — evita duplicar o cliente lá a cada boleto |
 
 #### Relacionamentos de Entrada (Tabelas que Referenciam esta)
 
@@ -241,6 +245,7 @@ Abaixo estão listadas as 40 tabelas ativas no esquema `public` do banco de dado
 ### rental_invoices
 
 * **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+* **Nota Arquitetural:** Custos deixaram de ser hardcoded aqui — a fatura consolida o valor total a partir da tabela `invoice_items`.
 
 #### Colunas
 
@@ -258,19 +263,10 @@ Abaixo estão listadas as 40 tabelas ativas no esquema `public` do banco de dado
 | `work_site` | `text` | Sim | - |  |
 | `billing_period_start` | `date` | Sim | - |  |
 | `billing_period_end` | `date` | Sim | - |  |
-| `billing_status` | `USER-DEFINED` | Sim | `'Pendente'::billing_status_type` | Valores: ["Pendente", "Faturado", "Emitida", "Cancelada"] |
+| `billing_status` | `USER-DEFINED` | Sim | `'Pendente'::billing_status_type` | Valores: ["Pendente", "Faturada", "Cancelada"] |
 | `return_date` | `date` | Sim | - |  |
-| `cost_rental` | `numeric` | Sim | `0` |  |
-| `cost_insurance` | `numeric` | Sim | `0` |  |
-| `cost_freight` | `numeric` | Sim | `0` |  |
-| `cost_rcd` | `numeric` | Sim | `0` |  |
-| `cost_third_party` | `numeric` | Sim | `0` |  |
-| `cost_training` | `numeric` | Sim | `0` |  |
-| `total_value` | `numeric` | Sim | `0` |  |
-| `due_date` | `date` | Sim | - |  |
-| `payment_method` | `text` | Sim | - |  |
-| `bank_reconciliation_date` | `date` | Sim | - |  |
-| `reconciliation_status` | `USER-DEFINED` | Sim | `'Atrasado'::reconciliation_status_type` | Valores: ["Pendente", "Atrasado", "Recebido", "Divergente", "No prazo"] |
+| `total_value` | `numeric` | Sim | `0` | Soma automática dos `invoice_items` da fatura |
+| `asaas_invoice_url` | `text` | Sim | - | Link geral da fatura no Asaas (opcional, se usar fatura única) |
 | `notes` | `text` | Sim | - |  |
 | `created_at` | `timestamp with time zone` | Sim | `now()` |  |
 | `updated_at` | `timestamp with time zone` | Sim | `now()` |  |
@@ -287,6 +283,9 @@ Abaixo estão listadas as 40 tabelas ativas no esquema `public` do banco de dado
 #### Relacionamentos de Entrada (Tabelas que Referenciam esta)
 
 * [`crm_deal_contracts.rental_invoice_id`](#crm-deal-contracts.rental-invoice-id)`(rental_invoice_id)` aponta para a coluna local `id` (Constraint: `crm_deal_contracts_rental_invoice_id_fkey`)
+* [`invoice_items.invoice_id`](#invoice-items.invoice-id)`(invoice_id)` aponta para a coluna local `id` (Constraint: `invoice_items_invoice_id_fkey`)
+* [`payments.invoice_id`](#payments.invoice-id)`(invoice_id)` aponta para a coluna local `id` (Constraint: `payments_invoice_id_fkey`)
+* [`service_orders.invoice_id`](#service-orders.invoice-id)`(invoice_id)` aponta para a coluna local `id` (Constraint: `service_orders_invoice_id_fkey`)
 
 #### Gatilhos (Triggers)
 
@@ -302,6 +301,80 @@ Abaixo estão listadas as 40 tabelas ativas no esquema `public` do banco de dado
   ```sql
   CREATE TRIGGER tr_update_client_score AFTER INSERT OR UPDATE OF client_score ON public.rental_invoices FOR EACH ROW EXECUTE FUNCTION update_client_average_score()
   ```
+
+---
+
+### invoice_items
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+* **Propósito:** Cumpre a arquitetura Item → Order → Invoice: detalha exatamente o que compõe o valor de uma fatura, permitindo que uma única fatura cobre múltiplas locações e/ou ordens de serviço.
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `invoice_id` | `uuid` | Não | - |  |
+| `description` | `text` | Não | - | Ex: "Locação Plataforma PT-10", "Seguro RCD", "Frete" |
+| `reference_type` | `text` | Sim | - | Ex: rental, service_order, freight |
+| `reference_id` | `uuid` | Sim | - | Referência genérica para a origem do custo (OS ou Contrato) — sem constraint de FK formal |
+| `quantity` | `numeric` | Não | `1` |  |
+| `unit_value` | `numeric` | Não | `0` |  |
+| `total_value` | `numeric` | Não | `0` | `quantity * unit_value` |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `invoice_id` aponta para [`rental_invoices.id`](#rental-invoices.id)`(id)` (Constraint: `invoice_items_invoice_id_fkey`)
+
+---
+
+### payments
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+* **Propósito:** Cumpre a arquitetura PaymentProfile → Payment → Invoice: gerencia o status financeiro real com o Asaas e as baixas manuais. Uma fatura pode ser paga em N parcelas, logo 1 `rental_invoices` tem N `payments`.
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `invoice_id` | `uuid` | Não | - |  |
+| `client_id` | `uuid` | Não | - |  |
+| `asaas_payment_id` | `text` | Sim | - | ID gerado pelo Asaas (ex: `pay_000001`) |
+| `billing_type` | `text` | Não | `'BOLETO'` | Ex: PIX, BOLETO, CREDIT_CARD |
+| `value` | `numeric` | Não | - | Valor bruto cobrado |
+| `net_value` | `numeric` | Sim | - | Valor líquido (após taxa do Asaas) |
+| `due_date` | `date` | Não | - | Data de vencimento |
+| `payment_date` | `date` | Sim | - | Data em que o pagamento foi efetivado |
+| `status` | `text` | Não | `'PENDING'` | Valores do Asaas: PENDING, RECEIVED, OVERDUE, CANCELLED |
+| `is_manual_reconciliation` | `boolean` | Não | `false` | `true` se o cliente utilizou o botão "Recebido por fora" (Baixa Manual) |
+| `created_at` | `timestamp with time zone` | Não | `now()` |  |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `invoice_id` aponta para [`rental_invoices.id`](#rental-invoices.id)`(id)` (Constraint: `payments_invoice_id_fkey`)
+* A coluna `client_id` aponta para [`clients.id`](#clients.id)`(id)` (Constraint: `payments_client_id_fkey`)
+
+---
+
+### asaas_webhook_logs
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+* **Propósito:** Auditoria e resiliência para processamento assíncrono via webhook na Vercel — evita perder atualizações de pagamento enviadas pelo Asaas.
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `event_id` | `text` | Não | - | ✨ Unique. ID único do evento do Asaas (evita duplicidade) |
+| `event_type` | `text` | Não | - | Ex: PAYMENT_RECEIVED, PAYMENT_OVERDUE |
+| `payment_id` | `text` | Não | - | Referência lógica a `payments.asaas_payment_id` — sem constraint de FK formal no banco |
+| `payload` | `jsonb` | Não | - | JSON completo recebido do Asaas |
+| `processed` | `boolean` | Não | `false` | `true` após atualizar a tabela `payments` com sucesso |
+| `created_at` | `timestamp with time zone` | Não | `now()` |  |
+
+Não há seção de "Relacionamentos de Saída" formal: a referência de `payment_id` a `payments.asaas_payment_id` é lógica/aplicacional, não uma constraint de FK no banco.
 
 ---
 
@@ -321,6 +394,7 @@ Abaixo estão listadas as 40 tabelas ativas no esquema `public` do banco de dado
 | `equipment_model` | `text` | Sim | - |  |
 | `equipment_serial_number` | `text` | Sim | - |  |
 | `equipment_condition_entry` | `text` | Sim | - |  |
+| `invoice_id` | `uuid` | Sim | - | Permite faturar a manutenção junto com a locação no fim do mês |
 | `executed_by` | `uuid` | Sim | - |  |
 | `execution_date` | `date` | Sim | - |  |
 | `execution_location` | `text` | Sim | - |  |
@@ -333,6 +407,7 @@ Abaixo estão listadas as 40 tabelas ativas no esquema `public` do banco de dado
 #### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
 
 * A coluna `equipment_id` aponta para [`equipments.id`](#equipments.id)`(id)` (Constraint: `service_orders_equipment_id_fkey`)
+* A coluna `invoice_id` aponta para [`rental_invoices.id`](#rental-invoices.id)`(id)` (Constraint: `service_orders_invoice_id_fkey`)
 * A coluna `executed_by` aponta para [`users_profiles.id`](#users-profiles.id)`(id)` (Constraint: `service_orders_executed_by_fkey`)
 
 #### Relacionamentos de Entrada (Tabelas que Referenciam esta)
@@ -904,6 +979,7 @@ Abaixo estão listadas as 40 tabelas ativas no esquema `public` do banco de dado
 ### erp_company_settings
 
 * **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+* **Nota Arquitetural:** Em um cenário SaaS, cada registro aqui representa um locador (cliente da RentDesk) que possui uma Subconta no Asaas.
 
 #### Colunas
 
@@ -918,9 +994,11 @@ Abaixo estão listadas as 40 tabelas ativas no esquema `public` do banco de dado
 | `bank_name` | `text` | Sim | - |  |
 | `bank_code` | `text` | Sim | - |  |
 | `bank_agency` | `text` | Sim | - |  |
-| `bank_account` | `text` | Sim | - |  |
+| `bank_account` | `text` | Sim | - | Conta real do cliente para onde o Asaas fará o saque |
 | `bank_pix_key` | `text` | Sim | - |  |
 | `contract_clauses` | `jsonb` | Não | - |  |
+| `asaas_account_id` | `text` | Sim | - | ID da subconta criada via API no Asaas (ex: `acct_0001`) |
+| `asaas_api_key` | `text` | Sim | - | Chave de API exclusiva desta subconta, usada para emitir boletos |
 | `active` | `boolean` | Não | `true` |  |
 | `updated_at` | `timestamp with time zone` | Não | `now()` |  |
 
