@@ -3,6 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../services/api';
 import { supabase } from '../lib/supabase';
+import { financeiroService } from '../services/financeiro';
+import { getApiErrorMessage } from '../utils/apiError';
+import { useAuth } from '../contexts/AuthContext';
 
 const maskCnpj = (value: string) => {
   return value
@@ -18,11 +21,18 @@ const ClientForm: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
+  const { profile } = useAuth();
+  const canVerifyAsaas = Boolean(profile && ['Administrador', 'Diretoria', 'Gerente'].includes(profile.access_level));
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
   const [error, setError] = useState<string | null>(null);
+
+  const [asaasCustomerId, setAsaasCustomerId] = useState<string | undefined>(undefined);
+  const [syncingAsaas, setSyncingAsaas] = useState(false);
+  const [verifyingAsaas, setVerifyingAsaas] = useState(false);
+  const [asaasMessage, setAsaasMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -63,6 +73,7 @@ const ClientForm: React.FC = () => {
             documentation_url: data.documentation_url || '',
             active: data.active ?? true,
           });
+          setAsaasCustomerId(data.asaas_customer_id || undefined);
         } catch (err: any) {
           console.error('Erro ao buscar cliente:', err);
           setError('Não foi possível carregar os dados do cliente.');
@@ -186,6 +197,35 @@ const ClientForm: React.FC = () => {
     }
   };
 
+  const handleSincronizarAsaas = async () => {
+    if (!id) return;
+    setSyncingAsaas(true);
+    setAsaasMessage(null);
+    try {
+      const updated = await financeiroService.sincronizarClienteAsaas(id);
+      setAsaasCustomerId(updated.asaas_customer_id || undefined);
+      setAsaasMessage({ type: 'success', text: 'Cliente sincronizado com o Asaas com sucesso.' });
+    } catch (err) {
+      setAsaasMessage({ type: 'error', text: getApiErrorMessage(err) });
+    } finally {
+      setSyncingAsaas(false);
+    }
+  };
+
+  const handleVerificarAsaas = async () => {
+    if (!id) return;
+    setVerifyingAsaas(true);
+    setAsaasMessage(null);
+    try {
+      await financeiroService.verificarClienteAsaas(id);
+      setAsaasMessage({ type: 'success', text: 'Cadastro Asaas verificado e válido.' });
+    } catch (err) {
+      setAsaasMessage({ type: 'error', text: getApiErrorMessage(err) });
+    } finally {
+      setVerifyingAsaas(false);
+    }
+  };
+
   if (fetching) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
@@ -292,6 +332,89 @@ const ClientForm: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Seção: Integração Asaas */}
+        {isEdit && (
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/30">
+              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="material-symbols-outlined text-mustard-500 text-xl">account_balance</span>
+                Integração Asaas
+              </h3>
+            </div>
+            <div className="p-6 space-y-4">
+              {asaasMessage && (
+                <div className={`px-4 py-3 rounded-xl text-sm flex items-center gap-3 border ${asaasMessage.type === 'success'
+                  ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-400'
+                  : 'bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20 text-red-700 dark:text-red-400'
+                  }`}>
+                  <span className="material-symbols-outlined">{asaasMessage.type === 'success' ? 'check_circle' : 'error'}</span>
+                  {asaasMessage.text}
+                </div>
+              )}
+
+              {asaasCustomerId ? (
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Cliente Asaas Ativo
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSincronizarAsaas}
+                      disabled={syncingAsaas}
+                      title="Gera um novo cadastro no Asaas para este cliente — use se o cadastro atual ficou inválido (ex: após recriar a subconta da locadora)"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+                    >
+                      {syncingAsaas ? (
+                        <div className="w-4 h-4 border-2 border-slate-400/30 border-t-slate-500 rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-[16px]">sync</span>
+                          Ressincronizar
+                        </>
+                      )}
+                    </button>
+                    {canVerifyAsaas && (
+                      <button
+                        type="button"
+                        onClick={handleVerificarAsaas}
+                        disabled={verifyingAsaas}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-bold text-xs uppercase tracking-wider disabled:opacity-50"
+                      >
+                        {verifyingAsaas ? (
+                          <div className="w-4 h-4 border-2 border-slate-400/30 border-t-slate-500 rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined text-[16px]">verified</span>
+                            Verificar
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSincronizarAsaas}
+                  disabled={syncingAsaas}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-mustard-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-mustard-600 transition-all disabled:opacity-50"
+                >
+                  {syncingAsaas ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[16px]">sync</span>
+                      Sincronizar com Asaas
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Seção: Contato */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">

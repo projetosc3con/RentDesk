@@ -29,6 +29,8 @@ import {
   IntegrationsTab,
   TrainingsTab
 } from './pages/HR/tabs';
+import Financeiro from './pages/Financeiro/Financeiro';
+import { ScoreTab, SubaccountTab, ExtratoTab } from './pages/Financeiro/tabs';
 import CRM from './pages/CRM/CRM';
 import {
   PipelineTab,
@@ -100,7 +102,12 @@ function App() {
                   <Route path="/usuarios" element={<Users />} />
                   <Route path="/usuarios/novo" element={<UserForm />} />
                   <Route path="/usuarios/editar/:id" element={<UserForm />} />
-                  <Route path="/financeiro" element={<Placeholder title="Financeiro" />} />
+                  <Route path="/financeiro" element={<Financeiro />}>
+                    <Route index element={<Navigate to="score" replace />} />
+                    <Route path="score" element={<ScoreTab />} />
+                    <Route path="config" element={<SubaccountTab />} />
+                    <Route path="extrato" element={<ExtratoTab />} />
+                  </Route>
                   <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
                   <Route path="/clientes/novo" element={<ClientForm />} />
                 </Route>
