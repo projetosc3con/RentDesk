@@ -176,6 +176,7 @@ export interface Client {
   address_zip: string;
   average_score?: number;
   documentation_url?: string;
+  asaas_customer_id?: string;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -320,4 +321,85 @@ export interface CRMTask {
   notes?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ScoreConsultaSuccess {
+  sucesso: true;
+  score: number;
+  tipo: 'PF' | 'PJ';
+}
+
+export interface ScoreConsultaError {
+  sucesso: false;
+  mensagem: string;
+}
+
+export type ScoreConsultaResponse = ScoreConsultaSuccess | ScoreConsultaError;
+
+export type AsaasCompanyType = 'MEI' | 'LIMITED' | 'INDIVIDUAL' | 'ASSOCIATION';
+
+export interface AsaasSubaccountPayload {
+  name: string;
+  email: string;
+  cpfCnpj: string;
+  companyType?: AsaasCompanyType;
+  mobilePhone: string;
+  address: string;
+  addressNumber: string;
+  province: string;
+  postalCode: string;
+  incomeValue: number;
+}
+
+export interface AsaasSubaccountResponse {
+  subaccount: {
+    id: string;
+    apiKey: string;
+    walletId: string;
+    email: string;
+    loginEmail: string;
+  };
+  settings: {
+    id: string;
+    company_name: string;
+    cnpj: string;
+    asaas_api_key: string;
+    active: boolean;
+  };
+}
+
+export interface AsaasSubaccountVerifyResponse {
+  keyPreview: string;
+  account: { status?: string; [key: string]: unknown };
+}
+
+export interface AsaasChargeResult {
+  invoice_id: string;
+  charge: {
+    id: string;
+    status: string;
+    value: number;
+    invoiceUrl: string;
+    bankSlipUrl?: string;
+    [key: string]: unknown;
+  };
+  payment: Record<string, unknown>;
+}
+
+export type AsaasPaymentStatus = 'PENDING' | 'RECEIVED' | 'CONFIRMED' | 'OVERDUE' | 'CANCELLED' | (string & {});
+
+export interface Payment {
+  id: string;
+  invoice_id: string;
+  client_id: string;
+  asaas_payment_id?: string;
+  billing_type: string;
+  value: number;
+  net_value?: number;
+  due_date: string;
+  payment_date?: string;
+  status: AsaasPaymentStatus;
+  is_manual_reconciliation: boolean;
+  created_at: string;
+  invoice?: { invoice_number?: string; client_name: string };
 }

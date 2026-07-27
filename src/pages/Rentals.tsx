@@ -2,10 +2,13 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
+import { financeiroService } from '../services/financeiro';
+import { getApiErrorMessage } from '../utils/apiError';
+import { isPaidStatus } from '../utils/payment';
 import { useTheme } from '../context/ThemeContext';
 import logoLight from '../assets/logo-completo.png';
 import logoDark from '../../config_files/logo-completo-dark.png';
-import type { RentalInvoice, BillingStatus, ReconciliationStatus } from '../types';
+import type { RentalInvoice, BillingStatus, ReconciliationStatus, AsaasChargeResult, Payment } from '../types';
 
 const ITEMS_PER_PAGE = 15;
 const BILLING_STATUSES: BillingStatus[] = ['Pendente', 'Faturado', 'Emitida', 'Cancelada'];
@@ -53,7 +56,67 @@ const Rentals: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [charging, setCharging] = useState(false);
+  const [chargeResult, setChargeResult] = useState<AsaasChargeResult | null>(null);
+  const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
+  const [confirmChargeOpen, setConfirmChargeOpen] = useState(false);
+  const [paidByInvoice, setPaidByInvoice] = useState<Record<string, Payment>>({});
+  const [invoicePaid, setInvoicePaid] = useState(false);
   const debounceRef = useRef<any>(null);
+
+  const fetchPaidPayments = useCallback(async () => {
+    try {
+      const [received, confirmed] = await Promise.all([
+        financeiroService.listarExtrato({ status: 'RECEIVED' }),
+        financeiroService.listarExtrato({ status: 'CONFIRMED' }),
+      ]);
+      const map: Record<string, Payment> = {};
+      [...received, ...confirmed].forEach((p) => {
+        const existing = map[p.invoice_id];
+        if (!existing || new Date(p.created_at) > new Date(existing.created_at)) {
+          map[p.invoice_id] = p;
+        }
+      });
+      setPaidByInvoice(map);
+    } catch (err) {
+      console.error('Erro ao buscar status de pagamentos:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPaidPayments();
+  }, [fetchPaidPayments]);
+
+  useEffect(() => {
+    if (!selectedRental) {
+      setInvoicePaid(false);
+      return;
+    }
+    financeiroService.buscarPagamentosFatura(selectedRental.id)
+      .then((payments) => setInvoicePaid(payments.some((p) => isPaidStatus(p.status))))
+      .catch((err) => console.error('Erro ao buscar pagamentos da fatura:', err));
+  }, [selectedRental]);
+
+  const handleGerarCobranca = async () => {
+    if (!selectedRental) return;
+    setCharging(true);
+    setFeedbackToast(null);
+    try {
+      const result = await financeiroService.gerarCobranca(selectedRental.id);
+      setChargeResult(result);
+      window.open(result.charge.invoiceUrl, '_blank');
+      setFeedbackToast('✓ Cobrança gerada com sucesso!');
+      setTimeout(() => setFeedbackToast(null), 5000);
+      fetchRentals(currentPage, filters);
+      fetchPaidPayments();
+    } catch (err) {
+      setFeedbackToast(`✗ ${getApiErrorMessage(err)}`);
+      setTimeout(() => setFeedbackToast(null), 6000);
+    } finally {
+      setCharging(false);
+      setConfirmChargeOpen(false);
+    }
+  };
 
   const activeFilterCount = [
     filters.billing_status, filters.reconciliation_status,
@@ -275,22 +338,29 @@ const Rentals: React.FC = () => {
                         {Number(rental.total_value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${rental.billing_status === 'Faturado'
-                          ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
-                          : rental.billing_status === 'Cancelada'
-                            ? 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-500/20'
-                            : 'bg-amber-100 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20'
-                          }`}>
-                          <span className="material-symbols-outlined text-[14px]">
-                            {rental.billing_status === 'Faturado' ? 'check_circle' : rental.billing_status === 'Cancelada' ? 'cancel' : 'schedule'}
+                        {paidByInvoice[rental.id] ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                            <span className="material-symbols-outlined text-[14px]">paid</span>
+                            Pago
                           </span>
-                          {rental.billing_status}
-                        </span>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${rental.billing_status === 'Faturado'
+                            ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
+                            : rental.billing_status === 'Cancelada'
+                              ? 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-500/20'
+                              : 'bg-amber-100 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20'
+                            }`}>
+                            <span className="material-symbols-outlined text-[14px]">
+                              {rental.billing_status === 'Faturado' ? 'check_circle' : rental.billing_status === 'Cancelada' ? 'cancel' : 'schedule'}
+                            </span>
+                            {rental.billing_status}
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => setSelectedRental(rental)}
+                            onClick={() => { setChargeResult(null); setSelectedRental(rental); }}
                             className="p-1.5 text-slate-400 hover:text-mustard-500 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 rounded-md transition-all"
                             title="Visualizar Fatura"
                           >
@@ -435,6 +505,27 @@ const Rentals: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* Toast de Cobrança */}
+      <AnimatePresence>
+        {feedbackToast && (
+          <motion.div
+            key="charge-toast"
+            initial={{ opacity: 0, y: -16, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.97 }}
+            className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl text-sm font-bold max-w-md ${feedbackToast.startsWith('✓')
+              ? 'bg-emerald-900 text-white'
+              : 'bg-red-600 text-white'
+              }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              {feedbackToast.startsWith('✓') ? 'check_circle' : 'error'}
+            </span>
+            {feedbackToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Modal de Visualização da Fatura */}
       <AnimatePresence>
         {selectedRental && (
@@ -537,6 +628,37 @@ const Rentals: React.FC = () => {
                 </button>
                 <div className="flex gap-3">
                   <button onClick={() => setSelectedRental(null)} className="px-6 py-3 text-slate-400 dark:text-slate-500 font-bold text-xs uppercase tracking-widest hover:text-slate-600 dark:hover:text-slate-300 transition-all">Fechar</button>
+                  {invoicePaid ? (
+                    <span className="flex items-center gap-2 px-6 py-3 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-xl font-bold text-xs uppercase tracking-widest border border-emerald-200 dark:border-emerald-500/20">
+                      <span className="material-symbols-outlined text-[20px]">check_circle</span>
+                      Pagamento Confirmado
+                    </span>
+                  ) : chargeResult ? (
+                    <a
+                      href={chargeResult.charge.invoiceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">receipt_long</span>
+                      Ver Boleto
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmChargeOpen(true)}
+                      disabled={charging}
+                      className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50"
+                    >
+                      {charging ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-[20px]">payments</span>
+                          {selectedRental.billing_status === 'Faturado' ? 'Gerar Segunda Via' : 'Gerar Cobrança'}
+                        </>
+                      )}
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       const id = selectedRental.id;
@@ -549,6 +671,53 @@ const Rentals: React.FC = () => {
                     Editar Fatura
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Confirmação — Gerar Cobrança */}
+      <AnimatePresence>
+        {confirmChargeOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => !charging && setConfirmChargeOpen(false)}
+              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 text-center"
+            >
+              <div className="w-16 h-16 mx-auto bg-amber-100 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600 mb-4">
+                <span className="material-symbols-outlined text-3xl">warning</span>
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Atenção</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 mb-6">
+                Esta ação irá gerar uma nova cobrança (boleto) para esta fatura. Se já existir uma cobrança em aberto, isso pode gerar duplicidade. Deseja continuar?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={charging}
+                  onClick={() => setConfirmChargeOpen(false)}
+                  className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-widest disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={charging}
+                  onClick={handleGerarCobranca}
+                  className="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-emerald-600/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {charging ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    'Confirmar'
+                  )}
+                </button>
               </div>
             </motion.div>
           </div>

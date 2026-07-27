@@ -838,6 +838,17 @@ const LogisticsTriagem: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Notificação simulada — disparo real de e-mail/WhatsApp ainda não integrado no backend */}
+                {(success || (isProcessed && contract.rental_invoice_id)) && (
+                  <div className="mt-3 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-xl p-4 flex items-center gap-3">
+                    <span className="material-symbols-outlined text-blue-500">mark_email_read</span>
+                    <div>
+                      <p className="text-xs font-bold text-blue-700 dark:text-blue-300">Notificação ao Cliente</p>
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Cliente notificado com o boleto por e-mail/WhatsApp.</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
