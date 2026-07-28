@@ -10,18 +10,15 @@ const IntegrationsTab: React.FC = () => {
 
   const [integrations, setIntegrations] = useState<any[]>([]);
   const [types, setTypes] = useState<any[]>([]);
-  const [metrics, setMetrics] = useState({ valid: 0, expired: 0, expiring: 0, total: 0 });
 
   const fetchData = async () => {
     try {
-      const [intRes, typesRes, metricsRes] = await Promise.all([
+      const [intRes, typesRes] = await Promise.all([
         api.get('/hr/integrations'),
-        api.get('/hr/integrations/types'),
-        api.get('/hr/integrations/metrics')
+        api.get('/hr/integrations/types')
       ]);
       setIntegrations(intRes.data || []);
       setTypes(typesRes.data || []);
-      setMetrics(metricsRes.data || { valid: 0, expired: 0, expiring: 0, total: 0 });
     } catch (err) {
       console.error('Error fetching integrations data:', err);
     }
@@ -94,8 +91,8 @@ const IntegrationsTab: React.FC = () => {
                   </td>
                   <td className="px-8 py-6">
                     <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter ${int.status === 'Válida' ? 'bg-mustard-50 dark:bg-mustard-500/10 text-mustard-600 dark:text-mustard-400 border border-mustard-200 dark:border-mustard-500/20' :
-                        int.status === 'Vencida' ? 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20' :
-                          'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20'
+                      int.status === 'Vencida' ? 'bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20' :
+                        'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20'
                       }`}>
                       {int.status}
                     </span>
@@ -138,8 +135,8 @@ const IntegrationsTab: React.FC = () => {
           {types.length === 0 ? (
             <p className="text-sm text-slate-500 col-span-3 text-center py-4">Nenhum tipo de integração cadastrado.</p>
           ) : types.map((type) => (
-            <div 
-              key={type.id} 
+            <div
+              key={type.id}
               onClick={() => {
                 setSelectedType(type);
                 setIsTypeModalOpen(true);

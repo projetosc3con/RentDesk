@@ -170,7 +170,7 @@ const IntegrationTypeModal: React.FC<IntegrationTypeModalProps> = ({ isOpen, onC
                       <input
                         type="number"
                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-mustard-500/20 focus:border-mustard-500 outline-none transition-all text-sm font-medium dark:text-white"
-                        value={formData.validity_days}
+                        value={formData.validity_days ?? ''}
                         onChange={e => setFormData({ ...formData, validity_days: parseInt(e.target.value) || 0 })}
                       />
                     </div>

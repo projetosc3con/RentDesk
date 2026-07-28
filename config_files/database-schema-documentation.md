@@ -4,14 +4,13 @@ Este documento descreve a estrutura de tabelas, relacionamentos, chaves primári
 
 ## Sumário das Tabelas
 
-Abaixo estão listadas as 43 tabelas ativas no esquema `public` do banco de dados:
+Abaixo estão listadas as 42 tabelas ativas no esquema `public` do banco de dados:
 
 - [`users_profiles`](#users-profiles)
 - [`clients`](#clients)
 - [`equipments`](#equipments)
 - [`parts`](#parts)
 - [`rental_invoices`](#rental-invoices)
-- [`invoice_items`](#invoice-items)
 - [`payments`](#payments)
 - [`asaas_webhook_logs`](#asaas-webhook-logs)
 - [`service_orders`](#service-orders)
@@ -304,29 +303,8 @@ Abaixo estão listadas as 43 tabelas ativas no esquema `public` do banco de dado
 
 ---
 
-### invoice_items
-
-* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
-* **Propósito:** Cumpre a arquitetura Item → Order → Invoice: detalha exatamente o que compõe o valor de uma fatura, permitindo que uma única fatura cobre múltiplas locações e/ou ordens de serviço.
-
-#### Colunas
-
-| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
-| :--- | :--- | :---: | :--- | :--- |
-| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
-| `invoice_id` | `uuid` | Não | - |  |
-| `description` | `text` | Não | - | Ex: "Locação Plataforma PT-10", "Seguro RCD", "Frete" |
-| `reference_type` | `text` | Sim | - | Ex: rental, service_order, freight |
-| `reference_id` | `uuid` | Sim | - | Referência genérica para a origem do custo (OS ou Contrato) — sem constraint de FK formal |
-| `quantity` | `numeric` | Não | `1` |  |
-| `unit_value` | `numeric` | Não | `0` |  |
-| `total_value` | `numeric` | Não | `0` | `quantity * unit_value` |
-
-#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
-
-* A coluna `invoice_id` aponta para [`rental_invoices.id`](#rental-invoices.id)`(id)` (Constraint: `invoice_items_invoice_id_fkey`)
-
 ---
+
 
 ### payments
 
