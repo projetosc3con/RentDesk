@@ -210,15 +210,6 @@ const Rentals: React.FC = () => {
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Gestão de Locações</h1>
           <p className="text-slate-500 dark:text-slate-400 mt-1">Acompanhe contratos, faturamentos e períodos de locação.</p>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => navigate('/locacoes/novo')}
-            className="flex items-center gap-2 bg-mustard-500 text-white px-6 py-2.5 rounded-xl hover:bg-mustard-600 transition-all font-bold text-xs uppercase tracking-wider shadow-lg shadow-mustard-500/20"
-          >
-            <span className="material-symbols-outlined text-[20px]">add</span>
-            Nova Locação
-          </button>
-        </div>
       </div>
 
       {/* Stats */}
@@ -621,11 +612,7 @@ const Rentals: React.FC = () => {
               </div>
 
               {/* Footer Visualização */}
-              <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-between items-center">
-                <button className="flex items-center gap-2 px-6 py-3 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-300 dark:hover:bg-slate-700 transition-all opacity-50 cursor-not-allowed">
-                  <span className="material-symbols-outlined text-[20px]">download</span>
-                  Baixar PDF (Em breve)
-                </button>
+              <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-end">
                 <div className="flex gap-3">
                   <button onClick={() => setSelectedRental(null)} className="px-6 py-3 text-slate-400 dark:text-slate-500 font-bold text-xs uppercase tracking-widest hover:text-slate-600 dark:hover:text-slate-300 transition-all">Fechar</button>
                   {invoicePaid ? (

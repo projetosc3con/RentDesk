@@ -39,14 +39,14 @@ function SearchableSelect<T extends { id: string }>({
   const filteredItems = useMemo(() => {
     if (!searchTerm) return items;
     const lowerSearch = searchTerm.toLowerCase();
-    return items.filter(item => 
+    return items.filter(item =>
       getSearchValue(item).toLowerCase().includes(lowerSearch)
     );
   }, [items, searchTerm, getSearchValue]);
 
-  const selectedItem = useMemo(() => 
+  const selectedItem = useMemo(() =>
     items.find(i => i.id === selectedId),
-  [items, selectedId]);
+    [items, selectedId]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -61,7 +61,7 @@ function SearchableSelect<T extends { id: string }>({
   return (
     <div className="space-y-1.5 relative" ref={containerRef}>
       <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">{label} {required && '*'}</label>
-      <div 
+      <div
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border rounded-xl flex items-center justify-between cursor-pointer transition-all ${isOpen ? 'border-mustard-500 ring-2 ring-mustard-500/10 dark:bg-slate-900' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}
       >
@@ -73,7 +73,7 @@ function SearchableSelect<T extends { id: string }>({
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
@@ -82,9 +82,9 @@ function SearchableSelect<T extends { id: string }>({
             <div className="p-2 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm">search</span>
-                <input 
+                <input
                   autoFocus
-                  type="text" 
+                  type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Pesquisar..."
@@ -95,7 +95,7 @@ function SearchableSelect<T extends { id: string }>({
             <div className="max-h-60 overflow-y-auto">
               {filteredItems.length > 0 ? (
                 filteredItems.map(item => (
-                  <div 
+                  <div
                     key={item.id}
                     onClick={() => {
                       onSelect(item.id);
@@ -164,10 +164,10 @@ const RentalEdit: React.FC = () => {
           api.get('/equipments'),
           api.get(`/rentals/${id}`)
         ]);
-        
+
         setClients(clientsRes.data.filter((c: Client) => c.active || c.id === rentalRes.data.client_id));
         setEquipments(equipmentsRes.data.filter((eq: Equipment) => eq.status === 'Disponível' || eq.id === rentalRes.data.equipment_id));
-        
+
         const rental = rentalRes.data;
         setFormData({
           invoice_number: rental.invoice_number || '',
@@ -428,13 +428,13 @@ const RentalEdit: React.FC = () => {
               </h3>
             </div>
             <div className="p-6">
-              <textarea 
-                name="notes" 
-                value={formData.notes} 
-                onChange={handleChange} 
-                rows={5} 
-                placeholder="Detalhes sobre a negociação, descontos ou condições especiais..." 
-                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all resize-none outline-none dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600" 
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows={5}
+                placeholder="Detalhes sobre a negociação, descontos ou condições especiais..."
+                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all resize-none outline-none dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600"
               />
             </div>
           </div>
@@ -442,10 +442,10 @@ const RentalEdit: React.FC = () => {
 
         {/* Right Column: Invoicing Summary */}
         <div className="space-y-6">
-          <div className="bg-mustard-600 dark:bg-mustard-500 rounded-2xl p-6 text-white shadow-xl shadow-mustard-500/20 space-y-6 sticky top-6">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 space-y-6 sticky top-6">
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest opacity-60">Valor Total da Fatura</h3>
-              <p className="text-4xl font-black mt-1">
+              <p className="text-4xl text-mustard-500 font-bold mt-1">
                 {totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               </p>
             </div>

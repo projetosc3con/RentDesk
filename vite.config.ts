@@ -18,7 +18,7 @@ export default defineConfig({
         name: 'C3LOC ERP — Gestão de Locação',
         short_name: 'C3LOC',
         description: 'Sistema completo para gestão de locação de equipamentos e CRM.',
-        theme_color: '#bf8110',
+        theme_color: '#f97316',
         background_color: '#0f172b',
         display: 'standalone',
         orientation: 'portrait',

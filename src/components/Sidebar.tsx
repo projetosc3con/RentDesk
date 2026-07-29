@@ -11,8 +11,8 @@ import { motion } from 'framer-motion';
 import { navItems } from '../constants/navigation';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import logoLight from '../assets/logo-completo.png';
-import logoDark from '../../config_files/logo-completo-dark.png';
+import logoLight from '../assets/altomaster-dark.png';
+import logoDark from '../assets/altomaster-white.png';
 
 const Sidebar: React.FC = () => {
   const { theme } = useTheme();
@@ -29,8 +29,8 @@ const Sidebar: React.FC = () => {
       transition={{ duration: 0.4 }}
       className="hidden lg:flex flex-col p-4 w-64 h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 z-50 shrink-0 transition-colors duration-300"
     >
-      <div className="mb-8 px-4 flex items-center justify-center flex-col mt-4">
-        <div className="w-full px-4 mb-2">
+      <div className="mb-8 flex items-center justify-center flex-col mt-4">
+        <div className="w-full mb-2">
           <img
             src={theme === 'dark' ? logoDark : logoLight}
             alt="C3LOC Logo"

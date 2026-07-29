@@ -181,7 +181,10 @@ const PositionsTab: React.FC = () => {
                   ) : (
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-slate-500 dark:text-slate-400 italic">Nenhum cargo associado</p>
-                      <button className="px-3 py-1.5 bg-mustard-50 dark:bg-mustard-500/10 text-mustard-600 dark:text-mustard-400 rounded-lg text-xs font-bold hover:bg-mustard-500 hover:text-white transition-colors">
+                      <button
+                        onClick={() => navigate(`/rh/colaboradores/${emp.id}/onboarding`)}
+                        className="px-3 py-1.5 bg-mustard-50 dark:bg-mustard-500/10 text-mustard-600 dark:text-mustard-400 rounded-lg text-xs font-bold hover:bg-mustard-500 hover:text-white transition-colors"
+                      >
                         Iniciar Onboard
                       </button>
                     </div>
@@ -195,22 +198,22 @@ const PositionsTab: React.FC = () => {
 
       {/* Sidebar: Job Levels & Salary Ranges Config */}
       <div className="space-y-6">
-        <div className="bg-mustard-500 rounded-3xl p-8 text-white shadow-xl shadow-mustard-500/20 relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
           <span className="material-symbols-outlined absolute -right-4 -bottom-4 text-white/5 text-9xl">badge</span>
           <h3 className="text-lg font-bold mb-1">Gestão de Pessoal</h3>
-          <p className="text-mustard-100/60 text-xs uppercase tracking-widest font-bold mb-6">Movimentações</p>
+          <p className="text-xs uppercase tracking-widest font-bold mb-6">Movimentações</p>
 
           <div className="space-y-4 relative z-10">
             <button
               onClick={() => setIsChangeModalOpen(true)}
-              className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 bg-mustard-500 hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/10 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-sm">person_edit</span>
               Alterar Cargo
             </button>
             <button
               onClick={() => setIsHistoryModalOpen(true)}
-              className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+              className="w-full py-3 bg-mustard-500 hover:bg-mustard-600 transition-all shadow-lg shadow-mustard-500/10 rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2"
             >
               <span className="material-symbols-outlined text-sm">manage_search</span>
               Histórico

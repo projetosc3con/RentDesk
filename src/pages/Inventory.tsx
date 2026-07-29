@@ -23,6 +23,11 @@ interface Equipment {
   notes?: string;
   unit?: string;
   created_at?: string;
+  // Rental info (populated when status === 'Locado')
+  rental_client_name?: string;
+  rental_period_start?: string;
+  rental_period_end?: string;
+  rental_work_site?: string;
 }
 
 const Inventory: React.FC = () => {
@@ -322,20 +327,21 @@ const Inventory: React.FC = () => {
                         </div>
                       </div>
 
+                      {equipment.status === 'Locado' && equipment.rental_period_start && (
+                        <div className="flex items-center gap-1.5 mb-4 text-[11px] text-slate-500 dark:text-slate-400">
+                          <span className="material-symbols-outlined text-[14px] text-mustard-500">date_range</span>
+                          {new Date(equipment.rental_period_start + 'T00:00:00').toLocaleDateString('pt-BR')}
+                          {' — '}
+                          {equipment.rental_period_end ? new Date(equipment.rental_period_end + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}
+                        </div>
+                      )}
+
                       <div className="flex gap-2">
                         <button
                           onClick={() => setSelectedEquipment(equipment)}
-                          className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                         >
                           Detalhes
-                        </button>
-                        <button
-                          onClick={() => equipment.status === 'Disponível' && navigate(`/locacoes/novo?equipmentId=${equipment.id}`)}
-                          className={`flex-1 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest transition-all ${equipment.status === 'Disponível'
-                            ? 'bg-mustard-500 text-white hover:bg-mustard-600'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                            }`}>
-                          Locar
                         </button>
                       </div>
                     </div>
@@ -377,12 +383,28 @@ const Inventory: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{equipment.model || '-'}</td>
                           <td className="px-6 py-4">
-                            <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider border ${getStatusStyle(equipment.status)}`}>
-                              <span className="material-symbols-outlined text-[14px]">
-                                {getStatusIcon(equipment.status)}
-                              </span>
-                              {equipment.status}
+                            <div className="flex items-center gap-2">
+                              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider border ${getStatusStyle(equipment.status)}`}>
+                                <span className="material-symbols-outlined text-[14px]">
+                                  {getStatusIcon(equipment.status)}
+                                </span>
+                                {equipment.status}
+                              </div>
                             </div>
+                            {equipment.status === 'Locado' && equipment.rental_client_name && (
+                              <div className="mt-2 flex flex-col gap-0.5">
+                                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[13px] text-mustard-500">business</span>
+                                  {equipment.rental_client_name}
+                                </span>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[12px]">date_range</span>
+                                  {equipment.rental_period_start ? new Date(equipment.rental_period_start + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}
+                                  {' — '}
+                                  {equipment.rental_period_end ? new Date(equipment.rental_period_end + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}
+                                </span>
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-center gap-2">
@@ -392,14 +414,6 @@ const Inventory: React.FC = () => {
                                 title="Ver Detalhes"
                               >
                                 <span className="material-symbols-outlined text-[20px]">visibility</span>
-                              </button>
-                              <button
-                                onClick={() => equipment.status === 'Disponível' && navigate(`/locacoes/novo?equipmentId=${equipment.id}`)}
-                                className={`p-2 rounded-lg transition-all ${equipment.status === 'Disponível' ? 'text-slate-400 hover:text-emerald-900 hover:bg-emerald-50' : 'text-slate-200 cursor-not-allowed'}`}
-                                title="Locar Equipamento"
-                                disabled={equipment.status !== 'Disponível'}
-                              >
-                                <span className="material-symbols-outlined text-[20px]">shopping_cart</span>
                               </button>
                             </div>
                           </td>
@@ -508,6 +522,40 @@ const Inventory: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Informações de Locação */}
+                {selectedEquipment.status === 'Locado' && selectedEquipment.rental_client_name && (
+                  <div className="mb-8 p-5 rounded-2xl bg-mustard-50 dark:bg-mustard-900/20 border border-mustard-200 dark:border-mustard-800/30">
+                    <h4 className="text-[11px] font-bold text-mustard-600 dark:text-mustard-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[16px]">assignment</span>
+                      Locação Ativa
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2">
+                        <span className="block text-[10px] font-bold text-mustard-500/70 dark:text-mustard-500/50 uppercase tracking-widest mb-0.5">Cliente</span>
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedEquipment.rental_client_name}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-bold text-mustard-500/70 dark:text-mustard-500/50 uppercase tracking-widest mb-0.5">Início</span>
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                          {selectedEquipment.rental_period_start ? new Date(selectedEquipment.rental_period_start + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-bold text-mustard-500/70 dark:text-mustard-500/50 uppercase tracking-widest mb-0.5">Término</span>
+                        <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                          {selectedEquipment.rental_period_end ? new Date(selectedEquipment.rental_period_end + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}
+                        </span>
+                      </div>
+                      {selectedEquipment.rental_work_site && (
+                        <div className="col-span-2">
+                          <span className="block text-[10px] font-bold text-mustard-500/70 dark:text-mustard-500/50 uppercase tracking-widest mb-0.5">Local da Obra</span>
+                          <span className="text-sm font-bold text-slate-800 dark:text-slate-200">{selectedEquipment.rental_work_site}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Notas/Observações */}
                 <div className="mb-8">
                   <h4 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -520,24 +568,13 @@ const Inventory: React.FC = () => {
                 </div>
 
                 {/* Ações Inferiores */}
-                <div className="mt-auto pt-6 border-t border-slate-100 flex gap-3">
+                <div className="mt-auto pt-6 border-t border-slate-100 dark:border-slate-800 flex gap-3">
                   <button
                     onClick={() => navigate(`/equipamentos/editar/${selectedEquipment.id}`)}
-                    className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
+                    className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
                   >
                     <span className="material-symbols-outlined text-[18px]">edit</span>
                     Editar Máquina
-                  </button>
-                  <button
-                    disabled={selectedEquipment.status !== 'Disponível'}
-                    onClick={() => navigate(`/locacoes/novo?equipmentId=${selectedEquipment.id}`)}
-                    className={`flex-[2] px-4 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${selectedEquipment.status === 'Disponível'
-                      ? 'bg-mustard-500 text-white hover:bg-mustard-600 shadow-mustard-500/20'
-                      : 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none'
-                      }`}
-                  >
-                    <span className="material-symbols-outlined text-[18px]">add_shopping_cart</span>
-                    Criar Locação
                   </button>
                 </div>
               </div>
