@@ -212,7 +212,7 @@ const LogisticsTriagem: React.FC = () => {
       return !!selectedEquipmentId && !!workSite.trim();
     }
     if (stepIndex === 1) {
-      return triagePhotos.length === CHECKLIST_ITEMS.length;
+      return true;
     }
     return true;
   };
