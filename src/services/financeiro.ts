@@ -7,6 +7,8 @@ import type {
   AsaasSubaccountVerifyResponse,
   AsaasChargeResult,
   Payment,
+  InvoiceNfse,
+  NfseEmitResult,
 } from '../types';
 
 export interface ExtratoFilters {
@@ -58,6 +60,16 @@ export const financeiroService = {
 
   listarExtrato: async (filters: ExtratoFilters = {}): Promise<Payment[]> => {
     const { data } = await api.get<Payment[]>('/payments', { params: filters });
+    return data;
+  },
+
+  emitirNfse: async (invoiceId: string): Promise<NfseEmitResult> => {
+    const { data } = await api.post<NfseEmitResult>(`/fiscal/invoices/${invoiceId}/nfse`);
+    return data;
+  },
+
+  buscarNfseFatura: async (invoiceId: string): Promise<InvoiceNfse> => {
+    const { data } = await api.get<InvoiceNfse>(`/fiscal/invoices/${invoiceId}/nfse`);
     return data;
   },
 };
