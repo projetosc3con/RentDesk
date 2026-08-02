@@ -8,7 +8,7 @@ const Financeiro: React.FC = () => {
   const tabs = [
     { id: 'config', label: 'Configuração', icon: 'settings', path: '/financeiro/config' },
     { id: 'score', label: 'Consultar Score', icon: 'credit_score', path: '/financeiro/score' },
-    { id: 'extrato', label: 'Extrato', icon: 'receipt_long', path: '/financeiro/extrato' },
+    { id: 'extrato', label: 'Extrato Bancário', icon: 'receipt_long', path: '/financeiro/extrato' },
   ];
 
   return (
