@@ -9,6 +9,7 @@ import type {
   Payment,
   Bill,
   CreateBillPayload,
+  StatementItem,
   InvoiceNfse,
   NfseEmitResult,
 } from '../types';
@@ -24,6 +25,12 @@ export interface ConciliacaoFilters {
   client_id?: string;
   status?: string;
   origin?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface ExtratoBancarioFilters {
+  client_id?: string;
   from?: string;
   to?: string;
 }
@@ -75,6 +82,13 @@ export const financeiroService = {
 
   listarConciliacaoBancaria: async (filters: ConciliacaoFilters = {}): Promise<Bill[]> => {
     const { data } = await api.get<Bill[]>('/bills', { params: filters });
+    return data;
+  },
+
+  // Extrato bancário: `payments` ainda em aberto + `bills` já conciliado
+  // (automático ou manual), mesclados pelo backend numa lista única.
+  listarExtratoBancario: async (filters: ExtratoBancarioFilters = {}): Promise<StatementItem[]> => {
+    const { data } = await api.get<StatementItem[]>('/bills', { params: filters });
     return data;
   },
 

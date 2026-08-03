@@ -30,7 +30,7 @@ import {
   TrainingsTab
 } from './pages/HR/tabs';
 import Financeiro from './pages/Financeiro/Financeiro';
-import { ScoreTab, SubaccountTab, ExtratoTab, ConciliacaoTab } from './pages/Financeiro/tabs';
+import { ScoreTab, SubaccountTab, ExtratoTab } from './pages/Financeiro/tabs';
 import CRM from './pages/CRM/CRM';
 import {
   PipelineTab,
@@ -106,7 +106,6 @@ function App() {
                     <Route path="score" element={<ScoreTab />} />
                     <Route path="config" element={<SubaccountTab />} />
                     <Route path="extrato" element={<ExtratoTab />} />
-                    <Route path="conciliacao" element={<ConciliacaoTab />} />
                   </Route>
                   <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
                   <Route path="/clientes/novo" element={<ClientForm />} />
