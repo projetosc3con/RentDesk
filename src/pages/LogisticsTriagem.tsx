@@ -3,11 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
 import { logisticsService, type LogisticsContract, type TriagePhoto } from '../services/logistics';
+import { financeiroService } from '../services/financeiro';
 import SearchableSelect from '../components/SearchableSelect';
-import type { Equipment } from '../types';
+import type { Equipment, AsaasChargeResult } from '../types';
 import { TriageChecklistDocument } from '../components/logistics/TriageChecklistDocument';
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
+import { getApiErrorMessage } from '../utils/apiError';
 
 const STEPS = [
   { key: 'triagem', label: 'Triagem', icon: 'fact_check' },
@@ -66,8 +68,12 @@ const LogisticsTriagem: React.FC = () => {
   // UI View Mode for checklist
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Emission data
-  const [rentalInvoiceId, setRentalInvoiceId] = useState('');
+  // Boleto generation on finish
+  const [chargeConfirmOpen, setChargeConfirmOpen] = useState(false);
+  const [charging, setCharging] = useState(false);
+  const [chargeResult, setChargeResult] = useState<AsaasChargeResult | null>(null);
+  const [chargeError, setChargeError] = useState<string | null>(null);
+  const [resultModalOpen, setResultModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -186,19 +192,39 @@ const LogisticsTriagem: React.FC = () => {
     }
   };
 
+  const gerarBoleto = async (invoiceId: string) => {
+    setCharging(true);
+    setChargeError(null);
+    try {
+      const result = await financeiroService.gerarCobranca(invoiceId);
+      setChargeResult(result);
+      setResultModalOpen(true);
+    } catch (err) {
+      setChargeError(getApiErrorMessage(err));
+    } finally {
+      setCharging(false);
+    }
+  };
+
   const handleFinish = async () => {
     if (!contract) return;
+    setChargeConfirmOpen(false);
     try {
       setSubmitting(true);
       setError(null);
-      await logisticsService.finishProcessing(contract.id, {
-        rental_invoice_id: rentalInvoiceId || undefined,
-        equipment_id: selectedEquipmentId || undefined
+      setChargeError(null);
+
+      const updatedContract = await logisticsService.finishProcessing(contract.id, {
+        equipment_id: selectedEquipmentId || undefined,
       });
       // Clear localStorage draft upon successful completion
       localStorage.removeItem(`triage_draft_${id}`);
+      setContract(updatedContract);
       setSuccess(true);
-      setTimeout(() => navigate('/logistica'), 2000);
+
+      if (updatedContract.rental_invoice_id) {
+        await gerarBoleto(updatedContract.rental_invoice_id);
+      }
     } catch (err: any) {
       console.error('Erro ao finalizar processamento:', err);
       setError(err.response?.data?.error || 'Erro ao finalizar processamento.');
@@ -264,6 +290,11 @@ const LogisticsTriagem: React.FC = () => {
     return contract.deal?.value || 0;
   };
 
+  // "Data de Fim" is used by the backend as the boleto's due date (dueDate).
+  // Without it, finishProcessing succeeds but the charge (Asaas) call fails.
+  const periodEnd: string | null = contract.contract_form?.period_end || contract.snapshot?.period_end || null;
+  const missingDueDate = !isProcessed && isTriage && !periodEnd;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -306,7 +337,7 @@ const LogisticsTriagem: React.FC = () => {
             className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-5 py-4 rounded-2xl text-sm flex items-center gap-3 font-medium"
           >
             <span className="material-symbols-outlined text-emerald-500 text-xl">check_circle</span>
-            Contrato processado com sucesso! Redirecionando...
+            Contrato processado com sucesso!
           </motion.div>
         )}
       </AnimatePresence>
@@ -744,18 +775,37 @@ const LogisticsTriagem: React.FC = () => {
                     { label: 'Local de Uso', value: workSite || 'N/A', icon: 'location_on' },
                     { label: 'Valor Total', value: getContractValue().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: 'payments' },
                     { label: 'Fotos Anexadas', value: `${triagePhotos.length} / ${CHECKLIST_ITEMS.length} foto(s)`, icon: 'photo_camera' },
+                    {
+                      label: 'Vencimento do Boleto',
+                      value: periodEnd ? new Date(`${periodEnd}T00:00:00`).toLocaleDateString('pt-BR') : 'Não informado',
+                      icon: 'event',
+                      alert: !periodEnd,
+                    },
                   ].map((item) => (
-                    <div key={item.label} className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-100 dark:border-slate-800 p-4 flex items-start gap-3">
+                    <div key={item.label} className={`rounded-xl border p-4 flex items-start gap-3 ${item.alert ? 'bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20' : 'bg-slate-50/50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-800'}`}>
                       <div className="w-9 h-9 bg-white dark:bg-slate-900 rounded-lg flex items-center justify-center shrink-0 border border-slate-100 dark:border-slate-800">
-                        <span className="material-symbols-outlined text-mustard-500 text-lg">{item.icon}</span>
+                        <span className={`material-symbols-outlined text-lg ${item.alert ? 'text-red-500' : 'text-mustard-500'}`}>{item.icon}</span>
                       </div>
                       <div className="min-w-0">
                         <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{item.label}</p>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 truncate">{item.value}</p>
+                        <p className={`text-sm font-bold mt-0.5 truncate ${item.alert ? 'text-red-700 dark:text-red-300' : 'text-slate-900 dark:text-white'}`}>{item.value}</p>
                       </div>
                     </div>
                   ))}
                 </div>
+
+                {/* Blocks finish when the invoice due date can't be computed */}
+                {missingDueDate && (
+                  <div className="mt-6 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-xl p-4 flex items-start gap-3">
+                    <span className="material-symbols-outlined text-red-500">error</span>
+                    <div>
+                      <p className="text-xs font-bold text-red-700 dark:text-red-300">Data de Fim do contrato não informada</p>
+                      <p className="text-sm text-red-800 dark:text-red-200 mt-1">
+                        Esse campo define o vencimento do boleto. Volte ao formulário do contrato (CRM) e preencha a "Data de Fim" antes de finalizar a triagem — caso contrário o contrato será processado, mas a geração do boleto vai falhar.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* PDF Checklist Actions */}
                 <div className="mt-8 border-t border-slate-100 dark:border-slate-800 pt-6">
@@ -814,20 +864,6 @@ const LogisticsTriagem: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Rental Invoice ID */}
-                {!isProcessed && isTriage && (
-                  <div className="mt-6 space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nº da Fatura de Locação (rental_invoice_id)</label>
-                    <input
-                      type="text"
-                      value={rentalInvoiceId}
-                      onChange={(e) => setRentalInvoiceId(e.target.value)}
-                      placeholder="Ex: FAT-2026-0001"
-                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm placeholder:text-slate-400 dark:placeholder:text-slate-600"
-                    />
-                  </div>
-                )}
-
                 {/* Already processed info */}
                 {isProcessed && contract.rental_invoice_id && (
                   <div className="mt-6 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">
@@ -835,6 +871,27 @@ const LogisticsTriagem: React.FC = () => {
                     <div>
                       <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">Fatura de Locação</p>
                       <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200 font-mono">{contract.rental_invoice_id}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Charge (boleto) retry after failure */}
+                {chargeError && isProcessed && contract.rental_invoice_id && (
+                  <div className="mt-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <span className="material-symbols-outlined text-red-500">error</span>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-red-700 dark:text-red-300">Contrato processado, mas houve um erro ao gerar o boleto</p>
+                        <p className="text-sm text-red-800 dark:text-red-200 mt-1">{chargeError}</p>
+                        <button
+                          type="button"
+                          onClick={() => gerarBoleto(contract.rental_invoice_id!)}
+                          disabled={charging}
+                          className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold uppercase tracking-widest disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {charging ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Tentar Gerar Boleto Novamente'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -865,11 +922,12 @@ const LogisticsTriagem: React.FC = () => {
                   </div>
                 </div>
                 <button
-                  onClick={handleFinish}
-                  disabled={submitting}
-                  className="w-full py-4 bg-white text-mustard-600 dark:text-mustard-500 rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-70"
+                  onClick={() => setChargeConfirmOpen(true)}
+                  disabled={submitting || charging || missingDueDate}
+                  title={missingDueDate ? 'Preencha a Data de Fim do contrato antes de finalizar.' : undefined}
+                  className="w-full py-4 bg-white text-mustard-600 dark:text-mustard-500 rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? (
+                  {(submitting || charging) ? (
                     <div className="w-5 h-5 border-2 border-mustard-500/30 border-t-mustard-500 rounded-full animate-spin" />
                   ) : (
                     <>
@@ -922,6 +980,141 @@ const LogisticsTriagem: React.FC = () => {
           </button>
         )}
       </div>
+
+      {/* Modal de Confirmação — Finalizar Triagem + Gerar Boleto */}
+      <AnimatePresence>
+        {chargeConfirmOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => !(submitting || charging) && setChargeConfirmOpen(false)}
+              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 text-center"
+            >
+              <div className="w-16 h-16 mx-auto bg-amber-100 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600 mb-4">
+                <span className="material-symbols-outlined text-3xl">warning</span>
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Atenção</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 mb-6">
+                Esta ação vai finalizar a triagem (status "Processado") e gerar automaticamente o boleto de cobrança para o cliente. Deseja continuar?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={submitting || charging}
+                  onClick={() => setChargeConfirmOpen(false)}
+                  className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-widest disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting || charging}
+                  onClick={handleFinish}
+                  className="flex-1 py-3 rounded-xl bg-mustard-500 hover:bg-mustard-600 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-mustard-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {(submitting || charging) ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    'Confirmar'
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Resultado — Boleto Gerado */}
+      <AnimatePresence>
+        {resultModalOpen && chargeResult && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setResultModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6"
+            >
+              <div className="w-16 h-16 mx-auto bg-emerald-100 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 mb-4">
+                <span className="material-symbols-outlined text-3xl">check_circle</span>
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white text-center">Boleto Gerado</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 mb-4 text-center">Cobrança sincronizada com o Asaas.</p>
+
+              {chargeResult.breakdown && (
+                <div className="bg-slate-50 dark:bg-slate-800/40 rounded-xl p-4 space-y-2 mb-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Valor total do contrato</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {chargeResult.breakdown.total_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Taxa Asaas repassada</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {chargeResult.breakdown.fee_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-2">
+                    <span className="text-slate-500 dark:text-slate-400">Valor cobrado no boleto</span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {chargeResult.charge.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Líquido projetado</span>
+                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      {chargeResult.breakdown.net_value?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) ?? '—'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {chargeResult.warning && (
+                <div className="mb-4 px-4 py-3 rounded-xl text-xs font-medium bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">warning</span>
+                  {chargeResult.warning}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href={chargeResult.charge.bankSlipUrl || chargeResult.charge.invoiceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 px-5 py-3 bg-mustard-500 text-white rounded-xl text-sm font-bold hover:bg-mustard-600 transition-colors flex items-center justify-center gap-2 shadow-md shadow-mustard-500/10"
+                >
+                  <span className="material-symbols-outlined text-[18px]">download</span>
+                  Baixar Boleto
+                </a>
+                <a
+                  href={chargeResult.charge.invoiceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 px-5 py-3 border border-mustard-500 text-mustard-600 dark:text-mustard-400 rounded-xl text-sm font-bold hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-colors flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-[18px]">receipt_long</span>
+                  Ver Fatura no Asaas
+                </a>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { setResultModalOpen(false); navigate('/logistica'); }}
+                className="w-full mt-4 py-2.5 text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+              >
+                Ir para Logística
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

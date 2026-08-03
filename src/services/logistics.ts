@@ -95,7 +95,7 @@ export const logisticsService = {
     return response.data;
   },
 
-  finishProcessing: async (id: string, data: { rental_invoice_id?: string; equipment_id?: string }): Promise<LogisticsContract> => {
+  finishProcessing: async (id: string, data: { equipment_id?: string }): Promise<LogisticsContract> => {
     const response = await api.patch(`/logistics/contracts/${id}/finish`, data);
     return response.data;
   },

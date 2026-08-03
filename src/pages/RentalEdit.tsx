@@ -5,10 +5,22 @@ import api from '../services/api';
 import { financeiroService } from '../services/financeiro';
 import { getApiErrorMessage } from '../utils/apiError';
 import { isPaidStatus } from '../utils/payment';
-import type { BillingStatus, ReconciliationStatus, Client, Equipment, AsaasChargeResult } from '../types';
+import type { BillingStatus, ReconciliationStatus, Client, Equipment, AsaasChargeResult, InvoiceNfse, NfseStatus } from '../types';
 
 const BILLING_STATUSES: BillingStatus[] = ['Pendente', 'Faturado', 'Emitida', 'Cancelada'];
 const RECONCILIATION_STATUSES: ReconciliationStatus[] = ['Pendente', 'Atrasado', 'Recebido', 'Divergente', 'No prazo'];
+
+const nfseBadgeClass = (status: NfseStatus) => {
+  if (status === 'AUTHORIZED' || status === 'SYNCHRONIZED') return 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20';
+  if (status === 'ERROR' || status === 'ERRO' || status === 'CANCELLED' || status === 'CANCELLATION_DENIED') return 'bg-red-500/10 text-red-300 border border-red-500/20';
+  return 'bg-amber-500/10 text-amber-300 border border-amber-500/20';
+};
+
+const nfseStatusIcon = (status: NfseStatus) => {
+  if (status === 'AUTHORIZED' || status === 'SYNCHRONIZED') return 'check_circle';
+  if (status === 'ERROR' || status === 'ERRO' || status === 'CANCELLED' || status === 'CANCELLATION_DENIED') return 'cancel';
+  return 'schedule';
+};
 
 // Reusable Searchable Select Component
 interface SearchableSelectProps<T> {
@@ -134,6 +146,12 @@ const RentalEdit: React.FC = () => {
   const [chargeMessage, setChargeMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [invoicePaid, setInvoicePaid] = useState(false);
 
+  const [hasCharge, setHasCharge] = useState(false);
+  const [nfse, setNfse] = useState<InvoiceNfse | null>(null);
+  const [nfseLoading, setNfseLoading] = useState(false);
+  const [emittingNfse, setEmittingNfse] = useState(false);
+  const [nfseMessage, setNfseMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   const [formData, setFormData] = useState({
     invoice_number: '',
     client_id: '',
@@ -202,8 +220,20 @@ const RentalEdit: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     financeiroService.buscarPagamentosFatura(id)
-      .then((payments) => setInvoicePaid(payments.some((p) => isPaidStatus(p.status))))
+      .then((payments) => {
+        setInvoicePaid(payments.some((p) => isPaidStatus(p.status)));
+        setHasCharge(payments.length > 0);
+      })
       .catch((err) => console.error('Erro ao buscar pagamentos da fatura:', err));
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    financeiroService.buscarNfseFatura(id)
+      .then(setNfse)
+      .catch((err) => {
+        if (err?.response?.status !== 404) console.error('Erro ao buscar NFS-e da fatura:', err);
+      });
   }, [id]);
 
   const totalValue = useMemo(() => {
@@ -281,6 +311,34 @@ const RentalEdit: React.FC = () => {
     } finally {
       setCharging(false);
       setChargeConfirmOpen(false);
+    }
+  };
+
+  const handleEmitirNfse = async () => {
+    if (!id) return;
+    setEmittingNfse(true);
+    setNfseMessage(null);
+    try {
+      const result = await financeiroService.emitirNfse(id);
+      setNfse(result.nfse);
+      setNfseMessage({ type: 'success', text: 'NFS-e emitida com sucesso!' });
+    } catch (err) {
+      setNfseMessage({ type: 'error', text: getApiErrorMessage(err) });
+    } finally {
+      setEmittingNfse(false);
+    }
+  };
+
+  const handleAtualizarStatusNfse = async () => {
+    if (!id) return;
+    setNfseLoading(true);
+    try {
+      const updated = await financeiroService.buscarNfseFatura(id);
+      setNfse(updated);
+    } catch (err) {
+      setNfseMessage({ type: 'error', text: getApiErrorMessage(err) });
+    } finally {
+      setNfseLoading(false);
     }
   };
 
@@ -521,6 +579,96 @@ const RentalEdit: React.FC = () => {
                   )}
                 </button>
               )}
+
+              <div className="pt-4 mt-4 border-t border-white/10 space-y-3">
+                <h4 className="text-[10px] font-bold uppercase tracking-widest opacity-60 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px]">request_quote</span>
+                  Nota Fiscal
+                </h4>
+
+                {nfseMessage && (
+                  <div className={`px-4 py-3 rounded-xl text-xs font-medium flex items-center gap-2 ${nfseMessage.type === 'success' ? 'bg-emerald-900/20 text-emerald-100' : 'bg-red-900/30 text-red-100'
+                    }`}>
+                    <span className="material-symbols-outlined text-base">{nfseMessage.type === 'success' ? 'check_circle' : 'error'}</span>
+                    {nfseMessage.text}
+                  </div>
+                )}
+
+                {nfse ? (
+                  <>
+                    <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${nfseBadgeClass(nfse.status)}`}>
+                      <span className="material-symbols-outlined text-[14px]">{nfseStatusIcon(nfse.status)}</span>
+                      {nfse.status}
+                    </div>
+
+                    {(nfse.status === 'ERROR' || nfse.status === 'ERRO') && nfse.return_message && (
+                      <p className="text-xs text-red-300">{nfse.return_message}</p>
+                    )}
+
+                    <div className="flex flex-wrap gap-2">
+                      {nfse.nfse_link && (
+                        <a
+                          href={nfse.nfse_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">description</span>
+                          Ver Nota
+                        </a>
+                      )}
+                      {nfse.xml_url && (
+                        <a
+                          href={nfse.xml_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">code</span>
+                          XML
+                        </a>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleAtualizarStatusNfse}
+                      disabled={nfseLoading}
+                      className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                    >
+                      {nfseLoading ? (
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-[16px]">refresh</span>
+                          Atualizar Status
+                        </>
+                      )}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleEmitirNfse}
+                      disabled={!hasCharge || emittingNfse}
+                      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+                    >
+                      {emittingNfse ? (
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-[18px]">request_quote</span>
+                          Emitir NFS-e
+                        </>
+                      )}
+                    </button>
+                    {!hasCharge && (
+                      <p className="text-[11px] text-white/50 text-center">Gere a cobrança antes de emitir a nota fiscal.</p>
+                    )}
+                  </>
+                )}
+              </div>
 
               <button type="button" onClick={() => navigate('/locacoes')} className="w-full py-2 text-[10px] font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity">
                 Cancelar e Voltar

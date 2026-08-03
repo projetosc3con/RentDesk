@@ -373,17 +373,27 @@ export interface AsaasSubaccountVerifyResponse {
   account: { status?: string; [key: string]: unknown };
 }
 
+export interface AsaasChargeBreakdown {
+  total_value: number;
+  fee_amount: number;
+  charged_value: number;
+  net_value: number | null;
+}
+
 export interface AsaasChargeResult {
   invoice_id: string;
   charge: {
     id: string;
     status: string;
     value: number;
+    netValue?: number;
     invoiceUrl: string;
     bankSlipUrl?: string;
     [key: string]: unknown;
   };
   payment: Record<string, unknown>;
+  breakdown?: AsaasChargeBreakdown;
+  warning?: string;
 }
 
 export type AsaasPaymentStatus = 'PENDING' | 'RECEIVED' | 'CONFIRMED' | 'OVERDUE' | 'CANCELLED' | (string & {});
@@ -396,10 +406,82 @@ export interface Payment {
   billing_type: string;
   value: number;
   net_value?: number;
+  net_value_projected?: number | null;
+  invoice_url?: string | null;
+  bank_slip_url?: string | null;
   due_date: string;
   payment_date?: string;
   status: AsaasPaymentStatus;
   is_manual_reconciliation: boolean;
   created_at: string;
   invoice?: { invoice_number?: string; client_name: string };
+}
+
+export type BillOrigin = 'ASAAS' | 'MANUAL';
+export type BillType = 'receivable' | 'payable';
+export type BillStatus = 'Pendente' | 'Atrasado' | 'Recebido' | 'Divergente' | 'No prazo';
+
+export interface Bill {
+  id: string;
+  origin: BillOrigin;
+  type: BillType;
+  rental_invoice_id: string | null;
+  payment_id: string | null;
+  client_id: string | null;
+  counterparty_name: string | null;
+  description: string | null;
+  gross_value: number;
+  fee_amount: number | null;
+  net_value: number;
+  due_date: string | null;
+  pix_end_to_end_id: string | null;
+  bank_transaction_date: string | null;
+  status: BillStatus;
+  reconciled_at: string | null;
+  created_at: string;
+  updated_at: string;
+  invoice?: { invoice_number?: string; client_name: string };
+  client?: { company_name: string; cnpj: string };
+}
+
+export interface CreateBillPayload {
+  type: BillType;
+  client_id?: string;
+  counterparty_name?: string;
+  description?: string;
+  gross_value: number;
+  due_date: string;
+  already_settled?: boolean;
+  settled_date?: string;
+}
+
+export type NfseStatus =
+  | 'SCHEDULED'
+  | 'SYNCHRONIZED'
+  | 'AUTHORIZED'
+  | 'PROCESSING_CANCELLATION'
+  | 'CANCELLED'
+  | 'CANCELLATION_DENIED'
+  | 'ERROR'
+  | 'ERRO';
+
+export interface InvoiceNfse {
+  id: string;
+  invoice_id: string;
+  gateway: string;
+  external_id: string | null;
+  status: NfseStatus;
+  nfse_link: string | null;
+  xml_url: string | null;
+  service_code: string | null;
+  iss_regime: 'Isento' | 'Tributado' | null;
+  return_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NfseEmitResult {
+  invoice_id: string;
+  nfse: InvoiceNfse;
+  asaas: Record<string, unknown>;
 }
