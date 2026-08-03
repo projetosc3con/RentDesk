@@ -455,6 +455,30 @@ export interface CreateBillPayload {
   settled_date?: string;
 }
 
+// Item normalizado do extrato bancário: mescla `bills` (já conciliado,
+// automático ou manual) com `payments` ainda sem bill vinculado (cobrança
+// Asaas em aberto). Espelha BillStatementItem do backend.
+export interface StatementItem {
+  source: 'bill' | 'payment';
+  id: string;
+  type: BillType;
+  status: string;
+  origin: BillOrigin | null;
+  gross_value: number;
+  net_value: number | null;
+  fee_amount: number | null;
+  due_date: string | null;
+  settled_date: string | null;
+  client_id: string | null;
+  client_name: string | null;
+  counterparty_name: string | null;
+  invoice_number: string | null;
+  description: string | null;
+  invoice_url: string | null;
+  bank_slip_url: string | null;
+  raw: Record<string, unknown>;
+}
+
 export type NfseStatus =
   | 'SCHEDULED'
   | 'SYNCHRONIZED'
