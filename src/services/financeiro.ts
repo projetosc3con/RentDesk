@@ -7,6 +7,8 @@ import type {
   AsaasSubaccountVerifyResponse,
   AsaasChargeResult,
   Payment,
+  Bill,
+  CreateBillPayload,
   InvoiceNfse,
   NfseEmitResult,
 } from '../types';
@@ -14,6 +16,14 @@ import type {
 export interface ExtratoFilters {
   client_id?: string;
   status?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface ConciliacaoFilters {
+  client_id?: string;
+  status?: string;
+  origin?: string;
   from?: string;
   to?: string;
 }
@@ -60,6 +70,16 @@ export const financeiroService = {
 
   listarExtrato: async (filters: ExtratoFilters = {}): Promise<Payment[]> => {
     const { data } = await api.get<Payment[]>('/payments', { params: filters });
+    return data;
+  },
+
+  listarConciliacaoBancaria: async (filters: ConciliacaoFilters = {}): Promise<Bill[]> => {
+    const { data } = await api.get<Bill[]>('/bills', { params: filters });
+    return data;
+  },
+
+  criarLancamentoManual: async (payload: CreateBillPayload): Promise<Bill> => {
+    const { data } = await api.post<Bill>('/bills', payload);
     return data;
   },
 

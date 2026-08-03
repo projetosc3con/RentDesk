@@ -290,6 +290,11 @@ const LogisticsTriagem: React.FC = () => {
     return contract.deal?.value || 0;
   };
 
+  // "Data de Fim" is used by the backend as the boleto's due date (dueDate).
+  // Without it, finishProcessing succeeds but the charge (Asaas) call fails.
+  const periodEnd: string | null = contract.contract_form?.period_end || contract.snapshot?.period_end || null;
+  const missingDueDate = !isProcessed && isTriage && !periodEnd;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -770,18 +775,37 @@ const LogisticsTriagem: React.FC = () => {
                     { label: 'Local de Uso', value: workSite || 'N/A', icon: 'location_on' },
                     { label: 'Valor Total', value: getContractValue().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: 'payments' },
                     { label: 'Fotos Anexadas', value: `${triagePhotos.length} / ${CHECKLIST_ITEMS.length} foto(s)`, icon: 'photo_camera' },
+                    {
+                      label: 'Vencimento do Boleto',
+                      value: periodEnd ? new Date(`${periodEnd}T00:00:00`).toLocaleDateString('pt-BR') : 'Não informado',
+                      icon: 'event',
+                      alert: !periodEnd,
+                    },
                   ].map((item) => (
-                    <div key={item.label} className="bg-slate-50/50 dark:bg-slate-800/30 rounded-xl border border-slate-100 dark:border-slate-800 p-4 flex items-start gap-3">
+                    <div key={item.label} className={`rounded-xl border p-4 flex items-start gap-3 ${item.alert ? 'bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20' : 'bg-slate-50/50 dark:bg-slate-800/30 border-slate-100 dark:border-slate-800'}`}>
                       <div className="w-9 h-9 bg-white dark:bg-slate-900 rounded-lg flex items-center justify-center shrink-0 border border-slate-100 dark:border-slate-800">
-                        <span className="material-symbols-outlined text-mustard-500 text-lg">{item.icon}</span>
+                        <span className={`material-symbols-outlined text-lg ${item.alert ? 'text-red-500' : 'text-mustard-500'}`}>{item.icon}</span>
                       </div>
                       <div className="min-w-0">
                         <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{item.label}</p>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 truncate">{item.value}</p>
+                        <p className={`text-sm font-bold mt-0.5 truncate ${item.alert ? 'text-red-700 dark:text-red-300' : 'text-slate-900 dark:text-white'}`}>{item.value}</p>
                       </div>
                     </div>
                   ))}
                 </div>
+
+                {/* Blocks finish when the invoice due date can't be computed */}
+                {missingDueDate && (
+                  <div className="mt-6 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-xl p-4 flex items-start gap-3">
+                    <span className="material-symbols-outlined text-red-500">error</span>
+                    <div>
+                      <p className="text-xs font-bold text-red-700 dark:text-red-300">Data de Fim do contrato não informada</p>
+                      <p className="text-sm text-red-800 dark:text-red-200 mt-1">
+                        Esse campo define o vencimento do boleto. Volte ao formulário do contrato (CRM) e preencha a "Data de Fim" antes de finalizar a triagem — caso contrário o contrato será processado, mas a geração do boleto vai falhar.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* PDF Checklist Actions */}
                 <div className="mt-8 border-t border-slate-100 dark:border-slate-800 pt-6">
@@ -899,8 +923,9 @@ const LogisticsTriagem: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setChargeConfirmOpen(true)}
-                  disabled={submitting || charging}
-                  className="w-full py-4 bg-white text-mustard-600 dark:text-mustard-500 rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-70"
+                  disabled={submitting || charging || missingDueDate}
+                  title={missingDueDate ? 'Preencha a Data de Fim do contrato antes de finalizar.' : undefined}
+                  className="w-full py-4 bg-white text-mustard-600 dark:text-mustard-500 rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {(submitting || charging) ? (
                     <div className="w-5 h-5 border-2 border-mustard-500/30 border-t-mustard-500 rounded-full animate-spin" />
