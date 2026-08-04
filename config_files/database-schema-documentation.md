@@ -4,7 +4,7 @@ Este documento descreve a estrutura de tabelas, relacionamentos, chaves primári
 
 ## Sumário das Tabelas
 
-Abaixo estão listadas as 42 tabelas ativas no esquema `public` do banco de dados:
+Abaixo estão listadas as 43 tabelas ativas no esquema `public` do banco de dados:
 
 - [`users_profiles`](#users-profiles)
 - [`clients`](#clients)
@@ -48,6 +48,7 @@ Abaixo estão listadas as 42 tabelas ativas no esquema `public` do banco de dado
 - [`hr_vacation_installments`](#hr-vacation-installments)
 - [`hr_vacation_requests`](#hr-vacation-requests)
 - [`service_order_labor`](#service-order-labor)
+- [`invoice_nfse`](#invoice-nfse)
 
 ---
 
@@ -283,6 +284,7 @@ Abaixo estão listadas as 42 tabelas ativas no esquema `public` do banco de dado
 
 * [`crm_deal_contracts.rental_invoice_id`](#crm-deal-contracts.rental-invoice-id)`(rental_invoice_id)` aponta para a coluna local `id` (Constraint: `crm_deal_contracts_rental_invoice_id_fkey`)
 * [`invoice_items.invoice_id`](#invoice-items.invoice-id)`(invoice_id)` aponta para a coluna local `id` (Constraint: `invoice_items_invoice_id_fkey`)
+* [`invoice_nfse.invoice_id`](#invoice-nfse.invoice-id)`(invoice_id)` aponta para a coluna local `id` (Constraint: `invoice_nfse_invoice_id_fkey`)
 * [`payments.invoice_id`](#payments.invoice-id)`(invoice_id)` aponta para a coluna local `id` (Constraint: `payments_invoice_id_fkey`)
 * [`service_orders.invoice_id`](#service-orders.invoice-id)`(invoice_id)` aponta para a coluna local `id` (Constraint: `service_orders_invoice_id_fkey`)
 
@@ -327,11 +329,19 @@ Abaixo estão listadas as 42 tabelas ativas no esquema `public` do banco de dado
 | `status` | `text` | Não | `'PENDING'` | Valores do Asaas: PENDING, RECEIVED, OVERDUE, CANCELLED |
 | `is_manual_reconciliation` | `boolean` | Não | `false` | `true` se o cliente utilizou o botão "Recebido por fora" (Baixa Manual) |
 | `created_at` | `timestamp with time zone` | Não | `now()` |  |
+| `net_value_projected` | `numeric` | Sim | - |  |
+| `invoice_url` | `text` | Sim | - |  |
+| `bank_slip_url` | `text` | Sim | - |  |
 
 #### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
 
 * A coluna `invoice_id` aponta para [`rental_invoices.id`](#rental-invoices.id)`(id)` (Constraint: `payments_invoice_id_fkey`)
 * A coluna `client_id` aponta para [`clients.id`](#clients.id)`(id)` (Constraint: `payments_client_id_fkey`)
+
+#### Índices (Indexes)
+
+* **`payments_invoice_active_unique_idx`**
+  Em `(invoice_id)` WHERE `status not in ('CANCELLED', 'REFUNDED')`
 
 ---
 
@@ -979,6 +989,10 @@ Não há seção de "Relacionamentos de Saída" formal: a referência de `paymen
 | `asaas_api_key` | `text` | Sim | - | Chave de API exclusiva desta subconta, usada para emitir boletos |
 | `active` | `boolean` | Não | `true` |  |
 | `updated_at` | `timestamp with time zone` | Não | `now()` |  |
+| `asaas_boleto_fee_amount` | `numeric` | Sim | - |  |
+| `asaas_pix_fee_percent` | `numeric` | Sim | - |  |
+| `nfse_service_code` | `text` | Sim | - |  |
+| `nfse_iss_regime` | `text` | Não | `'Isento'` |  |
 
 ---
 
@@ -1414,6 +1428,37 @@ $function$
 #### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
 
 * A coluna `service_order_id` aponta para [`service_orders.id`](#service-orders.id) (Constraint: `service_order_labor_service_order_id_fkey`)
+
+---
+
+### invoice_nfse
+
+* **Segurança de Nível de Linha (RLS):** Habilitada (Enabled)
+
+#### Colunas
+
+| Coluna | Tipo | Nulável | Padrão | Restrições / Notas |
+| :--- | :--- | :---: | :--- | :--- |
+| `id` | `uuid` | Não | `gen_random_uuid()` | 🔑 PK |
+| `invoice_id` | `uuid` | Não | - |  |
+| `gateway` | `text` | Não | `'asaas'` |  |
+| `external_id` | `text` | Sim | - |  |
+| `status` | `text` | Não | `'PENDENTE'` |  |
+| `nfse_link` | `text` | Sim | - |  |
+| `xml_url` | `text` | Sim | - |  |
+| `service_code` | `text` | Sim | - |  |
+| `iss_regime` | `text` | Sim | - |  |
+| `return_message` | `text` | Sim | - |  |
+| `created_at` | `timestamp with time zone` | Não | `now()` |  |
+| `updated_at` | `timestamp with time zone` | Não | `now()` |  |
+
+#### Relacionamentos de Saída (Chaves Estrangeiras Referenciadas)
+
+* A coluna `invoice_id` aponta para [`rental_invoices.id`](#rental-invoices.id)`(id)` (Constraint: `invoice_nfse_invoice_id_fkey`)
+
+#### Índices (Indexes)
+
+* **`invoice_nfse_invoice_id_idx`** (`invoice_id`)
 
 ---
 

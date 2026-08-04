@@ -95,7 +95,7 @@ const ConciliacaoTab: React.FC = () => {
           <div className="flex-1 min-w-[200px]">
             <h3 className="font-bold text-slate-900 dark:text-white text-lg">Conciliação Bancária</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Repasses recebidos via PIX na conta do Banco do Brasil, gerados automaticamente pelo webhook do Asaas ou lançados manualmente.
+              Obtenha o extrato atualizado das movimentações da conta bancária para conciliação com os registros do sistema.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

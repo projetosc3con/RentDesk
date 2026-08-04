@@ -1,6 +1,7 @@
 export const navItems = [
   { name: 'Dashboard', path: '/', icon: 'dashboard', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Comercial', 'Manutenção', 'Recursos Humanos'] },
   { name: 'Locações', path: '/locacoes', icon: 'contract', allowedRoles: ['Administrador', 'Diretoria', 'Gerente'] },
+  { name: 'Financeiro', path: '/financeiro', icon: 'attach_money', allowedRoles: ['Administrador', 'Diretoria', 'Gerente'] },
   { name: 'Estoque', path: '/equipamentos', icon: 'precision_manufacturing', allowedRoles: ['Administrador', 'Diretoria', 'Gerente'] },
   { name: 'Clientes', path: '/clientes', icon: 'groups', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Comercial'] },
   { name: 'CRM', path: '/crm', icon: 'monitoring', allowedRoles: ['Administrador', 'Diretoria', 'Gerente'] }, // Removido 'Comercial' daqui
@@ -17,5 +18,4 @@ export const navItems = [
   { name: 'Manutenções', path: '/manutencoes', icon: 'build', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Manutenção'] },
   { name: 'Usuários', path: '/usuarios', icon: 'manage_accounts', allowedRoles: ['Administrador', 'Diretoria', 'Gerente'] },
   { name: 'Recursos Humanos', path: '/rh', icon: 'badge', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Recursos Humanos'] },
-  { name: 'Financeiro', path: '/financeiro', icon: 'attach_money', allowedRoles: ['Administrador', 'Diretoria', 'Gerente'] },
 ];

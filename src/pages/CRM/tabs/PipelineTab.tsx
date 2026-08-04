@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { crmService, type CRMPipeline, type CRMPipelineStage } from '../../../services/crm';
 import NewDealModal from '../../../components/crm-modals/NewDealModal';
 import EditDealModal from '../../../components/crm-modals/EditDealModal';
+import ContractFormModal from '../../../components/crm-modals/ContractFormModal';
 import { useAuth } from '../../../contexts/AuthContext';
 
 const getStageColor = (index: number) => {
@@ -17,6 +18,23 @@ const getStageColor = (index: number) => {
   return colors[index % colors.length];
 };
 
+const formatShortDate = (date: Date) => {
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
+};
+
+const getWeekRange = (date: Date) => {
+  const day = date.getDay(); // 0 (Sunday) to 6 (Saturday)
+  const start = new Date(date);
+  start.setDate(date.getDate() - day);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
+};
+
 const PipelineTab: React.FC = () => {
   const [, setPipelines] = useState<(CRMPipeline & { stageList: CRMPipelineStage[] })[]>([]);
   const [activePipeline, setActivePipeline] = useState<(CRMPipeline & { stageList: CRMPipelineStage[] }) | null>(null);
@@ -26,6 +44,7 @@ const PipelineTab: React.FC = () => {
   const [isNewDealModalOpen, setIsNewDealModalOpen] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
   const { profile } = useAuth();
 
   // Won celebration state
@@ -37,6 +56,10 @@ const PipelineTab: React.FC = () => {
   const [lostReason, setLostReason] = useState('');
   const [pendingLostDeal, setPendingLostDeal] = useState<{ dealId: string; stageId: string; probability: number } | null>(null);
   const [lostLoading, setLostLoading] = useState(false);
+
+  // Contract form state
+  const [isContractModalOpen, setIsContractModalOpen] = useState(false);
+  const [pendingContractDeal, setPendingContractDeal] = useState<any>(null);
 
   const isUserComercial = profile?.access_level === 'Comercial';
 
@@ -98,9 +121,22 @@ const PipelineTab: React.FC = () => {
       // If target is is_won, trigger celebration
       if (newStage.is_won) {
         const deal = deals.find(d => d.id === dealId);
-        setWonDealTitle(deal?.title || 'Negócio');
-        setShowCelebration(true);
-        setTimeout(() => setShowCelebration(false), 4000);
+        
+        try {
+          const contracts = await crmService.getContracts(dealId);
+          if (!contracts || contracts.length === 0) {
+            setPendingContractDeal(deal);
+            setIsContractModalOpen(true);
+          } else {
+            setWonDealTitle(deal?.title || 'Negócio');
+            setShowCelebration(true);
+            setTimeout(() => setShowCelebration(false), 4000);
+          }
+        } catch (error) {
+          // If contract check fails, we assume no contract and show the modal
+          setPendingContractDeal(deal);
+          setIsContractModalOpen(true);
+        }
       }
 
       const activitiesData = await crmService.getDealActivities();
@@ -161,12 +197,31 @@ const PipelineTab: React.FC = () => {
     );
   }
 
-  const pipelineDeals = deals.filter(d => d.pipeline_id === activePipeline.id);
+  const { start: weekStart, end: weekEnd } = getWeekRange(currentWeekDate);
+  const wonStageIds = (activePipeline.stageList || []).filter(s => s.is_won).map(s => s.id);
+  const lostStageIds = (activePipeline.stageList || []).filter(s => s.is_lost).map(s => s.id);
+
+  const pipelineDeals = deals.filter(d => {
+    if (d.pipeline_id !== activePipeline.id) return false;
+    
+    // Filtro por semana (domingo a sábado)
+    const created = new Date(d.created_at);
+    if (created > weekEnd) return false; // Criado no futuro em relação à semana selecionada
+
+    const isClosed = wonStageIds.includes(d.stage_id) || lostStageIds.includes(d.stage_id);
+    
+    if (isClosed) {
+      // Se está finalizado, só exibe na semana se foi fechado nesta semana ou depois
+      const closedAt = d.closed_at ? new Date(d.closed_at) : new Date(d.updated_at);
+      if (closedAt < weekStart) return false; 
+    }
+    
+    return true;
+  });
+
   const totalValue = pipelineDeals.reduce((sum, d) => sum + (Number(d.value) || 0), 0);
 
   // Compute conversion rate: won / (won + lost)
-  const wonStageIds = (activePipeline.stageList || []).filter(s => s.is_won).map(s => s.id);
-  const lostStageIds = (activePipeline.stageList || []).filter(s => s.is_lost).map(s => s.id);
   const wonCount = pipelineDeals.filter(d => wonStageIds.includes(d.stage_id)).length;
   const lostCount = pipelineDeals.filter(d => lostStageIds.includes(d.stage_id)).length;
   const closedTotal = wonCount + lostCount;
@@ -185,44 +240,57 @@ const PipelineTab: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header and Actions */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">{activePipeline.name}</h2>
-          {activePipeline.description && (
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{activePipeline.description}</p>
-          )}
-        </div>
-        <button
-          onClick={() => setIsNewDealModalOpen(true)}
-          className="flex items-center gap-2 bg-mustard-500 hover:bg-mustard-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-mustard-500/20 transition-all active:scale-95"
-        >
-          <span className="material-symbols-outlined text-xl">add</span>
-          Novo Negócio
-        </button>
-      </div>
-
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Negociações Ativas', value: pipelineDeals.length.toString(), icon: 'handshake', accent: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' },
-          { label: 'Valor no Pipeline', value: totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: 'payments', accent: 'bg-mustard-50 dark:bg-mustard-500/10 text-mustard-600 dark:text-mustard-400' },
-          { label: 'Taxa de Conversão', value: conversionRate, icon: 'trending_up', accent: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400' },
-          { label: 'Ciclo Médio', value: avgCycle, icon: 'schedule', accent: 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400' },
-        ].map((stat) => (
-          <div key={stat.label} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 ${stat.accent} rounded-xl flex items-center justify-center`}>
-                <span className="material-symbols-outlined text-xl">{stat.icon}</span>
+    <div className="space-y-6">
+      {/* Header and Stats */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Stats Row */}
+        <div className="flex items-center gap-3 flex-1 overflow-x-auto custom-scrollbar pb-2 md:pb-0">
+          {[
+            { label: 'Ativas', value: pipelineDeals.length.toString(), icon: 'handshake', accent: 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' },
+            { label: 'Valor', value: totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: 'payments', accent: 'bg-mustard-50 dark:bg-mustard-500/10 text-mustard-600 dark:text-mustard-400' },
+            { label: 'Conversão', value: conversionRate, icon: 'trending_up', accent: 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+            { label: 'Ciclo', value: avgCycle, icon: 'schedule', accent: 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400' },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 shadow-sm min-w-max flex items-center gap-3">
+              <div className={`w-8 h-8 ${stat.accent} rounded-lg flex items-center justify-center shrink-0`}>
+                <span className="material-symbols-outlined text-[18px]">{stat.icon}</span>
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">{stat.label}</p>
-                <p className="text-xl font-black text-slate-900 dark:text-white leading-none">{stat.value}</p>
+                <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">{stat.label}</p>
+                <p className="text-sm font-black text-slate-900 dark:text-white leading-none">{stat.value}</p>
               </div>
             </div>
+          ))}
+        </div>
+
+        {/* Action Button & Period */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-xl px-2 py-1.5 border border-slate-200 dark:border-slate-800 shadow-sm h-[44px]">
+            <button 
+              onClick={() => { const d = new Date(currentWeekDate); d.setDate(d.getDate() - 7); setCurrentWeekDate(d); }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+            </button>
+            <span className="text-[11px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-300 min-w-[100px] text-center">
+              {formatShortDate(weekStart)} - {formatShortDate(weekEnd)}
+            </span>
+            <button 
+              onClick={() => { const d = new Date(currentWeekDate); d.setDate(d.getDate() + 7); setCurrentWeekDate(d); }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+            </button>
           </div>
-        ))}
+
+          <button
+            onClick={() => setIsNewDealModalOpen(true)}
+            className="flex items-center justify-center gap-2 bg-mustard-500 hover:bg-mustard-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest shadow-lg shadow-mustard-500/20 transition-all active:scale-95 h-[44px]"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            Novo Negócio
+          </button>
+        </div>
       </div>
 
       {/* Kanban Board Area */}
@@ -559,6 +627,28 @@ const PipelineTab: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Contract Form Modal */}
+      {isContractModalOpen && pendingContractDeal && (
+        <ContractFormModal
+          isOpen={isContractModalOpen}
+          onClose={() => {
+            setIsContractModalOpen(false);
+            setPendingContractDeal(null);
+          }}
+          onSuccess={() => {
+            setIsContractModalOpen(false);
+            if (pendingContractDeal) {
+              setWonDealTitle(pendingContractDeal.title || 'Negócio');
+              setShowCelebration(true);
+              setTimeout(() => setShowCelebration(false), 4000);
+            }
+            setPendingContractDeal(null);
+          }}
+          dealId={pendingContractDeal.id}
+          deal={pendingContractDeal}
+        />
+      )}
     </div>
   );
 };

@@ -178,5 +178,12 @@ export const crmService = {
   deleteContract: async (dealId: string, contractId: string) => {
     const response = await api.delete(`/crm/deals/${dealId}/contract/${contractId}`);
     return response.data;
+  },
+
+  sendContractEmail: async (dealId: string, contractId: string, pdfBase64: string) => {
+    const response = await api.post(`/crm/deals/${dealId}/contract/${contractId}/send-email`, {
+      pdf_base64: pdfBase64,
+    });
+    return response.data;
   }
 };

@@ -78,6 +78,9 @@ const EditDealModal: React.FC<EditDealModalProps> = ({ isOpen, onClose, onSucces
   const [showContractDeleteConfirm, setShowContractDeleteConfirm] = useState(false);
   const [contractError, setContractError] = useState<string | null>(null);
 
+  // Toast notification state
+  const [toast, setToast] = useState<{ type: 'success' | 'warning' | 'error'; title: string; message: string } | null>(null);
+
   const [linkType, setLinkType] = useState<'lead' | 'client'>('lead');
   const [leads, setLeads] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -391,10 +394,33 @@ const EditDealModal: React.FC<EditDealModalProps> = ({ isOpen, onClose, onSucces
                                   onClick={async () => {
                                     try {
                                       setContractLoading(true);
-                                      await crmService.generateContractRecord(deal.id);
+                                      const result = await crmService.generateContractRecord(deal.id);
                                       await loadContractData();
+                                      
+                                      // Generate PDF blob from snapshot and send email
+                                      try {
+                                        const snapshot = result.snapshot || result.record?.snapshot;
+                                        if (snapshot && result.record?.id) {
+                                          const blob = await pdf(<ContractDocument data={snapshot} generatedAt={result.record.generated_at} />).toBlob();
+                                          // Convert blob to base64
+                                          const reader = new FileReader();
+                                          reader.onloadend = async () => {
+                                            const base64 = (reader.result as string).split(',')[1];
+                                            try {
+                                              const emailResult = await crmService.sendContractEmail(deal.id, result.record.id, base64);
+                                              setToast({ type: 'success', title: 'Contrato gerado com sucesso!', message: `Proposta enviada por e-mail para ${emailResult.sentTo}` });
+                                            } catch (emailErr: any) {
+                                              const msg = emailErr?.response?.data?.error || 'Erro ao enviar e-mail';
+                                              setToast({ type: 'warning', title: 'Contrato gerado', message: `Não foi possível enviar o e-mail: ${msg}` });
+                                            }
+                                          };
+                                          reader.readAsDataURL(blob);
+                                        }
+                                      } catch (pdfErr) {
+                                        console.error('Erro ao gerar PDF para envio:', pdfErr);
+                                      }
                                     } catch (e) {
-                                      alert('Erro ao gerar contrato');
+                                      setToast({ type: 'error', title: 'Erro', message: 'Não foi possível gerar o contrato. Tente novamente.' });
                                     } finally {
                                       setContractLoading(false);
                                     }
@@ -752,6 +778,54 @@ const EditDealModal: React.FC<EditDealModalProps> = ({ isOpen, onClose, onSucces
           initialData={contractForm}
         />
       )}
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className="fixed bottom-6 right-6 z-[9999] w-[380px] max-w-[90vw]"
+          >
+            <div className={`rounded-2xl border shadow-2xl backdrop-blur-sm overflow-hidden ${
+              toast.type === 'success' ? 'bg-white dark:bg-slate-900 border-green-200 dark:border-green-500/30' :
+              toast.type === 'warning' ? 'bg-white dark:bg-slate-900 border-amber-200 dark:border-amber-500/30' :
+              'bg-white dark:bg-slate-900 border-red-200 dark:border-red-500/30'
+            }`}>
+              <div className={`h-1 ${
+                toast.type === 'success' ? 'bg-green-500' :
+                toast.type === 'warning' ? 'bg-amber-500' :
+                'bg-red-500'
+              }`} />
+              <div className="p-5">
+                <div className="flex items-start gap-4">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                    toast.type === 'success' ? 'bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400' :
+                    toast.type === 'warning' ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400' :
+                    'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
+                  }`}>
+                    <span className="material-symbols-outlined text-xl">
+                      {toast.type === 'success' ? 'check_circle' : toast.type === 'warning' ? 'warning' : 'error'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">{toast.title}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{toast.message}</p>
+                  </div>
+                  <button
+                    onClick={() => setToast(null)}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

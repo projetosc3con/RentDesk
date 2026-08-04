@@ -89,29 +89,29 @@ const ExtratoTab: React.FC = () => {
   };
 
   const handleBillCreated = (bill: Bill) => {
-    setItems((prev) => [
-      {
-        source: 'bill',
-        id: bill.id,
-        type: bill.type,
-        status: bill.status,
-        origin: bill.origin,
-        gross_value: bill.gross_value,
-        net_value: bill.net_value,
-        fee_amount: bill.fee_amount,
-        due_date: bill.due_date,
-        settled_date: bill.reconciled_at,
-        client_id: bill.client_id,
-        client_name: bill.client?.company_name ?? null,
-        counterparty_name: bill.counterparty_name,
-        invoice_number: bill.invoice?.invoice_number ?? null,
-        description: bill.description,
-        invoice_url: null,
-        bank_slip_url: null,
-        raw: bill,
-      },
-      ...prev,
-    ]);
+    /*     setItems((prev) => [
+          {
+            source: 'bill',
+            id: bill.id,
+            type: bill.type,
+            status: bill.status,
+            origin: bill.origin,
+            gross_value: bill.gross_value,
+            net_value: bill.net_value,
+            fee_amount: bill.fee_amount,
+            due_date: bill.due_date,
+            settled_date: bill.reconciled_at,
+            client_id: bill.client_id,
+            client_name: bill.client?.company_name ?? null,
+            counterparty_name: bill.counterparty_name,
+            invoice_number: bill.invoice?.invoice_number ?? null,
+            description: bill.description,
+            invoice_url: null,
+            bank_slip_url: null,
+            raw: bill,
+          },
+          ...prev,
+        ]); */
   };
 
   const hasActiveFilters = Boolean(selectedClientId || dateFrom || dateTo);
@@ -124,9 +124,9 @@ const ExtratoTab: React.FC = () => {
             <span className="material-symbols-outlined text-3xl">receipt_long</span>
           </div>
           <div className="flex-1 min-w-[200px]">
-            <h3 className="font-bold text-slate-900 dark:text-white text-lg">Extrato Bancário</h3>
+            <h3 className="font-bold text-slate-900 dark:text-white text-lg">Extrato de lançamentos</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Cobranças ainda em aberto e lançamentos já conciliados (automáticos ou manuais).
+              Incluir, consultar e validar conciliações de lançamentos de contas
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
