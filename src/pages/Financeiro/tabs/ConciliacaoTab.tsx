@@ -1,89 +1,80 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import api from '../../../services/api';
+import React, { useState } from 'react';
 import { financeiroService } from '../../../services/financeiro';
 import { getApiErrorMessage } from '../../../utils/apiError';
-import SearchableSelect from '../../../components/SearchableSelect';
 import LancamentoManualModal from '../../../components/financeiro/LancamentoManualModal';
-import type { Client, Bill, BillStatus, BillType } from '../../../types';
+import VincularLancamentoModal from '../../../components/financeiro/VincularLancamentoModal';
+import type { Bill, BankStatementMatchResult, ReconcileBankStatementResponse } from '../../../types';
 
-const STATUS_OPTIONS: BillStatus[] = ['Pendente', 'Atrasado', 'Recebido', 'Divergente', 'No prazo'];
-const ORIGIN_OPTIONS = ['ASAAS', 'MANUAL'];
-
-const statusBadgeClass = (status: string) => {
-  if (status === 'Recebido' || status === 'No prazo') return 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20';
-  if (status === 'Atrasado' || status === 'Divergente') return 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-500/20';
-  return 'bg-amber-100 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20';
-};
-
-const statusIcon = (status: string) => {
-  if (status === 'Recebido' || status === 'No prazo') return 'check_circle';
-  if (status === 'Atrasado' || status === 'Divergente') return 'cancel';
-  return 'schedule';
-};
-
-const originBadgeClass = (origin: string) =>
-  origin === 'ASAAS'
-    ? 'bg-mustard-100 dark:bg-mustard-500/10 text-mustard-700 dark:text-mustard-400 border border-mustard-200 dark:border-mustard-500/20'
-    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700';
+const dcBadgeClass = (dc: 'D' | 'C') =>
+  dc === 'C'
+    ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
+    : 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-500/20';
 
 const ConciliacaoTab: React.FC = () => {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState('');
-  const [status, setStatus] = useState('');
-  const [origin, setOrigin] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-
-  const [bills, setBills] = useState<Bill[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [reconciling, setReconciling] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<ReconcileBankStatementResponse | null>(null);
 
-  const [lancamentoModal, setLancamentoModal] = useState<BillType | null>(null);
+  const [linkTarget, setLinkTarget] = useState<BankStatementMatchResult | null>(null);
+  const [createTarget, setCreateTarget] = useState<BankStatementMatchResult | null>(null);
 
-  useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        const { data } = await api.get('/clients');
-        setClients(data);
-      } catch (err) {
-        console.error('Erro ao buscar clientes:', err);
-      }
-    };
-    fetchClients();
-  }, []);
-
-  const fetchBills = useCallback(async () => {
-    setLoading(true);
+  const handleReconcile = async () => {
+    setReconciling(true);
     setError(null);
     try {
-      const data = await financeiroService.listarConciliacaoBancaria({
-        client_id: selectedClientId || undefined,
-        status: status || undefined,
-        origin: origin || undefined,
+      const data = await financeiroService.reconciliarExtratoBancario({
         from: dateFrom || undefined,
         to: dateTo || undefined,
       });
-      setBills(data);
+      setResult(data);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
-      setLoading(false);
+      setReconciling(false);
     }
-  }, [selectedClientId, status, origin, dateFrom, dateTo]);
-
-  useEffect(() => {
-    fetchBills();
-  }, [fetchBills]);
-
-  const handleClearFilters = () => {
-    setSelectedClientId('');
-    setStatus('');
-    setOrigin('');
-    setDateFrom('');
-    setDateTo('');
   };
 
-  const hasActiveFilters = Boolean(selectedClientId || status || origin || dateFrom || dateTo);
+  // Localiza a linha por referência de objeto — como cada linha vem do
+  // mesmo array em memória (nunca refetch), isso basta pra achar a linha
+  // certa depois de vincular/cadastrar, sem precisar de um id próprio.
+  const replaceLine = (target: BankStatementMatchResult, bill: Bill) => {
+    setResult((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        lines: prev.lines.map((l) => (l === target ? {
+          ...l,
+          match_status: 'matched',
+          matched_bill_id: bill.id,
+          matched_bill: {
+            source: 'bill',
+            id: bill.id,
+            type: bill.type,
+            status: bill.status,
+            origin: bill.origin,
+            gross_value: bill.gross_value,
+            net_value: bill.net_value,
+            fee_amount: bill.fee_amount,
+            due_date: bill.due_date,
+            settled_date: bill.reconciled_at,
+            client_id: bill.client_id,
+            client_name: bill.client?.company_name ?? null,
+            counterparty_name: bill.counterparty_name,
+            invoice_number: bill.invoice?.invoice_number ?? null,
+            description: bill.description,
+            invoice_url: null,
+            bank_slip_url: null,
+            is_reconciled: true,
+            raw: bill,
+          },
+        } : l)),
+        matched_count: prev.matched_count + 1,
+        unmatched_count: prev.unmatched_count - 1,
+      };
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -95,65 +86,13 @@ const ConciliacaoTab: React.FC = () => {
           <div className="flex-1 min-w-[200px]">
             <h3 className="font-bold text-slate-900 dark:text-white text-lg">Conciliação Bancária</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Obtenha o extrato atualizado das movimentações da conta bancária para conciliação com os registros do sistema.
+              Busca o extrato da conta no Banco do Brasil e confere com os lançamentos do sistema.
             </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => setLancamentoModal('payable')}
-              className="px-4 py-2.5 border border-mustard-500 text-mustard-600 dark:text-mustard-400 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-colors flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[18px]">trending_down</span>
-              Lançar Conta a Pagar
-            </button>
-            <button
-              type="button"
-              onClick={() => setLancamentoModal('receivable')}
-              className="px-4 py-2.5 bg-mustard-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-mustard-600 transition-colors flex items-center gap-2 shadow-md shadow-mustard-500/10"
-            >
-              <span className="material-symbols-outlined text-[18px]">trending_up</span>
-              Lançar Conta a Receber
-            </button>
           </div>
         </div>
 
         <div className="p-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <SearchableSelect
-              label="Cliente"
-              placeholder="Todos os clientes"
-              items={clients}
-              selectedId={selectedClientId}
-              onSelect={setSelectedClientId}
-              getDisplayValue={(c) => c.company_name}
-              getSearchValue={(c) => `${c.company_name} ${c.cnpj}`}
-            />
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Status</label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm cursor-pointer"
-              >
-                <option value="">Todos</option>
-                {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Origem</label>
-              <select
-                value={origin}
-                onChange={(e) => setOrigin(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm cursor-pointer"
-              >
-                <option value="">Todas</option>
-                {ORIGIN_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-              </select>
-            </div>
-
+          <div className="flex flex-wrap items-end gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">De</label>
               <input
@@ -173,17 +112,24 @@ const ConciliacaoTab: React.FC = () => {
                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
-          </div>
 
-          {hasActiveFilters && (
             <button
               type="button"
-              onClick={handleClearFilters}
-              className="text-xs font-bold text-mustard-600 dark:text-mustard-400 uppercase tracking-widest hover:underline"
+              onClick={handleReconcile}
+              disabled={reconciling}
+              title="Reconciliar com o extrato bancário (padrão: últimos 30 dias)"
+              className="w-9 h-9 rounded-xl flex items-center justify-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-mustard-600 dark:hover:text-mustard-400 hover:border-mustard-300 dark:hover:border-mustard-500 transition-all disabled:opacity-50"
             >
-              Limpar filtros
+              <span className={`material-symbols-outlined text-[18px] ${reconciling ? 'animate-spin' : ''}`}>refresh</span>
             </button>
-          )}
+
+            {result && (
+              <p className="text-xs text-slate-400 dark:text-slate-500">
+                {result.simulated && <span className="font-bold text-amber-500">[simulado] </span>}
+                {result.matched_count} conciliado(s), {result.unmatched_count} pendente(s) — período {new Date(result.period.from).toLocaleDateString('pt-BR')} a {new Date(result.period.to).toLocaleDateString('pt-BR')}
+              </p>
+            )}
+          </div>
 
           {error && (
             <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl p-4 text-sm font-medium">
@@ -195,61 +141,70 @@ const ConciliacaoTab: React.FC = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 text-left">
-                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data do Repasse</th>
-                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Cliente / Fatura</th>
-                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Origem</th>
-                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right">Valor Bruto</th>
-                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right">Taxa</th>
-                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right">Valor Líquido (PIX)</th>
-                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Data</th>
+                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Tipo</th>
+                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Descrição</th>
+                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right">Valor</th>
+                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">Conciliado</th>
+                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {loading ? (
+                {!result ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center">
-                      <div className="w-8 h-8 border-4 border-mustard-500/20 border-t-mustard-500 rounded-full animate-spin mx-auto" />
+                    <td colSpan={6} className="px-6 py-12 text-center text-sm text-slate-400 dark:text-slate-500 italic">
+                      Clique no ícone de atualizar para buscar o extrato bancário do período.
                     </td>
                   </tr>
-                ) : bills.length === 0 ? (
+                ) : result.lines.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-sm text-slate-400 dark:text-slate-500 italic">
-                      Nenhum lançamento encontrado para os filtros selecionados.
+                    <td colSpan={6} className="px-6 py-12 text-center text-sm text-slate-400 dark:text-slate-500 italic">
+                      Nenhum lançamento encontrado no extrato para o período selecionado.
                     </td>
                   </tr>
                 ) : (
-                  bills.map((b) => (
-                    <tr key={b.id}>
+                  result.lines.map((line, idx) => (
+                    <tr key={idx}>
                       <td className="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                        {(b.bank_transaction_date || b.reconciled_at)
-                          ? new Date((b.bank_transaction_date || b.reconciled_at) as string).toLocaleDateString('pt-BR')
-                          : '—'}
+                        {new Date(line.bank_date).toLocaleDateString('pt-BR')}
                       </td>
                       <td className="px-6 py-4">
-                        <p className="font-bold text-slate-900 dark:text-white">{b.invoice?.client_name || b.client?.company_name || b.counterparty_name || '—'}</p>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-mono">
-                          {b.invoice?.invoice_number || b.pix_end_to_end_id || '—'}
-                        </p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold ${originBadgeClass(b.origin)}`}>
-                          {b.origin}
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold ${dcBadgeClass(line.dc_indicator)}`}>
+                          {line.dc_indicator === 'C' ? 'Crédito' : 'Débito'}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
+                        {line.match_status === 'matched'
+                          ? (line.matched_bill?.counterparty_name || line.matched_bill?.client_name || line.description || '—')
+                          : (line.description || '—')}
                       </td>
                       <td className="px-6 py-4 text-right text-slate-600 dark:text-slate-400">
-                        {b.gross_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        {line.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </td>
-                      <td className="px-6 py-4 text-right text-slate-400 dark:text-slate-500">
-                        {b.fee_amount ? b.fee_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}
-                      </td>
-                      <td className="px-6 py-4 text-right font-bold text-mustard-500 dark:text-mustard-400">
-                        {b.net_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      <td className="px-6 py-4 text-center">
+                        <input type="checkbox" checked={line.match_status === 'matched'} disabled readOnly className="w-4 h-4 rounded accent-emerald-500" />
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${statusBadgeClass(b.status)}`}>
-                          <span className="material-symbols-outlined text-[14px]">{statusIcon(b.status)}</span>
-                          {b.status}
-                        </span>
+                        {line.match_status === 'unmatched' && (
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setLinkTarget(line)}
+                              title="Vincular a lançamento existente"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-mustard-600 dark:hover:text-mustard-400 transition-all"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">link</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCreateTarget(line)}
+                              title="Cadastrar novo lançamento"
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-mustard-600 dark:hover:text-mustard-400 transition-all"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">add</span>
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -260,12 +215,34 @@ const ConciliacaoTab: React.FC = () => {
         </div>
       </div>
 
+      <VincularLancamentoModal
+        isOpen={linkTarget !== null}
+        line={linkTarget}
+        onClose={() => setLinkTarget(null)}
+        onLinked={(bill) => {
+          if (linkTarget) replaceLine(linkTarget, bill);
+          setLinkTarget(null);
+        }}
+      />
+
       <LancamentoManualModal
-        isOpen={lancamentoModal !== null}
-        type={lancamentoModal || 'receivable'}
-        clients={clients}
-        onClose={() => setLancamentoModal(null)}
-        onCreated={(bill) => setBills((prev) => [bill, ...prev])}
+        isOpen={createTarget !== null}
+        type={createTarget?.type || 'receivable'}
+        initialValues={createTarget ? {
+          gross_value: createTarget.value,
+          due_date: createTarget.bank_date,
+          description: createTarget.description ?? undefined,
+        } : undefined}
+        presetSettlement={createTarget ? {
+          settled_date: createTarget.bank_date,
+          bank_transaction_date: createTarget.bank_date,
+          bank_raw_snapshot: createTarget.raw,
+        } : undefined}
+        onClose={() => setCreateTarget(null)}
+        onCreated={(bill) => {
+          if (createTarget) replaceLine(createTarget, bill);
+          setCreateTarget(null);
+        }}
       />
     </div>
   );

@@ -123,7 +123,8 @@ const SubaccountTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Formulário de criação de subconta */}
+      {/* Formulário de criação de subconta — só aparece quando ainda não configurado */}
+      {(status === 'not_configured' || status === 'error') && (
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-800/30 flex items-center gap-4">
           <div className="w-14 h-14 bg-mustard-100 dark:bg-mustard-500/10 rounded-2xl flex items-center justify-center text-mustard-500 shadow-sm">
@@ -235,6 +236,23 @@ const SubaccountTab: React.FC = () => {
           </button>
         </form>
       </div>
+      )}
+
+      {status === 'connected' && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          <div className="p-8 flex items-center gap-4">
+            <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm">
+              <span className="material-symbols-outlined text-3xl">verified</span>
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 dark:text-white text-lg">Subconta já configurada</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                A integração com o Asaas já foi feita. Não é necessário preencher o formulário novamente.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de confirmação */}
       <AnimatePresence>

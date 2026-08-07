@@ -1,22 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { financeiroService } from '../../services/financeiro';
 import { getApiErrorMessage } from '../../utils/apiError';
-import SearchableSelect from '../SearchableSelect';
-import type { Client, Bill, BillType } from '../../types';
+import type { Bill, BillType } from '../../types';
+
+interface LancamentoManualModalInitialValues {
+  counterparty_name?: string;
+  description?: string;
+  gross_value?: number;
+  due_date?: string;
+}
+
+// Quando presente, indica que este lançamento está sendo criado a partir de
+// uma linha do extrato bancário já conciliada (ver ConciliacaoTab) — o
+// lançamento nasce já marcado como conciliado com o banco.
+interface LancamentoManualModalPresetSettlement {
+  settled_date: string;
+  bank_transaction_date: string;
+  bank_raw_snapshot: Record<string, unknown>;
+}
 
 interface LancamentoManualModalProps {
   isOpen: boolean;
   type: BillType;
-  clients: Client[];
   onClose: () => void;
   onCreated: (bill: Bill) => void;
+  initialValues?: LancamentoManualModalInitialValues;
+  presetSettlement?: LancamentoManualModalPresetSettlement;
 }
 
-const LancamentoManualModal: React.FC<LancamentoManualModalProps> = ({ isOpen, type, clients, onClose, onCreated }) => {
-  const [clientId, setClientId] = useState('');
+const LancamentoManualModal: React.FC<LancamentoManualModalProps> = ({ isOpen, type, onClose, onCreated, initialValues, presetSettlement }) => {
   const [counterpartyName, setCounterpartyName] = useState('');
   const [description, setDescription] = useState('');
+  const [barcode, setBarcode] = useState('');
   const [grossValue, setGrossValue] = useState(0);
   const [dueDate, setDueDate] = useState('');
   const [alreadySettled, setAlreadySettled] = useState(false);
@@ -24,14 +40,27 @@ const LancamentoManualModal: React.FC<LancamentoManualModalProps> = ({ isOpen, t
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!isOpen || !initialValues) return;
+    if (initialValues.counterparty_name !== undefined) setCounterpartyName(initialValues.counterparty_name);
+    if (initialValues.description !== undefined) setDescription(initialValues.description);
+    if (initialValues.gross_value !== undefined) setGrossValue(initialValues.gross_value);
+    if (initialValues.due_date !== undefined) setDueDate(initialValues.due_date);
+    if (presetSettlement) {
+      setAlreadySettled(true);
+      setSettledDate(presetSettlement.settled_date);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
   const isReceivable = type === 'receivable';
   const title = isReceivable ? 'Lançar Conta a Receber' : 'Lançar Conta a Pagar';
   const icon = isReceivable ? 'trending_up' : 'trending_down';
 
   const resetForm = () => {
-    setClientId('');
     setCounterpartyName('');
     setDescription('');
+    setBarcode('');
     setGrossValue(0);
     setDueDate('');
     setAlreadySettled(false);
@@ -53,14 +82,6 @@ const LancamentoManualModal: React.FC<LancamentoManualModalProps> = ({ isOpen, t
   const handleSubmit = async () => {
     setError(null);
 
-    if (isReceivable && !clientId) {
-      setError('Selecione um cliente cadastrado.');
-      return;
-    }
-    if (!isReceivable && !counterpartyName.trim()) {
-      setError('Informe o nome do fornecedor.');
-      return;
-    }
     if (!grossValue || grossValue <= 0) {
       setError('Informe um valor maior que zero.');
       return;
@@ -78,13 +99,15 @@ const LancamentoManualModal: React.FC<LancamentoManualModalProps> = ({ isOpen, t
     try {
       const bill = await financeiroService.criarLancamentoManual({
         type,
-        client_id: isReceivable ? clientId : undefined,
-        counterparty_name: isReceivable ? undefined : counterpartyName.trim(),
+        counterparty_name: counterpartyName.trim() || undefined,
         description: description.trim() || undefined,
+        barcode: isReceivable ? undefined : barcode.trim() || undefined,
         gross_value: grossValue,
         due_date: dueDate,
         already_settled: alreadySettled,
         settled_date: alreadySettled ? settledDate : undefined,
+        bank_transaction_date: presetSettlement?.bank_transaction_date,
+        bank_raw_snapshot: presetSettlement?.bank_raw_snapshot,
       });
       onCreated(bill);
       resetForm();
@@ -118,27 +141,51 @@ const LancamentoManualModal: React.FC<LancamentoManualModalProps> = ({ isOpen, t
 
             <div className="space-y-4">
               {isReceivable ? (
-                <SearchableSelect
-                  label="Cliente"
-                  placeholder="Selecione um cliente cadastrado"
-                  items={clients}
-                  selectedId={clientId}
-                  onSelect={setClientId}
-                  getDisplayValue={(c) => c.company_name}
-                  getSearchValue={(c) => `${c.company_name} ${c.cnpj}`}
-                  required
-                />
-              ) : (
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Fornecedor *</label>
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Nome</label>
                   <input
                     type="text"
                     value={counterpartyName}
                     onChange={(e) => setCounterpartyName(e.target.value)}
-                    placeholder="Nome do fornecedor"
+                    placeholder="Nome de quem vai pagar (opcional)"
                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm"
                   />
                 </div>
+              ) : (
+                <>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Descrição</label>
+                    <textarea
+                      rows={2}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Detalhes adicionais (opcional)"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm resize-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Código de Barras</label>
+                    <input
+                      type="text"
+                      value={barcode}
+                      onChange={(e) => setBarcode(e.target.value)}
+                      placeholder="Código de barras ou código do boleto"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Fornecedor</label>
+                    <input
+                      type="text"
+                      value={counterpartyName}
+                      onChange={(e) => setCounterpartyName(e.target.value)}
+                      placeholder="Nome do fornecedor (opcional)"
+                      className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm"
+                    />
+                  </div>
+                </>
               )}
 
               <div className="space-y-1.5">
@@ -164,33 +211,37 @@ const LancamentoManualModal: React.FC<LancamentoManualModalProps> = ({ isOpen, t
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Descrição</label>
-                <textarea
-                  rows={2}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Detalhes adicionais (opcional)"
-                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm resize-none"
-                />
-              </div>
+              {isReceivable && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Descrição</label>
+                  <textarea
+                    rows={2}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Detalhes adicionais (opcional)"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm resize-none"
+                  />
+                </div>
+              )}
 
-              <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={alreadySettled}
-                  onChange={(e) => setAlreadySettled(e.target.checked)}
-                  className="w-4 h-4 rounded accent-mustard-500 cursor-pointer"
-                />
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Já foi {isReceivable ? 'recebido' : 'pago'}?
-                </span>
-              </label>
+              {isReceivable && (
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={alreadySettled}
+                    onChange={(e) => setAlreadySettled(e.target.checked)}
+                    className="w-4 h-4 rounded accent-mustard-500 cursor-pointer"
+                  />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Já foi recebido?
+                  </span>
+                </label>
+              )}
 
-              {alreadySettled && (
+              {isReceivable && alreadySettled && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">
-                    Data que foi {isReceivable ? 'recebido' : 'pago'} *
+                    Data que foi recebido *
                   </label>
                   <input
                     type="date"
