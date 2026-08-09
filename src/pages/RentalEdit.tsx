@@ -304,6 +304,7 @@ const RentalEdit: React.FC = () => {
     try {
       const result = await financeiroService.gerarCobranca(id);
       setChargeResult(result);
+      setHasCharge(true);
       window.open(result.charge.invoiceUrl, '_blank');
       setChargeMessage({ type: 'success', text: 'Cobrança gerada com sucesso!' });
     } catch (err) {
@@ -603,6 +604,24 @@ const RentalEdit: React.FC = () => {
 
                     {(nfse.status === 'ERROR' || nfse.status === 'ERRO') && nfse.return_message && (
                       <p className="text-xs text-red-300">{nfse.return_message}</p>
+                    )}
+
+                    {(nfse.status === 'ERROR' || nfse.status === 'ERRO') && (
+                      <button
+                        type="button"
+                        onClick={handleEmitirNfse}
+                        disabled={!hasCharge || emittingNfse}
+                        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      >
+                        {emittingNfse ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <span className="material-symbols-outlined text-[16px]">refresh</span>
+                            Tentar Emitir Novamente
+                          </>
+                        )}
+                      </button>
                     )}
 
                     <div className="flex flex-wrap gap-2">

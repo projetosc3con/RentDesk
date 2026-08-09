@@ -224,34 +224,6 @@ const LancamentoManualModal: React.FC<LancamentoManualModalProps> = ({ isOpen, t
                 </div>
               )}
 
-              {isReceivable && (
-                <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={alreadySettled}
-                    onChange={(e) => setAlreadySettled(e.target.checked)}
-                    className="w-4 h-4 rounded accent-mustard-500 cursor-pointer"
-                  />
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Já foi recebido?
-                  </span>
-                </label>
-              )}
-
-              {isReceivable && alreadySettled && (
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">
-                    Data que foi recebido *
-                  </label>
-                  <input
-                    type="date"
-                    value={settledDate}
-                    onChange={(e) => setSettledDate(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm [color-scheme:light] dark:[color-scheme:dark]"
-                  />
-                </div>
-              )}
-
               {error && (
                 <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-xl p-3 text-xs font-medium">
                   {error}

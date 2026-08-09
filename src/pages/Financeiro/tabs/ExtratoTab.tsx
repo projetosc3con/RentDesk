@@ -235,6 +235,7 @@ const ExtratoTab: React.FC = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 text-left">
+                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">Conciliado</th>
                   <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Vencimento</th>
                   <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Cliente / Fatura</th>
                   <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Origem</th>
@@ -242,7 +243,6 @@ const ExtratoTab: React.FC = () => {
                   <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right">Taxa</th>
                   <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-right">Valor Líquido</th>
                   <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">Conciliado</th>
                   <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Asaas</th>
                 </tr>
               </thead>
@@ -264,6 +264,13 @@ const ExtratoTab: React.FC = () => {
                     const badge = sourceBadge(item);
                     return (
                       <tr key={`${item.source}-${item.id}`}>
+                        <td className="px-6 py-4 text-center">
+                          {item.is_reconciled ? (
+                            <span title="Conciliado com o extrato bancário" className="material-symbols-outlined text-[18px] text-emerald-500 dark:text-emerald-400">check_circle</span>
+                          ) : (
+                            <span title="Ainda não conciliado" className="material-symbols-outlined text-[18px] text-slate-300 dark:text-slate-600">radio_button_unchecked</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                           {item.due_date ? new Date(item.due_date).toLocaleDateString('pt-BR') : '—'}
                         </td>
@@ -294,13 +301,6 @@ const ExtratoTab: React.FC = () => {
                             <span className="material-symbols-outlined text-[14px]">{statusIcon(item)}</span>
                             {item.status}
                           </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          {item.is_reconciled ? (
-                            <span title="Conciliado com o extrato bancário" className="material-symbols-outlined text-[18px] text-emerald-500 dark:text-emerald-400">check_circle</span>
-                          ) : (
-                            <span title="Ainda não conciliado" className="material-symbols-outlined text-[18px] text-slate-300 dark:text-slate-600">radio_button_unchecked</span>
-                          )}
                         </td>
                         <td className="px-6 py-4">
                           {item.invoice_url || item.bank_slip_url ? (

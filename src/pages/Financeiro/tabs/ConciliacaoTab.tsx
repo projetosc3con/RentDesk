@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { financeiroService } from '../../../services/financeiro';
 import { getApiErrorMessage } from '../../../utils/apiError';
 import LancamentoManualModal from '../../../components/financeiro/LancamentoManualModal';
 import VincularLancamentoModal from '../../../components/financeiro/VincularLancamentoModal';
 import type { Bill, BankStatementMatchResult, ReconcileBankStatementResponse } from '../../../types';
+
+const ITEMS_PER_PAGE = 20;
 
 const dcBadgeClass = (dc: 'D' | 'C') =>
   dc === 'C'
@@ -16,9 +18,19 @@ const ConciliacaoTab: React.FC = () => {
   const [reconciling, setReconciling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ReconcileBankStatementResponse | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [linkTarget, setLinkTarget] = useState<BankStatementMatchResult | null>(null);
   const [createTarget, setCreateTarget] = useState<BankStatementMatchResult | null>(null);
+
+  const totalItems = result?.lines.length ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+
+  const paginatedLines = useMemo(() => {
+    if (!result) return [];
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return result.lines.slice(start, start + ITEMS_PER_PAGE);
+  }, [result, currentPage]);
 
   const handleReconcile = async () => {
     setReconciling(true);
@@ -29,6 +41,7 @@ const ConciliacaoTab: React.FC = () => {
         to: dateTo || undefined,
       });
       setResult(data);
+      setCurrentPage(1);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -163,7 +176,7 @@ const ConciliacaoTab: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  result.lines.map((line, idx) => (
+                  paginatedLines.map((line, idx) => (
                     <tr key={idx}>
                       <td className="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                         {new Date(line.bank_date).toLocaleDateString('pt-BR')}
@@ -212,6 +225,55 @@ const ConciliacaoTab: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {totalItems > 0 && (
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                Mostrando {Math.min(totalItems, (currentPage - 1) * ITEMS_PER_PAGE + 1)} - {Math.min(totalItems, currentPage * ITEMS_PER_PAGE)} de {totalItems}
+              </span>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 text-slate-400 hover:text-mustard-600 dark:hover:text-mustard-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined">chevron_left</span>
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) pageNum = i + 1;
+                    else if (currentPage <= 3) pageNum = i + 1;
+                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                    else pageNum = currentPage - 2 + i;
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === pageNum
+                          ? 'bg-mustard-500 text-white shadow-mustard-500/20'
+                          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 text-mustard-600 dark:text-mustard-400 hover:text-mustard-700 dark:hover:text-mustard-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

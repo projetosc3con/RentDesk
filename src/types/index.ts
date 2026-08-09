@@ -336,43 +336,6 @@ export interface ScoreConsultaError {
 
 export type ScoreConsultaResponse = ScoreConsultaSuccess | ScoreConsultaError;
 
-export type AsaasCompanyType = 'MEI' | 'LIMITED' | 'INDIVIDUAL' | 'ASSOCIATION';
-
-export interface AsaasSubaccountPayload {
-  name: string;
-  email: string;
-  cpfCnpj: string;
-  companyType?: AsaasCompanyType;
-  mobilePhone: string;
-  address: string;
-  addressNumber: string;
-  province: string;
-  postalCode: string;
-  incomeValue: number;
-}
-
-export interface AsaasSubaccountResponse {
-  subaccount: {
-    id: string;
-    apiKey: string;
-    walletId: string;
-    email: string;
-    loginEmail: string;
-  };
-  settings: {
-    id: string;
-    company_name: string;
-    cnpj: string;
-    asaas_api_key: string;
-    active: boolean;
-  };
-}
-
-export interface AsaasSubaccountVerifyResponse {
-  keyPreview: string;
-  account: { status?: string; [key: string]: unknown };
-}
-
 export interface AsaasChargeBreakdown {
   total_value: number;
   fee_amount: number;

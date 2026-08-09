@@ -2,9 +2,6 @@ import api from './api';
 import type {
   ScoreConsultaResponse,
   Client,
-  AsaasSubaccountPayload,
-  AsaasSubaccountResponse,
-  AsaasSubaccountVerifyResponse,
   AsaasChargeResult,
   Payment,
   Bill,
@@ -39,16 +36,6 @@ export const financeiroService = {
       { documento },
       { validateStatus: () => true }
     );
-    return data;
-  },
-
-  criarSubconta: async (payload: AsaasSubaccountPayload): Promise<AsaasSubaccountResponse> => {
-    const { data } = await api.post<AsaasSubaccountResponse>('/payments/setup/subaccount', payload);
-    return data;
-  },
-
-  verificarSubconta: async (): Promise<AsaasSubaccountVerifyResponse> => {
-    const { data } = await api.get<AsaasSubaccountVerifyResponse>('/payments/setup/subaccount/verify');
     return data;
   },
 
