@@ -2,16 +2,16 @@ import api from './api';
 import type {
   ScoreConsultaResponse,
   Client,
-  AsaasSubaccountPayload,
-  AsaasSubaccountResponse,
-  AsaasSubaccountVerifyResponse,
   AsaasChargeResult,
   Payment,
   Bill,
+  BillType,
   CreateBillPayload,
   StatementItem,
   InvoiceNfse,
   NfseEmitResult,
+  BankStatementLine,
+  ReconcileBankStatementResponse,
 } from '../types';
 
 export interface ExtratoFilters {
@@ -21,16 +21,10 @@ export interface ExtratoFilters {
   to?: string;
 }
 
-export interface ConciliacaoFilters {
+export interface ExtratoBancarioFilters {
   client_id?: string;
   status?: string;
   origin?: string;
-  from?: string;
-  to?: string;
-}
-
-export interface ExtratoBancarioFilters {
-  client_id?: string;
   from?: string;
   to?: string;
 }
@@ -42,16 +36,6 @@ export const financeiroService = {
       { documento },
       { validateStatus: () => true }
     );
-    return data;
-  },
-
-  criarSubconta: async (payload: AsaasSubaccountPayload): Promise<AsaasSubaccountResponse> => {
-    const { data } = await api.post<AsaasSubaccountResponse>('/payments/setup/subaccount', payload);
-    return data;
-  },
-
-  verificarSubconta: async (): Promise<AsaasSubaccountVerifyResponse> => {
-    const { data } = await api.get<AsaasSubaccountVerifyResponse>('/payments/setup/subaccount/verify');
     return data;
   },
 
@@ -80,11 +64,6 @@ export const financeiroService = {
     return data;
   },
 
-  listarConciliacaoBancaria: async (filters: ConciliacaoFilters = {}): Promise<Bill[]> => {
-    const { data } = await api.get<Bill[]>('/bills', { params: filters });
-    return data;
-  },
-
   // Extrato bancário: `payments` ainda em aberto + `bills` já conciliado
   // (automático ou manual), mesclados pelo backend numa lista única.
   listarExtratoBancario: async (filters: ExtratoBancarioFilters = {}): Promise<StatementItem[]> => {
@@ -94,6 +73,29 @@ export const financeiroService = {
 
   criarLancamentoManual: async (payload: CreateBillPayload): Promise<Bill> => {
     const { data } = await api.post<Bill>('/bills', payload);
+    return data;
+  },
+
+  // Dispara a busca do extrato bancário no BB pro período informado (default
+  // últimos 30 dias no backend) e concilia automaticamente contra os `bills`
+  // ainda não conciliados. A lista de linhas retornada não é persistida em
+  // nenhum lugar novo — só os `bills` batidos são atualizados no banco.
+  reconciliarExtratoBancario: async (period: { from?: string; to?: string } = {}): Promise<ReconcileBankStatementResponse> => {
+    const { data } = await api.post<ReconcileBankStatementResponse>('/bills/reconcile', null, { params: period });
+    return data;
+  },
+
+  // Vincula manualmente uma linha do extrato que não bateu automaticamente a
+  // um bill existente, atualizando esse bill pra refletir o extrato.
+  vincularLancamentoExtrato: async (billId: string, line: BankStatementLine): Promise<Bill> => {
+    const { data } = await api.post<Bill>(`/bills/${billId}/link-statement-line`, line);
+    return data;
+  },
+
+  // Lista bills de um tipo ainda não conciliados com o extrato bancário —
+  // usado como candidatos no picker de "vincular a lançamento existente".
+  listarLancamentosNaoConciliados: async (type: BillType): Promise<StatementItem[]> => {
+    const { data } = await api.get<StatementItem[]>('/bills', { params: { type, unreconciled: 'true' } });
     return data;
   },
 

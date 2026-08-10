@@ -6,7 +6,6 @@ const Financeiro: React.FC = () => {
   const location = useLocation();
 
   const tabs = [
-    { id: 'config', label: 'Configuração', icon: 'settings', path: '/financeiro/config' },
     { id: 'score', label: 'Consultar Score', icon: 'credit_score', path: '/financeiro/score' },
     { id: 'extrato', label: 'Lançamentos', icon: 'receipt_long', path: '/financeiro/extrato' },
     { id: 'conciliacao', label: 'Conciliação', icon: 'account_balance', path: '/financeiro/conciliacao' },

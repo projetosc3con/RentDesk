@@ -4,7 +4,10 @@ import { financeiroService } from '../../../services/financeiro';
 import { getApiErrorMessage } from '../../../utils/apiError';
 import SearchableSelect from '../../../components/SearchableSelect';
 import LancamentoManualModal from '../../../components/financeiro/LancamentoManualModal';
-import type { Client, StatementItem, BillType, Bill } from '../../../types';
+import type { Client, StatementItem, BillType, Bill, BillStatus } from '../../../types';
+
+const STATUS_OPTIONS: BillStatus[] = ['Pendente', 'Atrasado', 'Recebido', 'Divergente', 'No prazo'];
+const ORIGIN_OPTIONS = ['ASAAS', 'MANUAL'];
 
 const isSettled = (item: StatementItem) =>
   item.source === 'payment'
@@ -40,6 +43,8 @@ const sourceBadge = (item: StatementItem) => {
 const ExtratoTab: React.FC = () => {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState('');
+  const [status, setStatus] = useState('');
+  const [origin, setOrigin] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
@@ -67,6 +72,8 @@ const ExtratoTab: React.FC = () => {
     try {
       const data = await financeiroService.listarExtratoBancario({
         client_id: selectedClientId || undefined,
+        status: status || undefined,
+        origin: origin || undefined,
         from: dateFrom || undefined,
         to: dateTo || undefined,
       });
@@ -76,7 +83,7 @@ const ExtratoTab: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedClientId, dateFrom, dateTo]);
+  }, [selectedClientId, status, origin, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchExtrato();
@@ -84,6 +91,8 @@ const ExtratoTab: React.FC = () => {
 
   const handleClearFilters = () => {
     setSelectedClientId('');
+    setStatus('');
+    setOrigin('');
     setDateFrom('');
     setDateTo('');
   };
@@ -114,7 +123,7 @@ const ExtratoTab: React.FC = () => {
         ]); */
   };
 
-  const hasActiveFilters = Boolean(selectedClientId || dateFrom || dateTo);
+  const hasActiveFilters = Boolean(selectedClientId || status || origin || dateFrom || dateTo);
 
   return (
     <div className="space-y-6">
@@ -150,7 +159,7 @@ const ExtratoTab: React.FC = () => {
         </div>
 
         <div className="p-8 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <SearchableSelect
               label="Cliente"
               placeholder="Todos os clientes"
@@ -160,6 +169,30 @@ const ExtratoTab: React.FC = () => {
               getDisplayValue={(c) => c.company_name}
               getSearchValue={(c) => `${c.company_name} ${c.cnpj}`}
             />
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Status</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm cursor-pointer"
+              >
+                <option value="">Todos</option>
+                {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">Origem</label>
+              <select
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 transition-all outline-none text-sm cursor-pointer"
+              >
+                <option value="">Todas</option>
+                {ORIGIN_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest ml-1">De</label>
@@ -202,6 +235,7 @@ const ExtratoTab: React.FC = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 text-left">
+                  <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest text-center">Conciliado</th>
                   <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Vencimento</th>
                   <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Cliente / Fatura</th>
                   <th className="px-6 py-3 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Origem</th>
@@ -215,13 +249,13 @@ const ExtratoTab: React.FC = () => {
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center">
+                    <td colSpan={9} className="px-6 py-12 text-center">
                       <div className="w-8 h-8 border-4 border-mustard-500/20 border-t-mustard-500 rounded-full animate-spin mx-auto" />
                     </td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center text-sm text-slate-400 dark:text-slate-500 italic">
+                    <td colSpan={9} className="px-6 py-12 text-center text-sm text-slate-400 dark:text-slate-500 italic">
                       Nenhum lançamento encontrado para os filtros selecionados.
                     </td>
                   </tr>
@@ -230,6 +264,13 @@ const ExtratoTab: React.FC = () => {
                     const badge = sourceBadge(item);
                     return (
                       <tr key={`${item.source}-${item.id}`}>
+                        <td className="px-6 py-4 text-center">
+                          {item.is_reconciled ? (
+                            <span title="Conciliado com o extrato bancário" className="material-symbols-outlined text-[18px] text-emerald-500 dark:text-emerald-400">check_circle</span>
+                          ) : (
+                            <span title="Ainda não conciliado" className="material-symbols-outlined text-[18px] text-slate-300 dark:text-slate-600">radio_button_unchecked</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                           {item.due_date ? new Date(item.due_date).toLocaleDateString('pt-BR') : '—'}
                         </td>
@@ -289,7 +330,6 @@ const ExtratoTab: React.FC = () => {
       <LancamentoManualModal
         isOpen={lancamentoModal !== null}
         type={lancamentoModal || 'receivable'}
-        clients={clients}
         onClose={() => setLancamentoModal(null)}
         onCreated={handleBillCreated}
       />

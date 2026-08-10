@@ -336,43 +336,6 @@ export interface ScoreConsultaError {
 
 export type ScoreConsultaResponse = ScoreConsultaSuccess | ScoreConsultaError;
 
-export type AsaasCompanyType = 'MEI' | 'LIMITED' | 'INDIVIDUAL' | 'ASSOCIATION';
-
-export interface AsaasSubaccountPayload {
-  name: string;
-  email: string;
-  cpfCnpj: string;
-  companyType?: AsaasCompanyType;
-  mobilePhone: string;
-  address: string;
-  addressNumber: string;
-  province: string;
-  postalCode: string;
-  incomeValue: number;
-}
-
-export interface AsaasSubaccountResponse {
-  subaccount: {
-    id: string;
-    apiKey: string;
-    walletId: string;
-    email: string;
-    loginEmail: string;
-  };
-  settings: {
-    id: string;
-    company_name: string;
-    cnpj: string;
-    asaas_api_key: string;
-    active: boolean;
-  };
-}
-
-export interface AsaasSubaccountVerifyResponse {
-  keyPreview: string;
-  account: { status?: string; [key: string]: unknown };
-}
-
 export interface AsaasChargeBreakdown {
   total_value: number;
   fee_amount: number;
@@ -446,13 +409,15 @@ export interface Bill {
 
 export interface CreateBillPayload {
   type: BillType;
-  client_id?: string;
   counterparty_name?: string;
   description?: string;
+  barcode?: string;
   gross_value: number;
   due_date: string;
   already_settled?: boolean;
   settled_date?: string;
+  bank_transaction_date?: string;
+  bank_raw_snapshot?: Record<string, unknown>;
 }
 
 // Item normalizado do extrato bancário: mescla `bills` (já conciliado,
@@ -476,7 +441,35 @@ export interface StatementItem {
   description: string | null;
   invoice_url: string | null;
   bank_slip_url: string | null;
+  is_reconciled: boolean;
   raw: Record<string, unknown>;
+}
+
+// Linha normalizada do extrato bancário do BB (ver financeiroService.reconciliarExtratoBancario).
+export interface BankStatementLine {
+  bank_date: string;
+  value: number;
+  dc_indicator: 'D' | 'C';
+  type: BillType;
+  description: string | null;
+  document_number: string | null;
+  raw: Record<string, unknown>;
+}
+
+export type BankStatementMatchStatus = 'matched' | 'unmatched';
+
+export interface BankStatementMatchResult extends BankStatementLine {
+  match_status: BankStatementMatchStatus;
+  matched_bill_id: string | null;
+  matched_bill: StatementItem | null;
+}
+
+export interface ReconcileBankStatementResponse {
+  period: { from: string; to: string };
+  simulated: boolean;
+  lines: BankStatementMatchResult[];
+  matched_count: number;
+  unmatched_count: number;
 }
 
 export type NfseStatus =
