@@ -4,36 +4,64 @@ import { financeiroService } from '../../../services/financeiro';
 import { getApiErrorMessage } from '../../../utils/apiError';
 import SearchableSelect from '../../../components/SearchableSelect';
 import LancamentoManualModal from '../../../components/financeiro/LancamentoManualModal';
-import type { Client, StatementItem, BillType, Bill, BillStatus } from '../../../types';
+import type { Client, StatementItem, BillType, BillStatus } from '../../../types';
 
 const STATUS_OPTIONS: BillStatus[] = ['Pendente', 'Atrasado', 'Recebido', 'Divergente', 'No prazo'];
 const ORIGIN_OPTIONS = ['ASAAS', 'MANUAL'];
+const ITEMS_PER_PAGE = 20;
 
 const isSettled = (item: StatementItem) =>
   item.source === 'payment'
-    ? item.status === 'RECEIVED' || item.status === 'CONFIRMED'
+    ? item.status === 'RECEIVED'
     : item.status === 'Recebido' || item.status === 'No prazo';
+
+// Boleto confirmado pelo banco, mas ainda em compensação bancária — o valor
+// ainda não está disponível no saldo Asaas (ver PAYMENT_CONFIRMED vs
+// PAYMENT_RECEIVED em asaasWebhookController.ts). Só existe pra `payment`
+// (um `bill` só é criado quando o valor já está disponível).
+const isAwaitingCompensation = (item: StatementItem) =>
+  item.source === 'payment' && item.status === 'CONFIRMED';
 
 const isOverdueOrCancelled = (item: StatementItem) =>
   item.source === 'payment'
     ? item.status === 'OVERDUE' || item.status === 'CANCELLED'
     : item.status === 'Atrasado' || item.status === 'Divergente';
 
+const AWAITING_COMPENSATION_CLASSES = 'bg-sky-100 dark:bg-sky-500/10 text-sky-800 dark:text-sky-400 border border-sky-200 dark:border-sky-500/20';
+
 const statusBadgeClass = (item: StatementItem) => {
   if (isSettled(item)) return 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20';
+  if (isAwaitingCompensation(item)) return AWAITING_COMPENSATION_CLASSES;
   if (isOverdueOrCancelled(item)) return 'bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-500/20';
   return 'bg-amber-100 dark:bg-amber-500/10 text-amber-800 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20';
 };
 
 const statusIcon = (item: StatementItem) => {
   if (isSettled(item)) return 'check_circle';
+  if (isAwaitingCompensation(item)) return 'hourglass_top';
   if (isOverdueOrCancelled(item)) return 'cancel';
   return 'schedule';
 };
 
+// `bills` já guarda status em português (Pendente/Recebido/...); `payments`
+// guarda o status cru da Asaas (PENDING/CONFIRMED/RECEIVED/...) — traduzido
+// aqui só pra exibição, sem mudar o valor armazenado.
+const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  PENDING: 'Pendente',
+  OVERDUE: 'Atrasado',
+  CONFIRMED: 'Aguardando compensação',
+  RECEIVED: 'Recebido',
+  CANCELLED: 'Cancelado',
+};
+
+const statusLabel = (item: StatementItem) =>
+  item.source === 'payment' ? (PAYMENT_STATUS_LABELS[item.status] ?? item.status) : item.status;
+
 const sourceBadge = (item: StatementItem) => {
   if (item.source === 'payment') {
-    return { label: 'Aguardando pagamento', className: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20' };
+    return isAwaitingCompensation(item)
+      ? { label: 'Aguardando compensação', className: AWAITING_COMPENSATION_CLASSES }
+      : { label: 'Aguardando pagamento', className: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20' };
   }
   return item.origin === 'ASAAS'
     ? { label: 'ASAAS', className: 'bg-mustard-100 dark:bg-mustard-500/10 text-mustard-700 dark:text-mustard-400 border border-mustard-200 dark:border-mustard-500/20' }
@@ -51,6 +79,10 @@ const ExtratoTab: React.FC = () => {
   const [items, setItems] = useState<StatementItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [lancamentoModal, setLancamentoModal] = useState<BillType | null>(null);
 
@@ -76,18 +108,30 @@ const ExtratoTab: React.FC = () => {
         origin: origin || undefined,
         from: dateFrom || undefined,
         to: dateTo || undefined,
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
       });
-      setItems(data);
+      setItems(data.data);
+      setTotalItems(data.total);
+      setTotalPages(data.totalPages);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [selectedClientId, status, origin, dateFrom, dateTo]);
+  }, [selectedClientId, status, origin, dateFrom, dateTo, currentPage]);
 
   useEffect(() => {
     fetchExtrato();
   }, [fetchExtrato]);
+
+  // Sempre que um filtro muda, volta pra página 1 (mesmo padrão de
+  // Rentals.tsx) — sem isso, trocar de filtro numa página > 1 pode devolver
+  // uma página vazia (menos itens que o esperado pro offset atual).
+  useEffect(() => {
+    setCurrentPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClientId, status, origin, dateFrom, dateTo]);
 
   const handleClearFilters = () => {
     setSelectedClientId('');
@@ -97,30 +141,13 @@ const ExtratoTab: React.FC = () => {
     setDateTo('');
   };
 
-  const handleBillCreated = (bill: Bill) => {
-    /*     setItems((prev) => [
-          {
-            source: 'bill',
-            id: bill.id,
-            type: bill.type,
-            status: bill.status,
-            origin: bill.origin,
-            gross_value: bill.gross_value,
-            net_value: bill.net_value,
-            fee_amount: bill.fee_amount,
-            due_date: bill.due_date,
-            settled_date: bill.reconciled_at,
-            client_id: bill.client_id,
-            client_name: bill.client?.company_name ?? null,
-            counterparty_name: bill.counterparty_name,
-            invoice_number: bill.invoice?.invoice_number ?? null,
-            description: bill.description,
-            invoice_url: null,
-            bank_slip_url: null,
-            raw: bill,
-          },
-          ...prev,
-        ]); */
+  // Refaz a busca no servidor em vez de inserir o item otimisticamente no
+  // estado local: o backend é quem decide ordenação, status derivado
+  // (is_reconciled) e demais campos calculados do merge bills+payments —
+  // reconstruir isso no front duplicaria essa lógica e ficaria desatualizado
+  // a cada mudança no critério de merge do backend.
+  const handleBillCreated = () => {
+    fetchExtrato();
   };
 
   const hasActiveFilters = Boolean(selectedClientId || status || origin || dateFrom || dateTo);
@@ -266,9 +293,15 @@ const ExtratoTab: React.FC = () => {
                       <tr key={`${item.source}-${item.id}`}>
                         <td className="px-6 py-4 text-center">
                           {item.is_reconciled ? (
-                            <span title="Conciliado com o extrato bancário" className="material-symbols-outlined text-[18px] text-emerald-500 dark:text-emerald-400">check_circle</span>
+                            <span title="Conciliado com o extrato bancário" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                              <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                              Conciliado
+                            </span>
                           ) : (
-                            <span title="Ainda não conciliado" className="material-symbols-outlined text-[18px] text-slate-300 dark:text-slate-600">radio_button_unchecked</span>
+                            <span title="Ainda não conciliado" className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                              <span className="material-symbols-outlined text-[14px]">radio_button_unchecked</span>
+                              Pendente
+                            </span>
                           )}
                         </td>
                         <td className="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
@@ -299,7 +332,7 @@ const ExtratoTab: React.FC = () => {
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${statusBadgeClass(item)}`}>
                             <span className="material-symbols-outlined text-[14px]">{statusIcon(item)}</span>
-                            {item.status}
+                            {statusLabel(item)}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -324,6 +357,55 @@ const ExtratoTab: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {totalItems > 0 && (
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                Mostrando {Math.min(totalItems, (currentPage - 1) * ITEMS_PER_PAGE + 1)} - {Math.min(totalItems, currentPage * ITEMS_PER_PAGE)} de {totalItems}
+              </span>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="p-2 text-slate-400 hover:text-mustard-600 dark:hover:text-mustard-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined">chevron_left</span>
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) pageNum = i + 1;
+                    else if (currentPage <= 3) pageNum = i + 1;
+                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                    else pageNum = currentPage - 2 + i;
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${currentPage === pageNum
+                          ? 'bg-mustard-500 text-white shadow-mustard-500/20'
+                          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="p-2 text-mustard-600 dark:text-mustard-400 hover:text-mustard-700 dark:hover:text-mustard-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <span className="material-symbols-outlined">chevron_right</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

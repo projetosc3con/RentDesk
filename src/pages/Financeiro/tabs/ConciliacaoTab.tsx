@@ -195,7 +195,24 @@ const ConciliacaoTab: React.FC = () => {
                         {line.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <input type="checkbox" checked={line.match_status === 'matched'} disabled readOnly className="w-4 h-4 rounded accent-emerald-500" />
+                        {line.match_status === 'matched' ? (
+                          line.matched_bill?.status === 'Divergente' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 dark:bg-red-500/10 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-500/20">
+                              <span className="material-symbols-outlined text-[14px]">warning</span>
+                              Divergente
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                              <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                              Conciliado
+                            </span>
+                          )
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
+                            <span className="material-symbols-outlined text-[14px]">schedule</span>
+                            Pendente
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         {line.match_status === 'unmatched' && (
