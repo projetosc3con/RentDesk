@@ -12,6 +12,7 @@ import type {
   NfseEmitResult,
   BankStatementLine,
   ReconcileBankStatementResponse,
+  PaginatedBillStatement,
 } from '../types';
 
 export interface ExtratoFilters {
@@ -27,6 +28,8 @@ export interface ExtratoBancarioFilters {
   origin?: string;
   from?: string;
   to?: string;
+  page?: number;
+  limit?: number;
 }
 
 export const financeiroService = {
@@ -65,9 +68,9 @@ export const financeiroService = {
   },
 
   // Extrato bancário: `payments` ainda em aberto + `bills` já conciliado
-  // (automático ou manual), mesclados pelo backend numa lista única.
-  listarExtratoBancario: async (filters: ExtratoBancarioFilters = {}): Promise<StatementItem[]> => {
-    const { data } = await api.get<StatementItem[]>('/bills', { params: filters });
+  // (automático ou manual), mesclados e paginados pelo backend (máx. 20/página).
+  listarExtratoBancario: async (filters: ExtratoBancarioFilters = {}): Promise<PaginatedBillStatement> => {
+    const { data } = await api.get<PaginatedBillStatement>('/bills', { params: filters });
     return data;
   },
 

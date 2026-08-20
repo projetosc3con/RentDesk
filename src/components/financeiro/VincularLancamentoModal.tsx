@@ -5,6 +5,10 @@ import { getApiErrorMessage } from '../../utils/apiError';
 import SearchableSelect from '../SearchableSelect';
 import type { Bill, BankStatementMatchResult, StatementItem } from '../../types';
 
+// Mesma tolerância de bankReconciliationController.ts — usada só pra avisar
+// o usuário antes de confirmar, o backend decide o status final de novo.
+const VALUE_MATCH_TOLERANCE = 0.01;
+
 interface VincularLancamentoModalProps {
   isOpen: boolean;
   line: BankStatementMatchResult | null;
@@ -18,10 +22,12 @@ const VincularLancamentoModal: React.FC<VincularLancamentoModalProps> = ({ isOpe
   const [loadingCandidates, setLoadingCandidates] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDivergence, setConfirmDivergence] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !line) return;
     setSelectedId('');
+    setConfirmDivergence(false);
     setError(null);
     setLoadingCandidates(true);
     financeiroService.listarLancamentosNaoConciliados(line.type)
@@ -29,6 +35,16 @@ const VincularLancamentoModal: React.FC<VincularLancamentoModalProps> = ({ isOpe
       .catch((err) => setError(getApiErrorMessage(err)))
       .finally(() => setLoadingCandidates(false));
   }, [isOpen, line]);
+
+  useEffect(() => {
+    setConfirmDivergence(false);
+  }, [selectedId]);
+
+  const selectedCandidate = candidates.find((c) => c.id === selectedId) ?? null;
+  const isDivergent = Boolean(
+    selectedCandidate && line
+      && Math.abs((selectedCandidate.net_value ?? selectedCandidate.gross_value) - line.value) > VALUE_MATCH_TOLERANCE
+  );
 
   const handleClose = () => {
     if (submitting) return;
@@ -92,10 +108,37 @@ const VincularLancamentoModal: React.FC<VincularLancamentoModalProps> = ({ isOpe
                 items={candidates}
                 selectedId={selectedId}
                 onSelect={setSelectedId}
-                getDisplayValue={(c) => c.counterparty_name || c.client_name || c.description || c.invoice_number || '—'}
-                getSearchValue={(c) => `${c.counterparty_name ?? ''} ${c.client_name ?? ''} ${c.description ?? ''} ${c.invoice_number ?? ''}`}
+                getDisplayValue={(c) => {
+                  const label = c.counterparty_name || c.client_name || c.description || c.invoice_number || '—';
+                  const value = c.gross_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                  const due = c.due_date ? new Date(c.due_date).toLocaleDateString('pt-BR') : null;
+                  return due ? `${label} — ${value} (venc. ${due})` : `${label} — ${value}`;
+                }}
+                getSearchValue={(c) => `${c.counterparty_name ?? ''} ${c.client_name ?? ''} ${c.description ?? ''} ${c.invoice_number ?? ''} ${c.gross_value}`}
                 disabled={loadingCandidates}
               />
+
+              {isDivergent && selectedCandidate && line && (
+                <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl p-3 space-y-2">
+                  <p className="text-amber-700 dark:text-amber-400 text-xs font-bold">
+                    Valor do extrato diferente do lançamento cadastrado
+                  </p>
+                  <p className="text-amber-700 dark:text-amber-400 text-xs">
+                    Cadastrado: {(selectedCandidate.net_value ?? selectedCandidate.gross_value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    {' → '}
+                    Extrato: {line.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </p>
+                  <label className="flex items-center gap-2 text-xs font-medium text-amber-700 dark:text-amber-400 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={confirmDivergence}
+                      onChange={(e) => setConfirmDivergence(e.target.checked)}
+                      className="rounded border-amber-300 text-amber-500 focus:ring-amber-500"
+                    />
+                    Estou ciente da diferença de valor e quero vincular mesmo assim
+                  </label>
+                </div>
+              )}
 
               {error && (
                 <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 rounded-xl p-3 text-xs font-medium">
@@ -115,12 +158,14 @@ const VincularLancamentoModal: React.FC<VincularLancamentoModalProps> = ({ isOpe
               </button>
               <button
                 type="button"
-                disabled={submitting || !selectedId}
+                disabled={submitting || !selectedId || (isDivergent && !confirmDivergence)}
                 onClick={handleConfirm}
-                className="flex-1 py-3 rounded-xl bg-mustard-500 hover:bg-mustard-600 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-mustard-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                className={`flex-1 py-3 rounded-xl text-white font-bold text-xs uppercase tracking-widest shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 ${isDivergent ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20' : 'bg-mustard-500 hover:bg-mustard-600 shadow-mustard-500/20'}`}
               >
                 {submitting ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : isDivergent ? (
+                  'Vincular mesmo assim'
                 ) : (
                   'Vincular'
                 )}

@@ -453,6 +453,7 @@ export interface BankStatementLine {
   type: BillType;
   description: string | null;
   document_number: string | null;
+  unique_transaction_id: string | null;
   raw: Record<string, unknown>;
 }
 
@@ -470,6 +471,16 @@ export interface ReconcileBankStatementResponse {
   lines: BankStatementMatchResult[];
   matched_count: number;
   unmatched_count: number;
+}
+
+// Envelope paginado de GET /api/bills (ramo "merge completo" bills+payments,
+// usado pela tela de Lançamentos). Espelha PaginatedBillStatement do backend.
+export interface PaginatedBillStatement {
+  data: StatementItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export type NfseStatus =
