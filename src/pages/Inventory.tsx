@@ -2,33 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
+import XmlImportModal from '../components/XmlImportModal';
+import type { Equipment } from '../types';
 
 const EQUIPMENT_TYPES = [
   'Elétrica',
   'Diesel'
 ];
-
-interface Equipment {
-  id: string;
-  asset_number: string;
-  name: string;
-  type: string | null;
-  model: string | null;
-  serial_number: string | null;
-  height: number | null;
-  status: 'Disponível' | 'Locado' | 'Em Manutenção' | 'Inativo';
-  manufacture_year: number | null;
-  value: number;
-  photo_url: string | null;
-  notes?: string;
-  unit?: string;
-  created_at?: string;
-  // Rental info (populated when status === 'Locado')
-  rental_client_name?: string;
-  rental_period_start?: string;
-  rental_period_end?: string;
-  rental_work_site?: string;
-}
 
 const Inventory: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +19,7 @@ const Inventory: React.FC = () => {
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [yearMin, setYearMin] = useState('');
@@ -154,6 +135,14 @@ const Inventory: React.FC = () => {
               <span className="material-symbols-outlined text-[20px]">view_list</span>
             </button>
           </div>
+
+          <button
+            onClick={() => setIsXmlModalOpen(true)}
+            className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2.5 rounded-xl shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-all font-bold text-xs uppercase tracking-widest"
+          >
+            <span className="material-symbols-outlined text-[20px] text-mustard-600">receipt_long</span>
+            Importar NF-e (XML)
+          </button>
 
           <button
             onClick={() => navigate('/equipamentos/novo')}
@@ -556,6 +545,42 @@ const Inventory: React.FC = () => {
                   </div>
                 )}
 
+                {/* Dados Fiscais / NF-e de Aquisição */}
+                {selectedEquipment.invoice_number && (
+                  <div className="mb-8 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50">
+                    <h4 className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[16px] text-mustard-500">receipt_long</span>
+                      Dados Fiscais de Aquisição (NF-e)
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nº da NF-e</span>
+                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{selectedEquipment.invoice_number}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fornecedor</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-200 truncate block" title={selectedEquipment.supplier_name}>
+                          {selectedEquipment.supplier_name || '-'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">NCM / CST / CFOP</span>
+                        <span className="font-mono text-slate-700 dark:text-slate-300">
+                          {selectedEquipment.ncm || '-'}{selectedEquipment.cst ? ` | CST ${selectedEquipment.cst}` : ''}{selectedEquipment.cfop ? ` | CFOP ${selectedEquipment.cfop}` : ''}
+                        </span>
+                      </div>
+                      {selectedEquipment.nfe_access_key && (
+                        <div className="col-span-2 sm:col-span-3">
+                          <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chave de Acesso</span>
+                          <span className="font-mono text-[11px] text-slate-600 dark:text-slate-400 break-all select-all">
+                            {selectedEquipment.nfe_access_key}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Notas/Observações */}
                 <div className="mb-8">
                   <h4 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -758,6 +783,15 @@ const Inventory: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+      {/* Modal de Importação de NF-e XML */}
+      <XmlImportModal
+        isOpen={isXmlModalOpen}
+        onClose={() => setIsXmlModalOpen(false)}
+        onSuccess={() => {
+          // Re-fetch equipments
+          api.get('/equipments').then(res => setEquipments(res.data)).catch(console.error);
+        }}
+      />
     </motion.div>
   );
 };

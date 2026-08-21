@@ -4,9 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
 import api from '../services/api';
-import type { Equipment, UserProfile, Part, ServiceOrder, ServiceOrderStatus, ServiceOrderType, ServiceOrderLabor } from '../types';
+import { formatDate } from '../utils/date';
+import type { Equipment, UserProfile, Part, ServiceOrder, ServiceOrderStatus, ServiceOrderType, ServiceOrderLabor, NfeInvoiceReference, ServiceOrderPart } from '../types';
 import SearchableSelect from '../components/SearchableSelect';
 import ServiceOrderDocument from '../components/maintenance/ServiceOrderDocument';
+import OsXmlImportModal from '../components/maintenance/OsXmlImportModal';
 
 interface OSPartItem {
   part_id: string;
@@ -90,13 +92,15 @@ const MaintenanceForm: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('geral');
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [viewingPdf, setViewingPdf] = useState(false);
-
+  const [isNfeModalOpen, setIsNfeModalOpen] = useState(false);
 
   const [formData, setFormData] = useState<Partial<ServiceOrder>>({
     order_type: 'Interna',
     status: 'Aberta',
     execution_date: new Date().toISOString().split('T')[0],
     execution_location: '',
+    nfe_invoices: [],
+    nfe_access_keys: [],
   });
 
   const [partsUsed, setPartsUsed] = useState<OSPartItem[]>([]);
@@ -134,7 +138,9 @@ const MaintenanceForm: React.FC = () => {
           const { data } = await api.get(`/service-orders/${id}`);
           setFormData({
             ...data,
-            execution_date: data.execution_date ? new Date(data.execution_date).toISOString().split('T')[0] : ''
+            execution_date: data.execution_date ? new Date(data.execution_date).toISOString().split('T')[0] : '',
+            nfe_invoices: data.nfe_invoices || [],
+            nfe_access_keys: data.nfe_access_keys || [],
           });
 
           if (data.service_order_parts) {
@@ -228,6 +234,70 @@ const MaintenanceForm: React.FC = () => {
     setPartsUsed(prev => prev.filter(p => p.part_id !== partId));
   };
 
+  const handleNfeImportSuccess = async (nfeRef: NfeInvoiceReference, newParts: ServiceOrderPart[]) => {
+    // 1. Add linked NF-e (avoid duplicates)
+    setFormData(prev => {
+      const currentInvoices = prev.nfe_invoices || [];
+      const exists = currentInvoices.some(n => n.access_key === nfeRef.access_key);
+      const updatedInvoices = exists ? currentInvoices : [...currentInvoices, nfeRef];
+      return {
+        ...prev,
+        nfe_invoices: updatedInvoices,
+        nfe_access_keys: updatedInvoices.map(n => n.access_key),
+      };
+    });
+
+    // 2. Refresh allParts list from backend
+    try {
+      const { data } = await api.get('/parts');
+      setAllParts(data);
+    } catch (e) {
+      console.error('Erro ao recarregar materiais:', e);
+    }
+
+    // 3. Append selected parts to OS
+    if (newParts && newParts.length > 0) {
+      setPartsUsed(prev => {
+        const updated = [...prev];
+        for (const np of newParts) {
+          const existingIdx = updated.findIndex(p => p.part_id === np.part_id);
+          if (existingIdx >= 0) {
+            const current = updated[existingIdx];
+            const newQty = current.quantity_used + np.quantity_used;
+            updated[existingIdx] = {
+              ...current,
+              quantity_used: newQty,
+              subtotal: newQty * current.unit_value_at_use,
+            };
+          } else {
+            updated.push({
+              part_id: np.part_id,
+              description: np.part_description || np.parts?.description || '',
+              internal_code: np.internal_code || np.parts?.internal_code || '',
+              quantity_used: np.quantity_used,
+              unit_value_at_use: np.unit_value_at_use,
+              subtotal: np.subtotal,
+              was_used: true,
+            });
+          }
+        }
+        return updated;
+      });
+    }
+  };
+
+  const handleRemoveLinkedNfe = (accessKey: string) => {
+    setFormData(prev => {
+      const currentInvoices = prev.nfe_invoices || [];
+      const updatedInvoices = currentInvoices.filter(n => n.access_key !== accessKey);
+      return {
+        ...prev,
+        nfe_invoices: updatedInvoices,
+        nfe_access_keys: updatedInvoices.map(n => n.access_key),
+      };
+    });
+  };
+
   const handleUpdatePartQuantity = (partId: string, qty: number) => {
     if (qty < 1) return;
     setPartsUsed(prev => prev.map(p =>
@@ -285,6 +355,8 @@ const MaintenanceForm: React.FC = () => {
 
       const payload = {
         ...formData,
+        nfe_invoices: formData.nfe_invoices || [],
+        nfe_access_keys: (formData.nfe_invoices || []).map(n => n.access_key),
         parts: partsUsed,
         labor: laborEntries.filter(l => l.technician_name.trim() !== ''),
       };
@@ -573,12 +645,89 @@ const MaintenanceForm: React.FC = () => {
 
           {/* TAB 3: Peças */}
           {activeTab === 'pecas' && (
-            <motion.div key="pecas" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-              <SectionCard title="Peças e Insumos" icon="inventory_2">
+            <motion.div key="pecas" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
+              {/* Notas Fiscais Vinculadas (NF-e XML) */}
+              <SectionCard title="Notas Fiscais de Entrada Vinculadas (NF-e XML)" icon="receipt_long">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
+                      Importe XMLs de NF-e para alimentar o estoque e vincular à Ordem de Serviço.
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                      Você pode vincular múltiplas notas e escolher exatamente quais itens aplicar.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsNfeModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-mustard-500 hover:bg-mustard-600 text-white rounded-2xl font-bold text-xs shadow-lg shadow-mustard-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap self-start sm:self-auto"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                    Importar NF-e (XML)
+                  </button>
+                </div>
+
+                {/* Lista de NFs vinculadas */}
+                {formData.nfe_invoices && formData.nfe_invoices.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                    {formData.nfe_invoices.map(nfe => (
+                      <div
+                        key={nfe.access_key}
+                        className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-start justify-between gap-3 group"
+                      >
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded-md bg-mustard-100 dark:bg-mustard-500/20 text-mustard-800 dark:text-mustard-400 text-[10px] font-black uppercase font-mono">
+                              NF-e Nº {nfe.invoice_number}
+                            </span>
+                            {nfe.series && (
+                              <span className="text-[10px] text-slate-400 font-medium">Série {nfe.series}</span>
+                            )}
+                          </div>
+                          <p className="font-bold text-xs text-slate-800 dark:text-slate-200 truncate" title={nfe.issuer_name}>
+                            {nfe.issuer_name}
+                          </p>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-500">
+                            {nfe.issue_date && <span>{formatDate(nfe.issue_date)}</span>}
+                            {nfe.total_invoice != null && (
+                              <>
+                                <span>•</span>
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                                  {nfe.total_invoice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          <span className="font-mono text-[9px] text-slate-400 truncate block select-all" title={nfe.access_key}>
+                            {nfe.access_key}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveLinkedNfe(nfe.access_key)}
+                          className="p-1.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-colors"
+                          title="Desvincular NF-e da OS"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">close</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-4 px-5 rounded-2xl bg-slate-50/50 dark:bg-slate-800/20 border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-400">
+                    Nenhuma nota fiscal vinculada a esta ordem de serviço.
+                  </div>
+                )}
+              </SectionCard>
+
+              {/* Peças e Materiais Utilizados */}
+              <SectionCard title="Peças e Insumos Utilizados na OS" icon="inventory_2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Adicione peças e insumos consumidos.</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
+                    Peças e materiais que serão baixados do estoque ao salvar esta OS.
+                  </p>
                   <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total Peças</p>
                     <p className="text-xl font-black text-mustard-600 dark:text-mustard-500">{totalPartsValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
                   </div>
                 </div>
@@ -588,7 +737,7 @@ const MaintenanceForm: React.FC = () => {
                     <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">add_shopping_cart</span>
                     <input
                       type="text"
-                      placeholder="Busque por código ou nome da peça..."
+                      placeholder="Busque por código, referência ou nome do material no estoque..."
                       value={partSearch}
                       onChange={(e) => { setPartSearch(e.target.value); setShowPartResults(true); }}
                       onFocus={() => setShowPartResults(true)}
@@ -602,7 +751,10 @@ const MaintenanceForm: React.FC = () => {
                           <button key={p.id} type="button" onClick={() => handleAddPart(p)} className="w-full px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between group border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors">
                             <div>
                               <p className="font-bold text-slate-900 dark:text-white text-sm">{p.internal_code} - {p.description}</p>
-                              <p className="text-xs text-slate-500 font-medium">Estoque: {p.quantity} | {p.unit_value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                              <p className="text-xs text-slate-500 font-medium">
+                                <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold mr-1.5">{p.category || 'Peça'}</span>
+                                Estoque: {p.quantity} {p.unit || 'UN'} | {Number(p.unit_value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                              </p>
                             </div>
                             <span className="material-symbols-outlined text-mustard-600 opacity-0 group-hover:opacity-100 transition-all">add_circle</span>
                           </button>
@@ -627,7 +779,7 @@ const MaintenanceForm: React.FC = () => {
                       </div>
                       <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden h-10 shadow-sm">
                         <button type="button" onClick={() => handleUpdatePartQuantity(part.part_id, part.quantity_used - 1)} className="px-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-400"><span className="material-symbols-outlined text-[18px]">remove</span></button>
-                        <input type="number" value={part.quantity_used} onChange={(e) => handleUpdatePartQuantity(part.part_id, parseInt(e.target.value) || 0)} className="w-12 text-center text-sm font-black text-slate-700 dark:text-slate-300 bg-transparent outline-none" />
+                        <input type="number" step="any" min="0" value={part.quantity_used} onChange={(e) => handleUpdatePartQuantity(part.part_id, parseFloat(e.target.value) || 0)} className="w-14 text-center text-sm font-black text-slate-700 dark:text-slate-300 bg-transparent outline-none" />
                         <button type="button" onClick={() => handleUpdatePartQuantity(part.part_id, part.quantity_used + 1)} className="px-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-slate-400"><span className="material-symbols-outlined text-[18px]">add</span></button>
                       </div>
                       <div className="w-24 text-right">
@@ -639,11 +791,18 @@ const MaintenanceForm: React.FC = () => {
                     <div className="py-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl bg-slate-50/50 dark:bg-slate-800/30">
                       <span className="material-symbols-outlined text-slate-300 dark:text-slate-700 text-3xl mb-2">inventory_2</span>
                       <h4 className="font-bold text-slate-600 dark:text-slate-400">Nenhum material listado</h4>
-                      <p className="text-xs text-slate-400 mt-1 font-medium">Busque peças acima para incluir.</p>
+                      <p className="text-xs text-slate-400 mt-1 font-medium">Busque peças acima ou importe uma NF-e para incluir.</p>
                     </div>
                   )}
                 </div>
               </SectionCard>
+
+              {/* Modal de Importação de XML na OS */}
+              <OsXmlImportModal
+                isOpen={isNfeModalOpen}
+                onClose={() => setIsNfeModalOpen(false)}
+                onSuccess={handleNfeImportSuccess}
+              />
             </motion.div>
           )}
 

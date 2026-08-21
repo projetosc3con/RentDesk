@@ -56,15 +56,7 @@ const VincularLancamentoModal: React.FC<VincularLancamentoModalProps> = ({ isOpe
     setSubmitting(true);
     setError(null);
     try {
-      const bill = await financeiroService.vincularLancamentoExtrato(selectedId, {
-        bank_date: line.bank_date,
-        value: line.value,
-        dc_indicator: line.dc_indicator,
-        type: line.type,
-        description: line.description,
-        document_number: line.document_number,
-        raw: line.raw,
-      });
+      const bill = await financeiroService.vincularLancamentoExtrato(selectedId, line);
       onLinked(bill);
     } catch (err) {
       setError(getApiErrorMessage(err));

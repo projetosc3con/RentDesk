@@ -95,7 +95,16 @@ export const logisticsService = {
     return response.data;
   },
 
-  finishProcessing: async (id: string, data: { equipment_id?: string }): Promise<LogisticsContract> => {
+  finishProcessing: async (
+    id: string,
+    data: {
+      equipment_id?: string;
+      billing_method?: 'ASAAS' | 'MANUAL';
+      manual_due_date?: string;
+      document_type?: 'NFSE' | 'FATURA_LOCACAO';
+      fatura_pdf_url?: string;
+    }
+  ): Promise<LogisticsContract> => {
     const response = await api.patch(`/logistics/contracts/${id}/finish`, data);
     return response.data;
   },

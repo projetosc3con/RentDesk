@@ -6,9 +6,9 @@ const Financeiro: React.FC = () => {
   const location = useLocation();
 
   const tabs = [
-    { id: 'score', label: 'Consultar Score', icon: 'credit_score', path: '/financeiro/score' },
     { id: 'extrato', label: 'Lançamentos', icon: 'receipt_long', path: '/financeiro/extrato' },
     { id: 'conciliacao', label: 'Conciliação', icon: 'account_balance', path: '/financeiro/conciliacao' },
+    { id: 'score', label: 'Consultar Score', icon: 'credit_score', path: '/financeiro/score' },
   ];
 
   return (
@@ -16,6 +16,9 @@ const Financeiro: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Financeiro</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          Gestão de contas a pagar, receber, conciliação bancária e extratos.
+        </p>
       </div>
 
       {/* Tabs Navigation */}
@@ -54,3 +57,4 @@ const Financeiro: React.FC = () => {
 };
 
 export default Financeiro;
+

@@ -102,10 +102,10 @@ function App() {
                   <Route path="/usuarios/novo" element={<UserForm />} />
                   <Route path="/usuarios/editar/:id" element={<UserForm />} />
                   <Route path="/financeiro" element={<Financeiro />}>
-                    <Route index element={<Navigate to="score" replace />} />
-                    <Route path="score" element={<ScoreTab />} />
+                    <Route index element={<Navigate to="extrato" replace />} />
                     <Route path="extrato" element={<ExtratoTab />} />
                     <Route path="conciliacao" element={<ConciliacaoTab />} />
+                    <Route path="score" element={<ScoreTab />} />
                   </Route>
                   <Route path="/configuracoes" element={<Placeholder title="Configurações" />} />
                   <Route path="/clientes/novo" element={<ClientForm />} />
@@ -125,10 +125,13 @@ function App() {
                   </Route>
                 </Route>
 
-                {/* MAINTENANCE ACCESS: Peças and Manutenções */}
+                {/* MAINTENANCE / MATERIALS ACCESS */}
                 <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Diretoria', 'Gerente', 'Manutenção']} />}>
-                  <Route path="/pecas" element={<Parts />} />
-                  <Route path="/pecas/novo" element={<PartForm />} />
+                  <Route path="/materiais" element={<Parts />} />
+                  <Route path="/materiais/novo" element={<PartForm />} />
+                  <Route path="/materiais/editar/:id" element={<PartForm />} />
+                  <Route path="/pecas" element={<Navigate to="/materiais" replace />} />
+                  <Route path="/pecas/novo" element={<Navigate to="/materiais/novo" replace />} />
                   <Route path="/manutencoes" element={<Maintenance />} />
                   <Route path="/manutencoes/nova" element={<MaintenanceForm />} />
                   <Route path="/manutencoes/editar/:id" element={<MaintenanceForm />} />

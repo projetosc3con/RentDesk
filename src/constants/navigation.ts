@@ -14,7 +14,7 @@ export const navItems = [
 
   { name: 'Logística', path: '/logistica', icon: 'local_shipping', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Logística'] },
 
-  { name: 'Peças', path: '/pecas', icon: 'settings_input_component', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Manutenção'] },
+  { name: 'Materiais', path: '/materiais', icon: 'inventory_2', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Manutenção'] },
   { name: 'Manutenções', path: '/manutencoes', icon: 'build', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Manutenção'] },
   { name: 'Usuários', path: '/usuarios', icon: 'manage_accounts', allowedRoles: ['Administrador', 'Diretoria', 'Gerente'] },
   { name: 'Recursos Humanos', path: '/rh', icon: 'badge', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Recursos Humanos'] },

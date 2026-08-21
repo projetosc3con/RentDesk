@@ -3,6 +3,7 @@ import { financeiroService } from '../../../services/financeiro';
 import { getApiErrorMessage } from '../../../utils/apiError';
 import LancamentoManualModal from '../../../components/financeiro/LancamentoManualModal';
 import VincularLancamentoModal from '../../../components/financeiro/VincularLancamentoModal';
+import { formatDate } from '../../../utils/date';
 import type { Bill, BankStatementMatchResult, ReconcileBankStatementResponse } from '../../../types';
 
 const ITEMS_PER_PAGE = 20;
@@ -139,7 +140,7 @@ const ConciliacaoTab: React.FC = () => {
             {result && (
               <p className="text-xs text-slate-400 dark:text-slate-500">
                 {result.simulated && <span className="font-bold text-amber-500">[simulado] </span>}
-                {result.matched_count} conciliado(s), {result.unmatched_count} pendente(s) — período {new Date(result.period.from).toLocaleDateString('pt-BR')} a {new Date(result.period.to).toLocaleDateString('pt-BR')}
+                {result.matched_count} conciliado(s), {result.unmatched_count} pendente(s) — período {formatDate(result.period.from)} a {formatDate(result.period.to)}
               </p>
             )}
           </div>
@@ -179,7 +180,7 @@ const ConciliacaoTab: React.FC = () => {
                   paginatedLines.map((line, idx) => (
                     <tr key={idx}>
                       <td className="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                        {new Date(line.bank_date).toLocaleDateString('pt-BR')}
+                        {formatDate(line.bank_date)}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold ${dcBadgeClass(line.dc_indicator)}`}>

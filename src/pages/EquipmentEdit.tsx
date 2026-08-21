@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import api from '../services/api';
+import { formatDate } from '../utils/date';
+import type { Equipment } from '../types';
 
 const EQUIPMENT_TYPES = [
   'Elétrica',
@@ -17,6 +19,7 @@ const EquipmentEdit: React.FC = () => {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [rawEquipment, setRawEquipment] = useState<Equipment | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -38,6 +41,7 @@ const EquipmentEdit: React.FC = () => {
       try {
         setFetching(true);
         const { data } = await api.get(`/equipments/${id}`);
+        setRawEquipment(data);
         setFormData({
           asset_number: data.asset_number || '',
           name: data.name || '',
@@ -229,6 +233,69 @@ const EquipmentEdit: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Auditoria & Importação */}
+            {rawEquipment && (
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span className="material-symbols-outlined text-mustard-600 dark:text-mustard-500 text-xl">history</span>
+                  Auditoria & Registro
+                </h3>
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                      Data de Cadastro / Importação
+                    </span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {formatDate(rawEquipment.created_at)}
+                      {rawEquipment.created_at ? ` às ${new Date(rawEquipment.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ''}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                      Chave / UID do Responsável
+                    </span>
+                    <span className="font-mono text-slate-700 dark:text-slate-300 select-all block break-all" title={rawEquipment.created_by}>
+                      {rawEquipment.created_by || 'Sistema / Importação'}
+                    </span>
+                  </div>
+
+                  {rawEquipment.invoice_number && (
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                      <div>
+                        <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                          NF-e de Aquisição
+                        </span>
+                        <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                          Nº {rawEquipment.invoice_number}
+                        </span>
+                      </div>
+                      {rawEquipment.supplier_name && (
+                        <div>
+                          <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                            Fornecedor
+                          </span>
+                          <span className="text-slate-700 dark:text-slate-300 font-medium truncate block" title={rawEquipment.supplier_name}>
+                            {rawEquipment.supplier_name}
+                          </span>
+                        </div>
+                      )}
+                      {rawEquipment.nfe_access_key && (
+                        <div>
+                          <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                            Chave NF-e
+                          </span>
+                          <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 break-all select-all block">
+                            {rawEquipment.nfe_access_key}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Form */}

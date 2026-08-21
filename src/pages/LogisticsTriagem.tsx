@@ -7,9 +7,12 @@ import { financeiroService } from '../services/financeiro';
 import SearchableSelect from '../components/SearchableSelect';
 import type { Equipment, AsaasChargeResult } from '../types';
 import { TriageChecklistDocument } from '../components/logistics/TriageChecklistDocument';
+import { FaturaLocacaoDocument } from '../components/logistics/FaturaLocacaoDocument';
 import { pdf } from '@react-pdf/renderer';
 import { saveAs } from 'file-saver';
 import { getApiErrorMessage } from '../utils/apiError';
+import { formatDate } from '../utils/date';
+import { supabase } from '../lib/supabase';
 
 const STEPS = [
   { key: 'triagem', label: 'Triagem', icon: 'fact_check' },
@@ -68,6 +71,12 @@ const LogisticsTriagem: React.FC = () => {
   // UI View Mode for checklist
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  // Faturamento & Documento Fiscal
+  const [billingMethod, setBillingMethod] = useState<'ASAAS' | 'MANUAL'>('ASAAS');
+  const [manualDueDate, setManualDueDate] = useState<string>('');
+  const [documentType, setDocumentType] = useState<'FATURA_LOCACAO' | 'NFSE'>('FATURA_LOCACAO');
+  const [companySettings, setCompanySettings] = useState<any>(null);
+
   // Boleto generation on finish
   const [chargeConfirmOpen, setChargeConfirmOpen] = useState(false);
   const [charging, setCharging] = useState(false);
@@ -102,6 +111,22 @@ const LogisticsTriagem: React.FC = () => {
       setContract(contractData);
       setEquipments(equipmentsRes.data);
       setTriagePhotos(photosRes);
+
+      // Initialize manual due date from contract period end
+      const initialDueDate = contractData.contract_form?.period_end || contractData.snapshot?.period_end || new Date().toISOString().split('T')[0];
+      setManualDueDate(initialDueDate);
+
+      // Load company settings for Fatura PDF
+      try {
+        const { data: settings } = await supabase
+          .from('erp_company_settings')
+          .select('*')
+          .eq('active', true)
+          .maybeSingle();
+        if (settings) setCompanySettings(settings);
+      } catch (sErr) {
+        console.warn('Erro ao carregar erp_company_settings:', sErr);
+      }
 
       // Check localStorage for saved draft first
       const draftStr = localStorage.getItem(`triage_draft_${id}`);
@@ -151,6 +176,11 @@ const LogisticsTriagem: React.FC = () => {
 
       setClientName(initialClientName);
       setClientCnpj(initialClientCnpj);
+
+      // Se o contrato já foi processado, abre diretamente na última etapa (Emissão)
+      if (contractData.status === 'Processado') {
+        setCurrentStep(2);
+      }
     } catch (err) {
       console.error('Erro ao carregar contrato:', err);
       setError('Erro ao carregar dados do contrato.');
@@ -216,13 +246,17 @@ const LogisticsTriagem: React.FC = () => {
 
       const updatedContract = await logisticsService.finishProcessing(contract.id, {
         equipment_id: selectedEquipmentId || undefined,
+        billing_method: billingMethod,
+        manual_due_date: billingMethod === 'MANUAL' ? manualDueDate : undefined,
+        document_type: documentType,
       });
       // Clear localStorage draft upon successful completion
       localStorage.removeItem(`triage_draft_${id}`);
       setContract(updatedContract);
       setSuccess(true);
 
-      if (updatedContract.rental_invoice_id) {
+      // Se for fluxo Asaas, gera cobrança e boleto no Asaas
+      if (billingMethod === 'ASAAS' && updatedContract.rental_invoice_id) {
         await gerarBoleto(updatedContract.rental_invoice_id);
       }
     } catch (err: any) {
@@ -293,7 +327,8 @@ const LogisticsTriagem: React.FC = () => {
   // "Data de Fim" is used by the backend as the boleto's due date (dueDate).
   // Without it, finishProcessing succeeds but the charge (Asaas) call fails.
   const periodEnd: string | null = contract.contract_form?.period_end || contract.snapshot?.period_end || null;
-  const missingDueDate = !isProcessed && isTriage && !periodEnd;
+  const missingDueDate = !isProcessed && isTriage && billingMethod === 'ASAAS' && !periodEnd;
+  const missingManualDate = !isProcessed && isTriage && billingMethod === 'MANUAL' && !manualDueDate;
 
   return (
     <motion.div
@@ -358,7 +393,11 @@ const LogisticsTriagem: React.FC = () => {
               <div
                 className={`flex items-center gap-3 cursor-pointer group ${index <= currentStep ? '' : 'opacity-40'}`}
                 onClick={() => {
-                  if (isProcessed) return;
+                  if (isProcessed) {
+                    setError(null);
+                    setCurrentStep(index);
+                    return;
+                  }
                   if (index > currentStep) {
                     for (let i = currentStep; i < index; i++) {
                       if (!isStepValid(i)) {
@@ -759,9 +798,9 @@ const LogisticsTriagem: React.FC = () => {
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 rounded-t-2xl">
                 <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <span className="material-symbols-outlined text-mustard-500 text-xl">receipt_long</span>
-                  Resumo para Emissão
+                  Resumo do Contrato
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Confira todas as informações antes de emitir.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Confira os dados consolidados do contrato e do equipamento antes de finalizar.</p>
               </div>
               <div className="p-6">
                 {/* Summary Grid */}
@@ -776,8 +815,8 @@ const LogisticsTriagem: React.FC = () => {
                     { label: 'Valor Total', value: getContractValue().toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), icon: 'payments' },
                     { label: 'Fotos Anexadas', value: `${triagePhotos.length} / ${CHECKLIST_ITEMS.length} foto(s)`, icon: 'photo_camera' },
                     {
-                      label: 'Vencimento do Boleto',
-                      value: periodEnd ? new Date(`${periodEnd}T00:00:00`).toLocaleDateString('pt-BR') : 'Não informado',
+                      label: 'Período Contratado',
+                      value: periodEnd ? `${formatDate(contract.contract_form?.period_start || '')} a ${formatDate(periodEnd)}` : 'Não informado',
                       icon: 'event',
                       alert: !periodEnd,
                     },
@@ -793,24 +832,199 @@ const LogisticsTriagem: React.FC = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
 
-                {/* Blocks finish when the invoice due date can't be computed */}
-                {missingDueDate && (
-                  <div className="mt-6 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-xl p-4 flex items-start gap-3">
-                    <span className="material-symbols-outlined text-red-500">error</span>
-                    <div>
-                      <p className="text-xs font-bold text-red-700 dark:text-red-300">Data de Fim do contrato não informada</p>
-                      <p className="text-sm text-red-800 dark:text-red-200 mt-1">
-                        Esse campo define o vencimento do boleto. Volte ao formulário do contrato (CRM) e preencha a "Data de Fim" antes de finalizar a triagem — caso contrário o contrato será processado, mas a geração do boleto vai falhar.
-                      </p>
+            {/* Configuração de Faturamento & Documento Fiscal */}
+            {!isProcessed && isTriage && (
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-6">
+                <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+                  <div className="w-10 h-10 rounded-2xl bg-mustard-500/10 text-mustard-600 dark:text-mustard-500 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-2xl">account_balance_wallet</span>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      Condições de Faturamento & Documento Fiscal
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Selecione como será cobrado e qual documento será emitido ao cliente.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 1. Forma de Cobrança */}
+                <div className="space-y-3">
+                  <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    1. Método de Cobrança / Financeiro
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div
+                      onClick={() => setBillingMethod('ASAAS')}
+                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                        billingMethod === 'ASAAS'
+                          ? 'border-mustard-500 bg-mustard-50/20 dark:bg-mustard-500/5 shadow-sm'
+                          : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="radio"
+                          name="billingMethod"
+                          checked={billingMethod === 'ASAAS'}
+                          onChange={() => setBillingMethod('ASAAS')}
+                          className="mt-0.5 w-4 h-4 text-mustard-500 focus:ring-mustard-500 cursor-pointer"
+                        />
+                        <div>
+                          <p className="font-bold text-sm text-slate-900 dark:text-white">
+                            Fluxo Completo Asaas
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Gera boleto bancário e PIX automaticamente pela API do Asaas.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      onClick={() => setBillingMethod('MANUAL')}
+                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                        billingMethod === 'MANUAL'
+                          ? 'border-mustard-500 bg-mustard-50/20 dark:bg-mustard-500/5 shadow-sm'
+                          : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="radio"
+                          name="billingMethod"
+                          checked={billingMethod === 'MANUAL'}
+                          onChange={() => setBillingMethod('MANUAL')}
+                          className="mt-0.5 w-4 h-4 text-mustard-500 focus:ring-mustard-500 cursor-pointer"
+                        />
+                        <div>
+                          <p className="font-bold text-sm text-slate-900 dark:text-white">
+                            Lançamento Manual em Bills
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Registra no contas a receber (extrato) sem gerar cobrança no Asaas.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                )}
 
-                {/* PDF Checklist Actions */}
-                <div className="mt-8 border-t border-slate-100 dark:border-slate-800 pt-6">
-                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Relatório de Conferência de Estado</h4>
-                  <div className="flex flex-wrap gap-4">
+                  {/* Campo de Vencimento se for Lançamento Manual */}
+                  {billingMethod === 'MANUAL' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    >
+                      <div>
+                        <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                          Data de Vencimento do Lançamento
+                        </label>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Preenchida automaticamente com a data de término/fechamento do contrato.
+                        </p>
+                      </div>
+                      <input
+                        type="date"
+                        value={manualDueDate}
+                        onChange={e => setManualDueDate(e.target.value)}
+                        className="px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-mustard-500 shadow-sm"
+                      />
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* 2. Tipo de Documento Fiscal Obrigatório */}
+                <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    2. Documento Fiscal / Comprovante (Obrigatório)
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div
+                      onClick={() => setDocumentType('FATURA_LOCACAO')}
+                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                        documentType === 'FATURA_LOCACAO'
+                          ? 'border-mustard-500 bg-mustard-50/20 dark:bg-mustard-500/5 shadow-sm'
+                          : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="radio"
+                          name="documentType"
+                          checked={documentType === 'FATURA_LOCACAO'}
+                          onChange={() => setDocumentType('FATURA_LOCACAO')}
+                          className="mt-0.5 w-4 h-4 text-mustard-500 focus:ring-mustard-500 cursor-pointer"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-sm text-slate-900 dark:text-white">
+                              Fatura de Locação de Bens Móveis
+                            </p>
+                            <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                              Padrão
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Gera e envia o PDF de Fatura de Locação ao cliente (não emite NFS-e municipal).
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      onClick={() => setDocumentType('NFSE')}
+                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                        documentType === 'NFSE'
+                          ? 'border-mustard-500 bg-mustard-50/20 dark:bg-mustard-500/5 shadow-sm'
+                          : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="radio"
+                          name="documentType"
+                          checked={documentType === 'NFSE'}
+                          onChange={() => setDocumentType('NFSE')}
+                          className="mt-0.5 w-4 h-4 text-mustard-500 focus:ring-mustard-500 cursor-pointer"
+                        />
+                        <div>
+                          <p className="font-bold text-sm text-slate-900 dark:text-white">
+                            Nota Fiscal de Serviço (NFS-e)
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                            Emite NFS-e na prefeitura via integração Asaas após confirmação do pagamento.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Documentos & Relatórios em PDF */}
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <span className="material-symbols-outlined text-base">picture_as_pdf</span>
+                Documentos & Relatórios para Visualização e Download
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                {/* 1. Checklist de Triagem */}
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="material-symbols-outlined text-mustard-500 text-xl">photo_camera</span>
+                    <div>
+                      <h5 className="font-bold text-xs text-slate-900 dark:text-white">Relatório de Conferência de Estado</h5>
+                      <p className="text-[11px] text-slate-400">Checklist fotográfico completo da triagem</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
                     <button
                       type="button"
                       onClick={async () => {
@@ -828,15 +1042,14 @@ const LogisticsTriagem: React.FC = () => {
                           window.open(blobUrl, '_blank');
                         } catch (err) {
                           console.error('Erro ao gerar PDF', err);
-                          alert('Erro ao abrir PDF.');
+                          alert('Erro ao abrir PDF do checklist.');
                         }
                       }}
-                      className="px-5 py-3 border border-mustard-500 text-mustard-600 dark:text-mustard-400 rounded-xl text-sm font-bold hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-colors flex items-center gap-2"
+                      className="px-3.5 py-2 border border-mustard-500 text-mustard-600 dark:text-mustard-400 rounded-lg text-xs font-bold hover:bg-mustard-50 dark:hover:bg-mustard-500/10 transition-colors flex items-center gap-1.5"
                     >
-                      <span className="material-symbols-outlined text-[18px]">visibility</span>
-                      Visualizar PDF do Checklist
+                      <span className="material-symbols-outlined text-sm">visibility</span>
+                      Visualizar
                     </button>
-
                     <button
                       type="button"
                       onClick={async () => {
@@ -856,57 +1069,108 @@ const LogisticsTriagem: React.FC = () => {
                           alert('Erro ao baixar PDF.');
                         }
                       }}
-                      className="px-5 py-3 bg-mustard-500 text-white rounded-xl text-sm font-bold hover:bg-mustard-600 transition-colors flex items-center gap-2 shadow-md shadow-mustard-500/10"
+                      className="px-3.5 py-2 bg-mustard-500 text-white rounded-lg text-xs font-bold hover:bg-mustard-600 transition-colors flex items-center gap-1.5 shadow-sm"
                     >
-                      <span className="material-symbols-outlined text-[18px]">download</span>
-                      Download PDF do Checklist
+                      <span className="material-symbols-outlined text-sm">download</span>
+                      Baixar
                     </button>
                   </div>
                 </div>
 
-                {/* Already processed info */}
-                {isProcessed && contract.rental_invoice_id && (
-                  <div className="mt-6 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">
-                    <span className="material-symbols-outlined text-emerald-500">verified</span>
+                {/* 2. Fatura de Locação */}
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="material-symbols-outlined text-emerald-500 text-xl">receipt_long</span>
                     <div>
-                      <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">Fatura de Locação</p>
-                      <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200 font-mono">{contract.rental_invoice_id}</p>
+                      <h5 className="font-bold text-xs text-slate-900 dark:text-white">Fatura de Locação de Bens Móveis</h5>
+                      <p className="text-[11px] text-slate-400">Documento oficial com discriminação e valores</p>
                     </div>
                   </div>
-                )}
-
-                {/* Charge (boleto) retry after failure */}
-                {chargeError && isProcessed && contract.rental_invoice_id && (
-                  <div className="mt-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-xl p-4">
-                    <div className="flex items-start gap-3">
-                      <span className="material-symbols-outlined text-red-500">error</span>
-                      <div className="flex-1">
-                        <p className="text-xs font-bold text-red-700 dark:text-red-300">Contrato processado, mas houve um erro ao gerar o boleto</p>
-                        <p className="text-sm text-red-800 dark:text-red-200 mt-1">{chargeError}</p>
-                        <button
-                          type="button"
-                          onClick={() => gerarBoleto(contract.rental_invoice_id!)}
-                          disabled={charging}
-                          className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold uppercase tracking-widest disabled:opacity-50 flex items-center gap-2"
-                        >
-                          {charging ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Tentar Gerar Boleto Novamente'}
-                        </button>
-                      </div>
-                    </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const blob = await pdf(
+                            <FaturaLocacaoDocument
+                              contract={contract}
+                              invoiceNumber={contract.rental_invoice_id ? undefined : `ND-${String(contract.contract_number || '1').padStart(6, '0')}`}
+                              dueDate={billingMethod === 'MANUAL' ? manualDueDate : (periodEnd || undefined)}
+                              paymentMethod={billingMethod === 'MANUAL' ? 'Lançamento Manual' : 'Boleto Bancário'}
+                              companySettings={companySettings}
+                            />
+                          ).toBlob();
+                          const blobUrl = URL.createObjectURL(blob);
+                          window.open(blobUrl, '_blank');
+                        } catch (err) {
+                          console.error('Erro ao gerar PDF da Fatura de Locação', err);
+                          alert('Erro ao abrir PDF da Fatura.');
+                        }
+                      }}
+                      className="px-3.5 py-2 border border-emerald-600 text-emerald-600 dark:text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors flex items-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-sm">visibility</span>
+                      Visualizar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const blob = await pdf(
+                            <FaturaLocacaoDocument
+                              contract={contract}
+                              invoiceNumber={contract.rental_invoice_id ? undefined : `ND-${String(contract.contract_number || '1').padStart(6, '0')}`}
+                              dueDate={billingMethod === 'MANUAL' ? manualDueDate : (periodEnd || undefined)}
+                              paymentMethod={billingMethod === 'MANUAL' ? 'Lançamento Manual' : 'Boleto Bancário'}
+                              companySettings={companySettings}
+                            />
+                          ).toBlob();
+                          saveAs(blob, `FATURA_LOCACAO - Contrato ${contract.contract_number}.pdf`);
+                        } catch (err) {
+                          console.error('Erro ao gerar PDF da Fatura de Locação', err);
+                          alert('Erro ao baixar PDF da Fatura.');
+                        }
+                      }}
+                      className="px-3.5 py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors flex items-center gap-1.5 shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-sm">download</span>
+                      Baixar
+                    </button>
                   </div>
-                )}
-
-                {/* Notificação simulada — disparo real de e-mail/WhatsApp ainda não integrado no backend */}
-                {(success || (isProcessed && contract.rental_invoice_id)) && (
-                  <div className="mt-3 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-xl p-4 flex items-center gap-3">
-                    <span className="material-symbols-outlined text-blue-500">mark_email_read</span>
-                    <div>
-                      <p className="text-xs font-bold text-blue-700 dark:text-blue-300">Notificação ao Cliente</p>
-                      <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Cliente notificado com o boleto por e-mail/WhatsApp.</p>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
+
+              {/* Already processed info */}
+              {isProcessed && contract.rental_invoice_id && (
+                <div className="mt-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">
+                  <span className="material-symbols-outlined text-emerald-500">verified</span>
+                  <div>
+                    <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">Contrato Processado com Sucesso</p>
+                    <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200 font-mono">ID da Fatura: {contract.rental_invoice_id}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Charge (boleto) retry after failure */}
+              {chargeError && isProcessed && contract.rental_invoice_id && billingMethod === 'ASAAS' && (
+                <div className="mt-3 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="material-symbols-outlined text-red-500">error</span>
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-red-700 dark:text-red-300">Contrato processado, mas houve um erro ao gerar o boleto</p>
+                      <p className="text-sm text-red-800 dark:text-red-200 mt-1">{chargeError}</p>
+                      <button
+                        type="button"
+                        onClick={() => gerarBoleto(contract.rental_invoice_id!)}
+                        disabled={charging}
+                        className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold uppercase tracking-widest disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {charging ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Tentar Gerar Boleto Novamente'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Emit Button */}
@@ -917,14 +1181,16 @@ const LogisticsTriagem: React.FC = () => {
                     <span className="material-symbols-outlined text-3xl">rocket_launch</span>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Pronto para Emitir?</h3>
-                    <p className="text-sm opacity-70">O status será atualizado para "Processado".</p>
+                    <h3 className="text-lg font-bold">Pronto para Emitir e Finalizar?</h3>
+                    <p className="text-sm opacity-70">
+                      O contrato será processado com o método: <b>{billingMethod === 'MANUAL' ? 'Lançamento Manual (Bills)' : 'Cobrança Asaas'}</b> e documento: <b>{documentType === 'FATURA_LOCACAO' ? 'Fatura de Locação' : 'NFS-e'}</b>.
+                    </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setChargeConfirmOpen(true)}
-                  disabled={submitting || charging || missingDueDate}
-                  title={missingDueDate ? 'Preencha a Data de Fim do contrato antes de finalizar.' : undefined}
+                  disabled={submitting || charging || missingDueDate || missingManualDate}
+                  title={missingDueDate ? 'Preencha a Data de Fim do contrato antes de finalizar.' : missingManualDate ? 'Preencha a data de vencimento manual.' : undefined}
                   className="w-full py-4 bg-white text-mustard-600 dark:text-mustard-500 rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-slate-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {(submitting || charging) ? (
@@ -935,6 +1201,31 @@ const LogisticsTriagem: React.FC = () => {
                       Emitir e Finalizar Processamento
                     </>
                   )}
+                </button>
+              </div>
+            )}
+
+            {/* Processed Status Info Card */}
+            {isProcessed && (
+              <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-sm">
+                    <span className="material-symbols-outlined text-2xl">verified</span>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-base">Processamento Finalizado</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Este contrato já foi triado e faturado. Você pode consultar e baixar todos os documentos gerados acima.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled
+                  className="px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 rounded-xl font-bold text-xs uppercase tracking-widest cursor-not-allowed flex items-center gap-2 shrink-0 self-end sm:self-center"
+                >
+                  <span className="material-symbols-outlined text-base">lock</span>
+                  Finalizado
                 </button>
               </div>
             )}
@@ -959,8 +1250,8 @@ const LogisticsTriagem: React.FC = () => {
         {currentStep < STEPS.length - 1 && (
           <button
             onClick={nextStep}
-            disabled={!isStepValid(currentStep)}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.98] ${isStepValid(currentStep)
+            disabled={!isProcessed && !isStepValid(currentStep)}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.98] ${isProcessed || isStepValid(currentStep)
                 ? 'bg-mustard-500 hover:bg-mustard-600 text-white shadow-lg shadow-mustard-500/20'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none opacity-60'
               }`}
@@ -981,7 +1272,7 @@ const LogisticsTriagem: React.FC = () => {
         )}
       </div>
 
-      {/* Modal de Confirmação — Finalizar Triagem + Gerar Boleto */}
+      {/* Modal de Confirmação — Finalizar Triagem */}
       <AnimatePresence>
         {chargeConfirmOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
@@ -992,23 +1283,47 @@ const LogisticsTriagem: React.FC = () => {
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-sm bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 text-center"
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 text-center space-y-4"
             >
-              <div className="w-16 h-16 mx-auto bg-amber-100 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600 mb-4">
-                <span className="material-symbols-outlined text-3xl">warning</span>
+              <div className="w-14 h-14 mx-auto bg-amber-100 dark:bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-600">
+                <span className="material-symbols-outlined text-3xl">verified</span>
               </div>
-              <h3 className="text-lg font-black text-slate-900 dark:text-white">Atenção</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 mb-6">
-                Esta ação vai finalizar a triagem (status "Processado") e gerar automaticamente o boleto de cobrança para o cliente. Deseja continuar?
-              </p>
-              <div className="flex gap-3">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Confirmar Finalização</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Revise as definições de faturamento para esta locação:
+                </p>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 text-xs text-left space-y-2 border border-slate-100 dark:border-slate-800">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Cobrança:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {billingMethod === 'MANUAL' ? 'Lançamento Manual em Bills' : 'Cobrança Automática Asaas'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Vencimento:</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                    {formatDate(billingMethod === 'MANUAL' ? manualDueDate : (periodEnd || ''))}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-2">
+                  <span className="text-slate-400">Documento:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    {documentType === 'FATURA_LOCACAO' ? 'Fatura de Locação de Bens Móveis' : 'Nota Fiscal de Serviço (NFS-e)'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   disabled={submitting || charging}
                   onClick={() => setChargeConfirmOpen(false)}
                   className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-widest disabled:opacity-50"
                 >
-                  Cancelar
+                  Voltar
                 </button>
                 <button
                   type="button"
@@ -1019,7 +1334,7 @@ const LogisticsTriagem: React.FC = () => {
                   {(submitting || charging) ? (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
-                    'Confirmar'
+                    'Confirmar e Emitir'
                   )}
                 </button>
               </div>
@@ -1056,19 +1371,19 @@ const LogisticsTriagem: React.FC = () => {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Taxa Asaas repassada</span>
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      {chargeResult.breakdown.fee_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    <span className="text-slate-500 dark:text-slate-400">Taxa Asaas (descontada)</span>
+                    <span className="font-bold text-amber-600 dark:text-amber-400">
+                      - {chargeResult.breakdown.fee_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
                   <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-2">
-                    <span className="text-slate-500 dark:text-slate-400">Valor cobrado no boleto</span>
+                    <span className="text-slate-500 dark:text-slate-400">Valor do boleto emitido</span>
                     <span className="font-bold text-slate-900 dark:text-white">
                       {chargeResult.charge.value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500 dark:text-slate-400">Líquido projetado</span>
+                    <span className="text-slate-500 dark:text-slate-400">Líquido a receber</span>
                     <span className="font-bold text-emerald-600 dark:text-emerald-400">
                       {chargeResult.breakdown.net_value?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) ?? '—'}
                     </span>

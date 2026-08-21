@@ -4,10 +4,12 @@ import { financeiroService } from '../../../services/financeiro';
 import { getApiErrorMessage } from '../../../utils/apiError';
 import SearchableSelect from '../../../components/SearchableSelect';
 import LancamentoManualModal from '../../../components/financeiro/LancamentoManualModal';
+import XmlImportModal from '../../../components/XmlImportModal';
+import { formatDate } from '../../../utils/date';
 import type { Client, StatementItem, BillType, BillStatus } from '../../../types';
 
 const STATUS_OPTIONS: BillStatus[] = ['Pendente', 'Atrasado', 'Recebido', 'Divergente', 'No prazo'];
-const ORIGIN_OPTIONS = ['ASAAS', 'MANUAL'];
+const ORIGIN_OPTIONS = ['ASAAS', 'MANUAL', 'NFE'];
 const ITEMS_PER_PAGE = 20;
 
 const isSettled = (item: StatementItem) =>
@@ -63,6 +65,9 @@ const sourceBadge = (item: StatementItem) => {
       ? { label: 'Aguardando compensação', className: AWAITING_COMPENSATION_CLASSES }
       : { label: 'Aguardando pagamento', className: 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20' };
   }
+  if (item.origin === 'NFE') {
+    return { label: 'NF-E', className: 'bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/20' };
+  }
   return item.origin === 'ASAAS'
     ? { label: 'ASAAS', className: 'bg-mustard-100 dark:bg-mustard-500/10 text-mustard-700 dark:text-mustard-400 border border-mustard-200 dark:border-mustard-500/20' }
     : { label: 'MANUAL', className: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700' };
@@ -85,6 +90,7 @@ const ExtratoTab: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const [lancamentoModal, setLancamentoModal] = useState<BillType | null>(null);
+  const [isXmlModalOpen, setIsXmlModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchClients = async () => {
@@ -111,9 +117,10 @@ const ExtratoTab: React.FC = () => {
         page: currentPage,
         limit: ITEMS_PER_PAGE,
       });
-      setItems(data.data);
-      setTotalItems(data.total);
-      setTotalPages(data.totalPages);
+      const itemsList = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : []);
+      setItems(itemsList);
+      setTotalItems(data?.total ?? itemsList.length);
+      setTotalPages(data?.totalPages ?? 1);
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -166,6 +173,14 @@ const ExtratoTab: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => setIsXmlModalOpen(true)}
+              className="px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[18px] text-mustard-600">receipt_long</span>
+              Importar NF-e (XML)
+            </button>
             <button
               type="button"
               onClick={() => setLancamentoModal('payable')}
@@ -305,7 +320,7 @@ const ExtratoTab: React.FC = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                          {item.due_date ? new Date(item.due_date).toLocaleDateString('pt-BR') : '—'}
+                          {formatDate(item.due_date)}
                         </td>
                         <td className="px-6 py-4">
                           <p className="font-bold text-slate-900 dark:text-white">
@@ -414,6 +429,14 @@ const ExtratoTab: React.FC = () => {
         type={lancamentoModal || 'receivable'}
         onClose={() => setLancamentoModal(null)}
         onCreated={handleBillCreated}
+      />
+
+      <XmlImportModal
+        isOpen={isXmlModalOpen}
+        onClose={() => setIsXmlModalOpen(false)}
+        onSuccess={() => {
+          fetchExtrato();
+        }}
       />
     </div>
   );

@@ -12,23 +12,129 @@ export interface Equipment {
   manufacture_year: number;
   value: number;
   unit: string;
-  photo_url: string;
+  photo_url?: string;
   notes?: string;
+  invoice_number?: string;
+  nfe_access_key?: string;
+  supplier_name?: string;
+  supplier_cnpj?: string;
+  product_code?: string;
+  ncm?: string;
+  cst?: string;
+  cfop?: string;
+  tax_details?: Record<string, any>;
+  purchase_date?: string;
+  created_by?: string;
   created_at: string;
   updated_at: string;
+  rental_client_name?: string | null;
+  rental_period_start?: string | null;
+  rental_period_end?: string | null;
+  rental_work_site?: string | null;
+  rental_contract_number?: number | null;
 }
+
+export type MaterialCategory = 'Peça' | 'Consumo' | 'EPI' | 'Outros';
+export type MaterialUnit = 'UN' | 'L' | 'KG' | 'M' | 'PAR' | 'CX' | 'RL' | 'JG' | string;
 
 export interface Part {
   id: string;
   internal_code: string;
   description: string;
-  part_number: string;
+  category?: MaterialCategory;
+  unit?: MaterialUnit;
+  part_number?: string;
   quantity: number;
   unit_value: number;
   total_value: number;
   notes?: string;
+  invoice_number?: string;
+  nfe_access_key?: string;
+  supplier_name?: string;
+  supplier_cnpj?: string;
+  ncm?: string;
+  cfop?: string;
+  created_by?: string;
   created_at: string;
   updated_at: string;
+}
+
+export type Material = Part;
+
+export type NfeItemDestination = 'equipment' | 'part_peca' | 'part_consumo' | 'part_epi' | 'part_outros' | 'ignore';
+
+export interface ParsedNfeItem {
+  item_index: number;
+  product_code: string;
+  ean?: string;
+  description: string;
+  ncm: string;
+  cfop: string;
+  unit: string;
+  quantity: number;
+  unit_value: number;
+  total_value: number;
+  discount_value: number;
+  net_item_value: number;
+  cst_icms?: string;
+  icms_rate?: number;
+  icms_value?: number;
+  ipi_value?: number;
+  pis_value?: number;
+  cofins_value?: number;
+  tax_details: Record<string, any>;
+  suggested_destination: NfeItemDestination;
+  extracted_serial_number?: string;
+  extracted_model?: string;
+}
+
+export interface ParsedNfeInstallment {
+  installment_number: string;
+  due_date: string;
+  amount: number;
+}
+
+export interface ParsedNfeData {
+  access_key: string;
+  invoice_number: string;
+  series: string;
+  issue_date: string;
+  operation_type: 'entrada' | 'saida';
+  nature_of_operation: string;
+  issuer: {
+    cnpj: string;
+    name: string;
+    fantasy_name?: string;
+    ie?: string;
+    city?: string;
+    state?: string;
+    full_address?: string;
+  };
+  recipient: {
+    cnpj: string;
+    name: string;
+    ie?: string;
+    email?: string;
+    city?: string;
+    state?: string;
+  };
+  items: ParsedNfeItem[];
+  totals: {
+    total_products: number;
+    total_discount: number;
+    total_freight: number;
+    total_insurance: number;
+    total_other: number;
+    total_invoice: number;
+    total_icms: number;
+    total_pis: number;
+    total_cofins: number;
+    total_ipi: number;
+  };
+  installments: ParsedNfeInstallment[];
+  additional_info?: string;
+  already_imported?: boolean;
+  existing_import?: any;
 }
 
 export type BillingStatus = 'Pendente' | 'Faturado' | 'Emitida' | 'Cancelada';
@@ -92,6 +198,9 @@ export interface ServiceOrder {
   cost_company?: number;
   cost_client?: number;
   has_pending?: boolean;
+  // Notas Fiscais Vinculadas (NF-e XML)
+  nfe_invoices?: NfeInvoiceReference[];
+  nfe_access_keys?: string[];
   // Timestamps
   created_at: string;
   updated_at: string;
@@ -99,6 +208,38 @@ export interface ServiceOrder {
   parts?: ServiceOrderPart[];
   service_order_parts?: ServiceOrderPart[];
   service_order_labor?: ServiceOrderLabor[];
+}
+
+export interface NfeInvoiceReference {
+  access_key: string;
+  invoice_number: string;
+  series?: string;
+  issuer_name: string;
+  issuer_cnpj?: string;
+  issue_date?: string;
+  total_invoice?: number;
+}
+
+export interface StockMovement {
+  id: string;
+  part_id: string;
+  movement_type: 'ENTRADA' | 'SAIDA' | 'AJUSTE';
+  quantity: number;
+  unit_value?: number;
+  previous_stock: number;
+  new_stock: number;
+  reference_type: 'NFE_IMPORT' | 'SERVICE_ORDER' | 'MANUAL_ADJUSTMENT';
+  reference_id?: string;
+  reference_label?: string;
+  notes?: string;
+  created_by?: string;
+  created_at: string;
+  part?: Part;
+  creator?: {
+    id: string;
+    full_name: string;
+    email: string;
+  };
 }
 
 export interface ServiceOrderPart {
@@ -152,6 +293,10 @@ export interface RentalInvoice {
   total_value: number;
   due_date: string;
   payment_method: string;
+  billing_method?: 'ASAAS' | 'MANUAL';
+  document_type?: 'NFSE' | 'FATURA_LOCACAO';
+  manual_due_date?: string;
+  fatura_pdf_url?: string;
   bank_reconciliation_date?: string;
   reconciliation_status: ReconciliationStatus;
   client_score?: number;
@@ -380,7 +525,7 @@ export interface Payment {
   invoice?: { invoice_number?: string; client_name: string };
 }
 
-export type BillOrigin = 'ASAAS' | 'MANUAL';
+export type BillOrigin = 'ASAAS' | 'MANUAL' | 'NFE';
 export type BillType = 'receivable' | 'payable';
 export type BillStatus = 'Pendente' | 'Atrasado' | 'Recebido' | 'Divergente' | 'No prazo';
 
@@ -442,7 +587,7 @@ export interface StatementItem {
   invoice_url: string | null;
   bank_slip_url: string | null;
   is_reconciled: boolean;
-  raw: Record<string, unknown>;
+  raw: Record<string, any> | any;
 }
 
 // Linha normalizada do extrato bancário do BB (ver financeiroService.reconciliarExtratoBancario).
@@ -454,7 +599,7 @@ export interface BankStatementLine {
   description: string | null;
   document_number: string | null;
   unique_transaction_id: string | null;
-  raw: Record<string, unknown>;
+  raw: Record<string, any> | any;
 }
 
 export type BankStatementMatchStatus = 'matched' | 'unmatched';

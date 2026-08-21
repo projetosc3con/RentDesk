@@ -32,7 +32,26 @@ export interface ExtratoBancarioFilters {
   limit?: number;
 }
 
+export interface AsaasScoreInfo {
+  available: boolean;
+  balance: number;
+  totalReceivables?: number;
+  feePerQuery: number;
+  feeNaturalPerson: number;
+  feeLegalPerson: number;
+  message?: string;
+  bankPixKey?: string | null;
+  companyCnpj?: string | null;
+  companyName?: string | null;
+  asaasPortalUrl?: string | null;
+}
+
 export const financeiroService = {
+  getAsaasScoreInfo: async (): Promise<AsaasScoreInfo> => {
+    const { data } = await api.get<AsaasScoreInfo>('/consultar-score/info');
+    return data;
+  },
+
   consultarScore: async (documento: string): Promise<ScoreConsultaResponse> => {
     const { data } = await api.post<ScoreConsultaResponse>(
       '/consultar-score',
