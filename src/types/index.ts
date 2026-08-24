@@ -13,6 +13,7 @@ export interface Equipment {
   value: number;
   unit: string;
   photo_url?: string;
+  technical_specs_url?: string | null;
   notes?: string;
   invoice_number?: string;
   nfe_access_key?: string;
@@ -139,7 +140,7 @@ export interface ParsedNfeData {
 
 export type BillingStatus = 'Pendente' | 'Faturado' | 'Emitida' | 'Cancelada';
 export type ReconciliationStatus = 'Pendente' | 'Atrasado' | 'Recebido' | 'Divergente' | 'No prazo';
-export type ServiceOrderStatus = 'Aberta' | 'Em Andamento' | 'Aguardando Peças' | 'Concluída' | 'Cancelada';
+export type ServiceOrderStatus = 'Aberta' | 'Em Andamento' | 'Aguardando Peças' | 'Concluída' | 'Cancelada' | 'Encerrada com pendências';
 export type ServiceOrderType = 'Interna' | 'Externa';
 
 export interface ServiceOrder {
@@ -472,6 +473,7 @@ export interface ScoreConsultaSuccess {
   sucesso: true;
   score: number;
   tipo: 'PF' | 'PJ';
+  mensagem?: string;
 }
 
 export interface ScoreConsultaError {

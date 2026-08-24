@@ -54,8 +54,8 @@ export const crmService = {
     return response.data;
   },
 
-  convertLead: async (id: string) => {
-    const response = await api.post(`/crm/leads/${id}/convert`);
+  convertLead: async (id: string, data?: { score?: number; average_score?: number }) => {
+    const response = await api.post(`/crm/leads/${id}/convert`, data);
     return response.data;
   },
 

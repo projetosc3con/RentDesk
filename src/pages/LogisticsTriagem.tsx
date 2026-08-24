@@ -144,7 +144,7 @@ const LogisticsTriagem: React.FC = () => {
 
       // Pre-fill from contract_form data or draft
       const form = contractData.contract_form;
-      
+
       let initialWorkSite = savedWorkSite;
       if (!initialWorkSite) {
         if (form) initialWorkSite = form.work_site || '';
@@ -350,8 +350,8 @@ const LogisticsTriagem: React.FC = () => {
               {isProcessed ? 'Detalhes do Contrato' : 'Triagem de Contrato'}
             </h1>
             <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${contract.status === 'Assinado' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300' :
-                contract.status === 'Triagem' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300' :
-                  'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+              contract.status === 'Triagem' ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300' :
+                'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
               }`}>
               {contract.status}
             </span>
@@ -411,10 +411,10 @@ const LogisticsTriagem: React.FC = () => {
                 }}
               >
                 <div className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${index < currentStep
-                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                    : index === currentStep
-                      ? 'bg-mustard-500 text-white shadow-lg shadow-mustard-500/20'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
+                  ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                  : index === currentStep
+                    ? 'bg-mustard-500 text-white shadow-lg shadow-mustard-500/20'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
                   }`}>
                   {index < currentStep ? (
                     <span className="material-symbols-outlined text-xl">check</span>
@@ -435,8 +435,8 @@ const LogisticsTriagem: React.FC = () => {
               {index < STEPS.length - 1 && (
                 <div className="flex-1 mx-4">
                   <div className={`h-0.5 rounded-full transition-all ${index < currentStep
-                      ? 'bg-emerald-500'
-                      : 'bg-slate-100 dark:bg-slate-800'
+                    ? 'bg-emerald-500'
+                    : 'bg-slate-100 dark:bg-slate-800'
                     }`} />
                 </div>
               )}
@@ -549,8 +549,8 @@ const LogisticsTriagem: React.FC = () => {
                       type="button"
                       onClick={() => setViewMode('grid')}
                       className={`p-1.5 rounded-lg flex items-center transition-all ${viewMode === 'grid'
-                          ? 'bg-white dark:bg-slate-700 text-mustard-500 shadow-sm'
-                          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                        ? 'bg-white dark:bg-slate-700 text-mustard-500 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                         }`}
                       title="Visualização em Grade"
                     >
@@ -560,8 +560,8 @@ const LogisticsTriagem: React.FC = () => {
                       type="button"
                       onClick={() => setViewMode('list')}
                       className={`p-1.5 rounded-lg flex items-center transition-all ${viewMode === 'list'
-                          ? 'bg-white dark:bg-slate-700 text-mustard-500 shadow-sm'
-                          : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                        ? 'bg-white dark:bg-slate-700 text-mustard-500 shadow-sm'
+                        : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
                         }`}
                       title="Visualização em Lista"
                     >
@@ -860,11 +860,10 @@ const LogisticsTriagem: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div
                       onClick={() => setBillingMethod('ASAAS')}
-                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                        billingMethod === 'ASAAS'
+                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${billingMethod === 'ASAAS'
                           ? 'border-mustard-500 bg-mustard-50/20 dark:bg-mustard-500/5 shadow-sm'
                           : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         <input
@@ -876,10 +875,10 @@ const LogisticsTriagem: React.FC = () => {
                         />
                         <div>
                           <p className="font-bold text-sm text-slate-900 dark:text-white">
-                            Fluxo Completo Asaas
+                            Fluxo Completo pelo gateway
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-                            Gera boleto bancário e PIX automaticamente pela API do Asaas.
+                            Gera boleto bancário e PIX automaticamente pela API. Cobrança gerada e pagamento validado pelo sistema.
                           </p>
                         </div>
                       </div>
@@ -887,11 +886,10 @@ const LogisticsTriagem: React.FC = () => {
 
                     <div
                       onClick={() => setBillingMethod('MANUAL')}
-                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                        billingMethod === 'MANUAL'
+                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${billingMethod === 'MANUAL'
                           ? 'border-mustard-500 bg-mustard-50/20 dark:bg-mustard-500/5 shadow-sm'
                           : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         <input
@@ -903,10 +901,10 @@ const LogisticsTriagem: React.FC = () => {
                         />
                         <div>
                           <p className="font-bold text-sm text-slate-900 dark:text-white">
-                            Lançamento Manual em Bills
+                            Lançamento Manual
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-                            Registra no contas a receber (extrato) sem gerar cobrança no Asaas.
+                            Registra no contas a receber (extrato) sem gerar cobrança no gateway. Utilizar se não quiser cobrar o cliente pelo sistema
                           </p>
                         </div>
                       </div>
@@ -946,11 +944,10 @@ const LogisticsTriagem: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div
                       onClick={() => setDocumentType('FATURA_LOCACAO')}
-                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                        documentType === 'FATURA_LOCACAO'
+                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${documentType === 'FATURA_LOCACAO'
                           ? 'border-mustard-500 bg-mustard-50/20 dark:bg-mustard-500/5 shadow-sm'
                           : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         <input
@@ -978,11 +975,10 @@ const LogisticsTriagem: React.FC = () => {
 
                     <div
                       onClick={() => setDocumentType('NFSE')}
-                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                        documentType === 'NFSE'
+                      className={`p-4 rounded-2xl border-2 cursor-pointer transition-all ${documentType === 'NFSE'
                           ? 'border-mustard-500 bg-mustard-50/20 dark:bg-mustard-500/5 shadow-sm'
                           : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-start gap-3">
                         <input
@@ -1239,8 +1235,8 @@ const LogisticsTriagem: React.FC = () => {
           onClick={prevStep}
           disabled={currentStep === 0}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all ${currentStep === 0
-              ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
-              : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 active:scale-[0.98]'
+            ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+            : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 active:scale-[0.98]'
             }`}
         >
           <span className="material-symbols-outlined text-lg">arrow_back</span>
@@ -1252,8 +1248,8 @@ const LogisticsTriagem: React.FC = () => {
             onClick={nextStep}
             disabled={!isProcessed && !isStepValid(currentStep)}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.98] ${isProcessed || isStepValid(currentStep)
-                ? 'bg-mustard-500 hover:bg-mustard-600 text-white shadow-lg shadow-mustard-500/20'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none opacity-60'
+              ? 'bg-mustard-500 hover:bg-mustard-600 text-white shadow-lg shadow-mustard-500/20'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed shadow-none opacity-60'
               }`}
           >
             Próximo

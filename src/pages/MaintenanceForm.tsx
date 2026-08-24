@@ -9,6 +9,7 @@ import type { Equipment, UserProfile, Part, ServiceOrder, ServiceOrderStatus, Se
 import SearchableSelect from '../components/SearchableSelect';
 import ServiceOrderDocument from '../components/maintenance/ServiceOrderDocument';
 import OsXmlImportModal from '../components/maintenance/OsXmlImportModal';
+import { PartCreateModal } from '../components/maintenance/PartCreateModal';
 
 interface OSPartItem {
   part_id: string;
@@ -93,6 +94,7 @@ const MaintenanceForm: React.FC = () => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [viewingPdf, setViewingPdf] = useState(false);
   const [isNfeModalOpen, setIsNfeModalOpen] = useState(false);
+  const [isPartModalOpen, setIsPartModalOpen] = useState(false);
 
   const [formData, setFormData] = useState<Partial<ServiceOrder>>({
     order_type: 'Interna',
@@ -228,6 +230,11 @@ const MaintenanceForm: React.FC = () => {
     }
     setPartSearch('');
     setShowPartResults(false);
+  };
+
+  const handlePartCreated = (newPart: Part) => {
+    setAllParts(prev => [newPart, ...prev.filter(p => p.id !== newPart.id)]);
+    handleAddPart(newPart);
   };
 
   const handleRemovePart = (partId: string) => {
@@ -600,6 +607,7 @@ const MaintenanceForm: React.FC = () => {
                       <option value="Em Andamento">Em Andamento</option>
                       <option value="Aguardando Peças">Aguardando Peças</option>
                       <option value="Concluída">Concluída</option>
+                      <option value="Encerrada com pendências">Encerrada com pendências</option>
                       <option value="Cancelada">Cancelada</option>
                     </select>
                   </div>
@@ -732,8 +740,8 @@ const MaintenanceForm: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="relative max-w-xl" ref={partContainerRef}>
-                  <div className="relative">
+                <div className="flex items-center gap-3 max-w-xl" ref={partContainerRef}>
+                  <div className="relative flex-1">
                     <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">add_shopping_cart</span>
                     <input
                       type="text"
@@ -743,25 +751,33 @@ const MaintenanceForm: React.FC = () => {
                       onFocus={() => setShowPartResults(true)}
                       className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-mustard-500/10 focus:border-mustard-500 text-slate-900 dark:text-white outline-none transition-all"
                     />
+                    <AnimatePresence>
+                      {showPartResults && filteredParts.length > 0 && (
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+                          {filteredParts.map(p => (
+                            <button key={p.id} type="button" onClick={() => handleAddPart(p)} className="w-full px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between group border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors">
+                              <div>
+                                <p className="font-bold text-slate-900 dark:text-white text-sm">{p.internal_code} - {p.description}</p>
+                                <p className="text-xs text-slate-500 font-medium">
+                                  <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold mr-1.5">{p.category || 'Peça'}</span>
+                                  Estoque: {p.quantity} {p.unit || 'UN'} | {Number(p.unit_value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                </p>
+                              </div>
+                              <span className="material-symbols-outlined text-mustard-600 opacity-0 group-hover:opacity-100 transition-all">add_circle</span>
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                  <AnimatePresence>
-                    {showPartResults && filteredParts.length > 0 && (
-                      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
-                        {filteredParts.map(p => (
-                          <button key={p.id} type="button" onClick={() => handleAddPart(p)} className="w-full px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center justify-between group border-b border-slate-50 dark:border-slate-800 last:border-0 transition-colors">
-                            <div>
-                              <p className="font-bold text-slate-900 dark:text-white text-sm">{p.internal_code} - {p.description}</p>
-                              <p className="text-xs text-slate-500 font-medium">
-                                <span className="inline-block px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold mr-1.5">{p.category || 'Peça'}</span>
-                                Estoque: {p.quantity} {p.unit || 'UN'} | {Number(p.unit_value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                              </p>
-                            </div>
-                            <span className="material-symbols-outlined text-mustard-600 opacity-0 group-hover:opacity-100 transition-all">add_circle</span>
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  <button
+                    type="button"
+                    onClick={() => setIsPartModalOpen(true)}
+                    title="Cadastrar nova peça / material no estoque"
+                    className="w-12 h-12 bg-mustard-500 hover:bg-mustard-600 active:scale-95 text-white rounded-2xl flex items-center justify-center transition-all shadow-md shadow-mustard-500/20 shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-xl">add</span>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3">
@@ -802,6 +818,13 @@ const MaintenanceForm: React.FC = () => {
                 isOpen={isNfeModalOpen}
                 onClose={() => setIsNfeModalOpen(false)}
                 onSuccess={handleNfeImportSuccess}
+              />
+
+              {/* Modal de Cadastro Rápido de Peça na OS */}
+              <PartCreateModal
+                isOpen={isPartModalOpen}
+                onClose={() => setIsPartModalOpen(false)}
+                onSuccess={handlePartCreated}
               />
             </motion.div>
           )}

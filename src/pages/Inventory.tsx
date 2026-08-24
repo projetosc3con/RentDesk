@@ -325,10 +325,19 @@ const Inventory: React.FC = () => {
                         </div>
                       )}
 
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
                         <button
+                          type="button"
+                          onClick={() => navigate(`/equipamentos/editar/${equipment.id}`)}
+                          title="Editar Equipamento"
+                          className="p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-mustard-600 dark:hover:text-mustard-400 hover:border-mustard-300 dark:hover:border-mustard-500/30 rounded-xl transition-all flex items-center justify-center shrink-0"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">edit</span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setSelectedEquipment(equipment)}
-                          className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                          className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 py-2.5 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-center"
                         >
                           Detalhes
                         </button>
@@ -398,8 +407,17 @@ const Inventory: React.FC = () => {
                           <td className="px-6 py-4">
                             <div className="flex items-center justify-center gap-2">
                               <button
+                                type="button"
+                                onClick={() => navigate(`/equipamentos/editar/${equipment.id}`)}
+                                className="p-2 text-slate-400 hover:text-mustard-600 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 rounded-lg transition-all"
+                                title="Editar Equipamento"
+                              >
+                                <span className="material-symbols-outlined text-[20px]">edit</span>
+                              </button>
+                              <button
+                                type="button"
                                 onClick={() => setSelectedEquipment(equipment)}
-                                className="p-2 text-slate-400 hover:text-emerald-900 hover:bg-emerald-50 rounded-lg transition-all"
+                                className="p-2 text-slate-400 hover:text-mustard-600 hover:bg-mustard-50 dark:hover:bg-mustard-500/10 rounded-lg transition-all"
                                 title="Ver Detalhes"
                               >
                                 <span className="material-symbols-outlined text-[20px]">visibility</span>

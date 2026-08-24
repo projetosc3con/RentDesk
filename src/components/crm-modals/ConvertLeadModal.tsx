@@ -75,11 +75,10 @@ const ConvertLeadModal: React.FC<ConvertLeadModalProps> = ({ isOpen, onClose, on
     setScoreError(null);
     try {
       const res = await financeiroService.consultarScore(cleanDocument);
-      if (res.sucesso && typeof res.score === 'number') {
+      if (res.sucesso) {
         setScore(res.score);
       } else {
-        const errorMsg = (!res.sucesso && res.mensagem) ? res.mensagem : 'Não foi possível obter o score do cliente.';
-        setScoreError(errorMsg);
+        setScoreError(res.mensagem || 'Não foi possível obter o score do cliente.');
       }
     } catch (err: any) {
       console.error('Erro ao consultar score:', err);
@@ -93,7 +92,10 @@ const ConvertLeadModal: React.FC<ConvertLeadModalProps> = ({ isOpen, onClose, on
     if (!canConvert) return;
     setLoading(true);
     try {
-      const result = await crmService.convertLead(lead.id);
+      const result = await crmService.convertLead(lead.id, {
+        score: score ?? undefined,
+        average_score: stars ?? undefined,
+      });
       setConvertedClient(result.client);
       setSuccess(true);
       onSuccess(result.client);
@@ -175,7 +177,7 @@ const ConvertLeadModal: React.FC<ConvertLeadModalProps> = ({ isOpen, onClose, on
             onClick={onClose}
             className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
           />
-          
+
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -283,7 +285,7 @@ const ConvertLeadModal: React.FC<ConvertLeadModalProps> = ({ isOpen, onClose, on
                     <p className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
                       Classificação de Crédito (Score Serasa / Asaas)
                     </p>
-                    
+
                     {renderStars(stars)}
 
                     {stars !== null ? (
@@ -297,7 +299,7 @@ const ConvertLeadModal: React.FC<ConvertLeadModalProps> = ({ isOpen, onClose, on
                       </div>
                     ) : (
                       <p className="text-xs text-slate-400 dark:text-slate-500 italic pt-1">
-                        Cinco estrelas apagadas — clique em &quot;Consultar&quot; para obter o score
+                        clique em &quot;Consultar&quot; para obter o score
                       </p>
                     )}
                   </div>

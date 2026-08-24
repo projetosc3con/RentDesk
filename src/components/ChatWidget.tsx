@@ -7,7 +7,7 @@ const ChatWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   // Only show for Admin access level
-  if (profile?.access_level !== 'Administrador') {
+  if (profile?.access_level !== '') {
     return null;
   }
 
