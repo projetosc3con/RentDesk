@@ -11,8 +11,8 @@ import { motion } from 'framer-motion';
 import { navItems } from '../constants/navigation';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import logoLight from '../assets/altomaster-dark.png';
-import logoDark from '../assets/altomaster-white.png';
+import logoLight from '../assets/logo-completo.png';
+import logoDark from '../assets/logo-completo-dark.png';
 
 const Sidebar: React.FC = () => {
   const { theme } = useTheme();

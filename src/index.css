@@ -68,16 +68,16 @@
   --spacing-stack-lg: 32px;
   --spacing-unit: 4px;
 
-  --color-mustard-50: #fff7ed;
-  --color-mustard-100: #ffedd5;
-  --color-mustard-200: #fed7aa;
-  --color-mustard-300: #fdba74;
-  --color-mustard-400: #fb923c;
-  --color-mustard-500: #f97316;
-  --color-mustard-600: #ea580c;
-  --color-mustard-700: #c2410c;
-  --color-mustard-800: #9a3412;
-  --color-mustard-900: #7c2d12;
+  --color-mustard-50:  #fef8e6;
+  --color-mustard-100: #fdf1cd;
+  --color-mustard-200: #fae39b;
+  --color-mustard-300: #f3c74d;
+  --color-mustard-400: #dbac18;
+  --color-mustard-500: #bf8110;
+  --color-mustard-600: #99670d;
+  --color-mustard-700: #734d0a;
+  --color-mustard-800: #4d3307;
+  --color-mustard-900: #261a03;
 }
 
 @layer base {
