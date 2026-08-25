@@ -26,7 +26,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
   // Se houver papéis permitidos definidos, verifica se o usuário tem um deles
   if (allowedRoles && profile && !allowedRoles.includes(profile.access_level as AccessLevel)) {
     // Redireciona para o dashboard se não tiver permissão
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

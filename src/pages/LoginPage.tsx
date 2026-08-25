@@ -40,7 +40,7 @@ const LoginPage: React.FC = () => {
 
   // Redirect if already logged in
   if (session) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -55,7 +55,7 @@ const LoginPage: React.FC = () => {
       });
 
       if (error) throw error;
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Erro ao realizar login');
     } finally {
@@ -471,8 +471,16 @@ const LoginPage: React.FC = () => {
               )}
             </AnimatePresence>
 
-            <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-800">
-              <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">
+            <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="text-[11px] font-bold text-slate-500 hover:text-mustard-500 transition-colors inline-flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                Voltar para a página principal
+              </button>
+              <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mt-1">
                 © 2026 - C3LOC ERP
               </p>
             </div>

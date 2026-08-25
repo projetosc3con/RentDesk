@@ -1,5 +1,5 @@
 export const navItems = [
-  { name: 'Dashboard', path: '/', icon: 'dashboard', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Comercial', 'Manutenção', 'Recursos Humanos', 'Logística'] },
+  { name: 'Dashboard', path: '/dashboard', icon: 'dashboard', allowedRoles: ['Administrador', 'Diretoria', 'Gerente', 'Comercial', 'Manutenção', 'Recursos Humanos', 'Logística'] },
   { name: 'Contratos', path: '/locacoes', icon: 'contract', allowedRoles: ['Administrador', 'Diretoria', 'Gerente'] },
   { name: 'CRM', path: '/crm', icon: 'monitoring', allowedRoles: ['Administrador', 'Diretoria', 'Gerente'] },
 

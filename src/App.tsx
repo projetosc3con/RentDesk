@@ -40,6 +40,7 @@ import {
   SettingsTab
 } from './pages/CRM/tabs';
 import ProtectedRoute from './components/ProtectedRoute';
+import LandingPage from './pages/LandingPage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -53,6 +54,25 @@ const PasswordGuard: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }
 
   return <>{children}</>;
+};
+
+// Rota raiz: exibe Landing Page para visitantes e redireciona usuários autenticados para /dashboard
+const RootRoute: React.FC = () => {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <div className="w-10 h-10 border-4 border-mustard-500/10 border-t-mustard-500 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (session) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <LandingPage />;
 };
 
 const Placeholder = ({ title }: { title: string }) => (
@@ -75,6 +95,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             {/* Public Routes */}
+            <Route path="/" element={<RootRoute />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/definir-senha" element={<SetPassword />} />
 
@@ -87,7 +108,7 @@ function App() {
 
                 {/* Routes accessible by all allowed roles (except Financeiro and Usuário) */}
                 <Route element={<ProtectedRoute allowedRoles={['Administrador', 'Diretoria', 'Gerente', 'Comercial', 'Manutenção', 'Recursos Humanos', 'Logística']} />}>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/perfil" element={<Profile />} />
                 </Route>
 

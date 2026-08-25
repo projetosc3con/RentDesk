@@ -54,7 +54,7 @@ const SetPassword: React.FC = () => {
       await refreshProfile();
 
       // 4. Redirecionar para o dashboard
-      navigate('/');
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Erro ao definir senha.');
     } finally {
