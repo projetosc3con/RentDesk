@@ -228,19 +228,22 @@ const PRICING_PLANS = [
   {
     id: 'starter',
     name: 'Starter',
-    badge: 'Para frotas em início',
+    badge: '',
     featured: false,
     fleetLimit: 'Até 30 equipamentos',
-    monthlyPrice: 590,
+    originalPrice: 1500,
+    monthlyPrice: 960,
     setupPrice: 1500,
     description: 'Ideal para locadoras regionais que buscam profissionalizar contratos e controle de frota.',
     features: [
-      'Até 3 usuários simultâneos',
+      'Até 10 usuários simultâneos',
       'Gestão completa de Contratos & Faturas',
       'Controle de Frota & Patrimônios',
-      'CRM & Gestão de Leads básica',
+      'Conciliação Bancária & Faturamento Inteligente',
+      'App PWA para técnicos e equipe de campo',
       'Ordens de Serviço de Manutenção',
       'Geração de Contratos em PDF',
+      'Importação de notas fiscais automaticamente',
       'Suporte via e-mail e ticket (horário comercial)'
     ]
   },
@@ -250,17 +253,17 @@ const PRICING_PLANS = [
     badge: 'Mais Escolhido',
     featured: true,
     fleetLimit: 'Até 100 equipamentos',
-    monthlyPrice: 1190,
+    originalPrice: 2500,
+    monthlyPrice: 1560,
     setupPrice: 2400,
     description: 'A solução mais completa para locadoras em expansão que exigem máxima eficiência operacional.',
     features: [
-      'Até 10 usuários simultâneos',
+      'Até 30 usuários simultâneos',
       'Todos os recursos do Starter',
       'CRM Avançado com Funil Kanban completo',
       'Módulo de Logística & Triagem de Pátio',
       'Estoque de Peças com baixa automática por OS',
       'Conciliação Bancária & Faturamento Inteligente',
-      'App PWA para técnicos e equipe de campo',
       'Exportação avançada em XLSX / BI',
       'Suporte prioritário via WhatsApp e Telefone'
     ]
@@ -271,7 +274,8 @@ const PRICING_PLANS = [
     badge: 'Grandes Frotas & Filiais',
     featured: false,
     fleetLimit: 'Equipamentos Ilimitados',
-    monthlyPrice: 2490,
+    originalPrice: 3500,
+    monthlyPrice: 2570,
     setupPrice: 3900,
     description: 'Para empresas com múltiplas filiais, grandes frotas e exigências rigorosas de compliance e RH.',
     features: [
@@ -281,7 +285,7 @@ const PRICING_PLANS = [
       'Controle de Integrações e Crachás de Obras',
       'Migração assistida de bancos de dados legados',
       'Consultor de implantação dedicado',
-      'SLA de 99.9% com suporte 24/7',
+      'Agente de IA para auxílio na gestão',
       'Treinamentos ilimitados para novas contratações'
     ]
   }
@@ -592,17 +596,15 @@ const LandingPage: React.FC = () => {
                   <button
                     key={mod.id}
                     onClick={() => setActiveModule(mod.id)}
-                    className={`flex items-center justify-between p-4 rounded-2xl border text-left transition-all duration-200 ${
-                      isActive
-                        ? 'bg-mustard-500/15 border-mustard-500/50 text-white shadow-lg shadow-mustard-500/10'
-                        : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                    }`}
+                    className={`flex items-center justify-between p-4 rounded-2xl border text-left transition-all duration-200 ${isActive
+                      ? 'bg-mustard-500/15 border-mustard-500/50 text-white shadow-lg shadow-mustard-500/10'
+                      : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      }`}
                   >
                     <div className="flex items-center gap-3.5">
                       <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-                          isActive ? 'bg-mustard-500 text-white' : 'bg-slate-800 text-slate-400'
-                        }`}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isActive ? 'bg-mustard-500 text-white' : 'bg-slate-800 text-slate-400'
+                          }`}
                       >
                         <span className="material-symbols-outlined text-[22px]">{mod.icon}</span>
                       </div>
@@ -612,9 +614,8 @@ const LandingPage: React.FC = () => {
                       </div>
                     </div>
                     <span
-                      className={`material-symbols-outlined text-[20px] transition-transform ${
-                        isActive ? 'text-mustard-400 translate-x-1' : 'text-slate-600'
-                      }`}
+                      className={`material-symbols-outlined text-[20px] transition-transform ${isActive ? 'text-mustard-400 translate-x-1' : 'text-slate-600'
+                        }`}
                     >
                       chevron_right
                     </span>
@@ -783,14 +784,17 @@ const LandingPage: React.FC = () => {
       <section id="precos" className="relative z-10 py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
-            <span className="text-xs font-black uppercase tracking-widest text-mustard-400 bg-mustard-500/10 border border-mustard-500/20 px-3.5 py-1.5 rounded-full">
-              Transparência Total
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight mt-4">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-black uppercase tracking-widest text-emerald-400">
+                Condições Especiais • 1º Ano Promocional
+              </span>
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight mt-2">
               Planos dimensionados para o tamanho da sua locadora.
             </h2>
             <p className="text-slate-400 text-base sm:text-lg mt-4">
-              Mensalidades justas e custo de implantação transparente. Escolha o plano ideal para a sua frota.
+              Aproveite a <strong className="text-emerald-400 font-semibold">tabela promocional exclusiva para o primeiro ano</strong> com mensalidades reduzidas e custo de implantação transparente.
             </p>
           </div>
 
@@ -798,11 +802,10 @@ const LandingPage: React.FC = () => {
             {PRICING_PLANS.map((plan) => (
               <div
                 key={plan.id}
-                className={`relative rounded-3xl p-8 sm:p-10 flex flex-col justify-between transition-all duration-300 ${
-                  plan.featured
-                    ? 'bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-2 border-mustard-500 shadow-2xl shadow-mustard-500/10 lg:-translate-y-4'
-                    : 'bg-slate-900/70 border border-slate-800'
-                }`}
+                className={`relative rounded-3xl p-8 sm:p-10 flex flex-col justify-between transition-all duration-300 ${plan.featured
+                  ? 'bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border-2 border-mustard-500 shadow-2xl shadow-mustard-500/10 lg:-translate-y-4'
+                  : 'bg-slate-900/70 border border-slate-800'
+                  }`}
               >
                 {plan.featured && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-mustard-500 to-amber-500 text-white text-[11px] font-black uppercase tracking-widest shadow-md">
@@ -830,15 +833,34 @@ const LandingPage: React.FC = () => {
 
                   {/* Prices breakdown */}
                   <div className="mt-6 pt-6 border-t border-slate-800">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xs text-slate-400 font-bold">R$</span>
-                      <span className="text-4xl sm:text-5xl font-black text-white">{plan.monthlyPrice}</span>
+                    {/* Original Price / Promo Tag */}
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span className="text-xs sm:text-sm text-slate-400 line-through font-medium">
+                        De R$ {plan.originalPrice.toLocaleString('pt-BR')}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                        1º Ano Promocional
+                      </span>
+                    </div>
+
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-sm text-emerald-400 font-bold">Por R$</span>
+                      <span className="text-4xl sm:text-5xl font-black text-white">
+                        {plan.monthlyPrice.toLocaleString('pt-BR')}
+                      </span>
                       <span className="text-xs text-slate-400 font-semibold">/ mês</span>
                     </div>
 
-                    <div className="mt-3 p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between">
+                    <p className="text-[11px] text-emerald-400 font-semibold mt-2 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[15px] shrink-0">savings</span>
+                      Economia de R$ {(plan.originalPrice - plan.monthlyPrice).toLocaleString('pt-BR')}/mês no 1º ano
+                    </p>
+
+                    <div className="mt-3.5 p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 flex items-center justify-between">
                       <span className="text-xs text-slate-400 font-medium">Custo de Implantação:</span>
-                      <span className="text-xs font-bold text-mustard-400">R$ {plan.setupPrice.toLocaleString('pt-BR')} (taxa única)</span>
+                      <span className="text-xs font-bold text-mustard-400">
+                        R$ {plan.setupPrice.toLocaleString('pt-BR')} (taxa única)
+                      </span>
                     </div>
                   </div>
 
@@ -859,11 +881,10 @@ const LandingPage: React.FC = () => {
                 <div className="mt-10">
                   <a
                     href="#contato"
-                    className={`w-full py-4 rounded-2xl font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
-                      plan.featured
-                        ? 'bg-mustard-500 text-white hover:bg-mustard-600 shadow-xl shadow-mustard-500/25 active:scale-95'
-                        : 'bg-slate-800 text-white hover:bg-slate-700 active:scale-95'
-                    }`}
+                    className={`w-full py-4 rounded-2xl font-bold text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${plan.featured
+                      ? 'bg-mustard-500 text-white hover:bg-mustard-600 shadow-xl shadow-mustard-500/25 active:scale-95'
+                      : 'bg-slate-800 text-white hover:bg-slate-700 active:scale-95'
+                      }`}
                   >
                     Escolher Plano {plan.name}
                     <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
@@ -904,9 +925,8 @@ const LandingPage: React.FC = () => {
                   >
                     <span className="text-base sm:text-lg font-bold text-white">{faq.q}</span>
                     <span
-                      className={`material-symbols-outlined text-mustard-400 transition-transform duration-200 ${
-                        isOpen ? 'rotate-180' : ''
-                      }`}
+                      className={`material-symbols-outlined text-mustard-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''
+                        }`}
                     >
                       expand_more
                     </span>
