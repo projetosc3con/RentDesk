@@ -293,7 +293,7 @@ const PRICING_PLANS = [
 
 const FAQS = [
   {
-    q: 'Quanto tempo leva para colocar o RentDesk em funcionamento na minha locadora?',
+    q: 'Quanto tempo leva para colocar o C3Loc em funcionamento na minha locadora?',
     a: 'Nosso processo de implantação express leva entre 7 e 14 dias corridos. Durante esse período realizamos o diagnóstico, a importação dos seus equipamentos e clientes, o treinamento dos colaboradores e o acompanhamento do go-live.'
   },
   {
@@ -302,7 +302,7 @@ const FAQS = [
   },
   {
     q: 'O sistema funciona em celulares e tablets na oficina ou na obra?',
-    a: 'Sim! O RentDesk é construído com tecnologia PWA (Progressive Web App) e design 100% responsivo. Seus mecânicos e motoristas podem acessar o sistema diretamente pelo celular ou tablet para abrir ordens de serviço, registrar pontos e realizar vistorias.'
+    a: 'Sim! O C3Loc é construído com tecnologia PWA (Progressive Web App) e design 100% responsivo. Seus mecânicos e motoristas podem acessar o sistema diretamente pelo celular ou tablet para abrir ordens de serviço, registrar pontos e realizar vistorias.'
   },
   {
     q: 'Existe contrato de fidelidade ou multa de cancelamento?',
@@ -346,9 +346,9 @@ const LandingPage: React.FC = () => {
 
   const handleWhatsAppContact = () => {
     const text = encodeURIComponent(
-      `Olá! Tenho interesse no ERP RentDesk / C3LOC para locação de equipamentos. Gostaria de agendar uma demonstração.`
+      `Olá! Tenho interesse no ERP C3Loc / C3LOC para locação de equipamentos. Gostaria de agendar uma demonstração.`
     );
-    window.open(`https://wa.me/5511999999999?text=${text}`, '_blank');
+    window.open(`https://wa.me/556792683370?text=${text}`, '_blank');
   };
 
   const currentModuleData = MODULES.find((m) => m.id === activeModule) || MODULES[0];
@@ -977,7 +977,7 @@ const LandingPage: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Atendimento Comercial</p>
-                    <p className="text-sm sm:text-base font-bold text-white">comercial@rentdesk.com.br</p>
+                    <p className="text-sm sm:text-base font-bold text-white">comercialc3con@outlook.com.br</p>
                   </div>
                 </div>
 
@@ -991,7 +991,7 @@ const LandingPage: React.FC = () => {
                       onClick={handleWhatsAppContact}
                       className="text-sm sm:text-base font-bold text-emerald-400 hover:underline inline-flex items-center gap-1"
                     >
-                      (11) 99999-9999
+                      (67) 99268-3370
                       <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                     </button>
                   </div>
@@ -1144,7 +1144,7 @@ const LandingPage: React.FC = () => {
           <div className="flex items-center gap-4">
             <img src={logoDark} alt="C3LOC ERP" className="h-8 w-auto object-contain opacity-80" />
             <p className="text-xs text-slate-500">
-              © {new Date().getFullYear()} C3LOC / RentDesk ERP. Todos os direitos reservados.
+              © {new Date().getFullYear()} C3LOC ERP. Todos os direitos reservados.
             </p>
           </div>
 
